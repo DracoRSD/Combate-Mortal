@@ -2,7 +2,11 @@
 .game-container {
   height: 100vh;
   width: 100%;
-  background-image: url('../../assets/images/fondo-luna.jpg');
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -8%, #132540 0%, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 90% 100%, #0d1d33 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 5% 95%, #0d1d33 0%, transparent 55%),
+    var(--color-background);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

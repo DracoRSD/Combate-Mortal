@@ -1,20 +1,29 @@
 :root {
   /* Colores principales */
-  --color-background: #000;
-  --color-primary: #FFD700;
-  --color-secondary: #FF6600;
+  --color-background: #05070f;
+  --color-primary: #3fb6ff;
+  --color-secondary: #c9d6e6;
   --color-text: #ffffff;
-  --color-text-dark: #000000;
-  --color-border: #333;
-  --color-accent: #b8860b;
-  
+  --color-text-dark: #04101c;
+  --color-border: #1c2b42;
+  --color-accent: #7fdcff;
+
+  /* Jugadores (selección izquierda/derecha) */
+  --color-player-left: #48c6ff;
+  --color-player-right: #7f8fff;
+
+  /* Estado crítico (temporizador) */
+  --color-warn: #ffb545;
+  --color-danger: #ff3b52;
+
   /* Gradientes comunes */
   --gradient-primary: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
   --gradient-header: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.4));
-  
+  --gradient-chrome: linear-gradient(180deg, #fdfefe 0%, #b9c6d6 25%, #6f8298 50%, #b9c6d6 75%, #fdfefe 100%);
+
   /* Sombras */
-  --shadow-text: 0 0 10px var(--color-secondary), 2px 2px 4px var(--color-background);
-  --shadow-box: 0 0 20px rgba(255, 215, 0, 0.3);
+  --shadow-text: 0 0 10px var(--color-primary), 2px 2px 4px var(--color-background);
+  --shadow-box: 0 0 20px rgba(63, 182, 255, 0.35);
   
   /* Espaciado */
   --spacing-xs: 5px;

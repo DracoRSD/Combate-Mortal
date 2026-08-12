@@ -20,11 +20,11 @@
 }
 
 .selection-indicator.selecting-left {
-  color: #FF5555;
+  color: var(--color-player-left);
 }
 
 .selection-indicator.selecting-right {
-  color: #5555FF;
+  color: var(--color-player-right);
 }
 
 .character-grid {
@@ -56,18 +56,18 @@
 }
 
 .character-card.selected-left {
-  border-color: #FF5555;
-  box-shadow: 0 0 20px rgba(255, 85, 85, 0.5);
+  border-color: var(--color-player-left);
+  box-shadow: 0 0 20px rgba(72, 198, 255, 0.5);
 }
 
 .character-card.selected-right {
-  border-color: #5555FF;
-  box-shadow: 0 0 20px rgba(85, 85, 255, 0.5);
+  border-color: var(--color-player-right);
+  box-shadow: 0 0 20px rgba(127, 143, 255, 0.5);
 }
 
 .character-card.selected-both {
-  border-color: #FF00FF;
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 20px rgba(127, 220, 255, 0.5);
 }
 
 .character-card img {

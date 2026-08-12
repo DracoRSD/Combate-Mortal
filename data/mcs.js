@@ -80,6 +80,20 @@ const McData = [
     urlFoto: "assets/images/mcs/Adonys.jpg",
     urlVideo: "assets/videos/mcs/"
   },
+  {
+    nombreMC: "Teorema",
+    urlFoto: "assets/images/mcs/teorema.jpg",
+    urlVideo: "assets/videos/mcs/",
+    pais: "Chile",
+    bandera: "🇨🇱"
+  },
+  {
+    nombreMC: "Mecha",
+    urlFoto: "assets/images/mcs/mecha.jpg",
+    urlVideo: "assets/videos/mcs/",
+    pais: "Argentina",
+    bandera: "🇦🇷"
+  },
 ];
 
 // Exportar datos para usarlos en otros archivos
