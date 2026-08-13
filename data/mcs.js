@@ -38,8 +38,8 @@ const McData = [
     urlVideo: "assets/videos/mcs/"
   },
   {
-    nombreMC: "Kentari",
-    urlFoto: "assets/images/mcs/kentari.jpg",
+    nombreMC: "Kenyari",
+    urlFoto: "assets/images/mcs/kenyari.jpg",
     urlVideo: "assets/videos/mcs/"
   },
   {
@@ -48,8 +48,8 @@ const McData = [
     urlVideo: "assets/videos/mcs/"
   },
   {
-    nombreMC: "Nyme",
-    urlFoto: "assets/images/mcs/nyme.jpg",
+    nombreMC: "Nume",
+    urlFoto: "assets/images/mcs/nume.jpg",
     urlVideo: "assets/videos/mcs/"
   },
   {
