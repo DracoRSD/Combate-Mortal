@@ -2,6 +2,7 @@ import { FormatPicker } from './modules/FormatPicker.js';
 import { FighterSelector } from './modules/FighterSelector.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { cleanupVideos } from './utils/performance.js';
+import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
 import Formats from '../data/formats.js';
 
@@ -13,6 +14,8 @@ function showScreen(name) {
 
 function initializeApp() {
   var chosenFormat = Formats[0];
+  var formatGrid = document.getElementById('formatGrid');
+  var fighterGrid = document.getElementById('fighterGrid');
 
   var formatPicker = new FormatPicker({
     cards: document.querySelectorAll('.mode-card'),
@@ -22,6 +25,7 @@ function initializeApp() {
       document.getElementById('formatBadge').textContent = format.name + ' — ' + format.description.toUpperCase();
       fighterSelector.reset();
       showScreen('Select');
+      focusFirstNavItem(fighterGrid);
     }
   });
 
@@ -48,7 +52,12 @@ function initializeApp() {
   document.getElementById('btnVolverFormato').addEventListener('click', function () {
     fighterSelector.reset();
     showScreen('Format');
+    focusFirstNavItem(formatGrid);
   });
+
+  enableGridKeyboardNav(formatGrid, { layout: 'linear' });
+  enableGridKeyboardNav(fighterGrid, { layout: 'grid' });
+  focusFirstNavItem(formatGrid);
 
   window.addEventListener('beforeunload', function () { cleanupVideos(); });
 

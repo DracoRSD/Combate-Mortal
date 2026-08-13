@@ -34,9 +34,11 @@ export class FighterSelector {
     const fragment = document.createDocumentFragment();
 
     this.mcData.forEach((mc, index) => {
-      const card = document.createElement('div');
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'fighter-card';
       card.dataset.index = index;
+      card.dataset.navItem = '';
 
       const img = document.createElement('img');
       img.alt = mc.nombreMC;
