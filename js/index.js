@@ -55,8 +55,24 @@ function initializeApp() {
     focusFirstNavItem(formatGrid);
   });
 
+  var selectControls = document.getElementById('selectControls');
+
   enableGridKeyboardNav(formatGrid, { layout: 'linear' });
-  enableGridKeyboardNav(fighterGrid, { layout: 'grid' });
+  enableGridKeyboardNav(fighterGrid, {
+    layout: 'grid',
+    onEdge: function (key) {
+      if (key === 'ArrowDown') focusFirstNavItem(selectControls);
+    }
+  });
+  enableGridKeyboardNav(selectControls, {
+    layout: 'linear',
+    onEdge: function (key) {
+      if (key === 'ArrowLeft' || key === 'ArrowUp') {
+        var fighterCards = fighterGrid.querySelectorAll('[data-nav-item]');
+        if (fighterCards.length) fighterCards[fighterCards.length - 1].focus();
+      }
+    }
+  });
   focusFirstNavItem(formatGrid);
 
   window.addEventListener('beforeunload', function () { cleanupVideos(); });

@@ -170,7 +170,11 @@ export class TimerController {
     if (this.isRunning) return;
 
     this.isRunning = true;
+    const startHadFocus = document.activeElement === this.elements.startButton;
     this.elements.startButton.disabled = true;
+    // El navegador quita el foco de un botón que se deshabilita; lo movemos
+    // a Reiniciar para no perder la navegación por flechas mientras corre.
+    if (startHadFocus) this.elements.resetButton.focus();
 
     // Detener el intervalo anterior si existe
     if (this.interval) {
@@ -307,6 +311,9 @@ export class TimerController {
    */
   handleKeyDown(event) {
     if (event.key === ' ' || event.key === 'Space') {
+      // Si el foco está en un botón, Espacio ya lo activa de forma nativa
+      // (dispara su propio listener de click); evita duplicar la acción.
+      if (event.target && event.target.tagName === 'BUTTON') return;
       if (!this.elements.startButton.disabled) {
         this.startTimer();
       }

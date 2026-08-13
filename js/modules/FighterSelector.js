@@ -181,5 +181,7 @@ export class FighterSelector {
     const bothChosen = this.left !== null && this.right !== null;
     this.elements.vsBadge.classList.toggle('visible', bothChosen);
     this.elements.fightButton.classList.toggle('visible', bothChosen);
+    if (bothChosen) this.elements.fightButton.setAttribute('data-nav-item', '');
+    else this.elements.fightButton.removeAttribute('data-nav-item');
   }
 }

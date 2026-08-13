@@ -1,6 +1,7 @@
 import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
 import { createBoltRenderer } from './utils/lightning.js';
+import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
 import Formats from '../data/formats.js';
 
@@ -77,6 +78,10 @@ function initializeTimer() {
     onNextBattle: () => timerController.resetTimer(),
     onRoundReset: () => timerController.resetTimer()
   });
+
+  const controls = document.getElementById('controls');
+  enableGridKeyboardNav(controls, { layout: 'linear' });
+  focusFirstNavItem(controls);
 
   initLightning();
 }

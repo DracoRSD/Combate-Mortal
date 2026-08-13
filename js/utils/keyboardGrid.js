@@ -29,10 +29,14 @@ function columnsInFirstRow(items) {
  *   como "anterior" y Abajo/Derecha como "siguiente" (para grillas con
  *   tarjetas de distinto tamaño, donde la posición visual no es confiable).
  * @param {string} [options.itemSelector]
+ * @param {Function} [options.onEdge] - Se invoca con (key) cuando el
+ *   movimiento se saldría del contenedor, para saltar a otro grupo
+ *   navegable (p.ej. de la grilla de MCs a los botones Volver/Fight).
  */
 export function enableGridKeyboardNav(container, options = {}) {
   const layout = options.layout || 'grid';
   const itemSelector = options.itemSelector || '[data-nav-item]';
+  const onEdge = options.onEdge;
 
   function getItems() {
     return Array.from(container.querySelectorAll(itemSelector));
@@ -57,8 +61,14 @@ export function enableGridKeyboardNav(container, options = {}) {
     }
 
     if (next === null) return;
+
+    if (next < 0 || next >= items.length) {
+      event.preventDefault();
+      if (onEdge) onEdge(event.key);
+      return;
+    }
+
     event.preventDefault();
-    next = Math.max(0, Math.min(items.length - 1, next));
     items[next].focus();
   });
 }
