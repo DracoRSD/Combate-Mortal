@@ -12,12 +12,7 @@
     <canvas id="boltCanvas" class="bolt-canvas"></canvas>
 
     <header class="cm-brand">
-        <div class="cm-badge" aria-hidden="true">
-            <svg viewBox="0 0 120 120">
-                <circle class="cm-badge__ring" cx="60" cy="60" r="50"></circle>
-                <path class="cm-badge__dragon" d="M40 38c10-10 26-10 34 0 6 7 4 16-2 20 8 2 12 10 8 18-5 10-20 12-30 4-4 10-16 14-24 8-9-7-8-21 1-27-8-3-10-13-4-19 5-5 12-6 17-4z"></path>
-            </svg>
-        </div>
+        <img class="cm-badge" src="assets/images/logo-dragon.png" alt="Combate Mortal" />
         <span class="cm-brand__text chrome-text">Combate Mortal</span>
     </header>
 
@@ -36,6 +31,11 @@
             <button class="step-btn" id="battleDown" aria-label="Batalla anterior">&minus;</button>
             <div class="battle-num">Batalla <span id="battleNum">1</span></div>
             <button class="step-btn" id="battleUp" aria-label="Siguiente batalla">+</button>
+        </div>
+        <div class="battle-counter" id="entradaField" hidden>
+            <button class="step-btn" id="entradaDown" aria-label="Entrada anterior">&minus;</button>
+            <div class="battle-num">Entrada <span id="entradaNum">1</span>/<span id="entradaTotal">2</span></div>
+            <button class="step-btn" id="entradaUp" aria-label="Siguiente entrada">+</button>
         </div>
     </div>
 
@@ -65,7 +65,7 @@
 
             <div class="time-wrapper">
                 <div class="time-number" id="countdown">60</div>
-                <div class="time-label">SEGUNDOS</div>
+                <div class="time-label" id="timeLabel">SEGUNDOS</div>
             </div>
         </div>
 

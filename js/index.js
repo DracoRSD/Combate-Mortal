@@ -3,6 +3,7 @@ import { FighterSelector } from './modules/FighterSelector.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { cleanupVideos } from './utils/performance.js';
 import McData from '../data/mcs.js';
+import Formats from '../data/formats.js';
 
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach((el) => {
@@ -11,13 +12,14 @@ function showScreen(name) {
 }
 
 function initializeApp() {
-  var chosenFormat = { format: 'minutoLibre', time: 60, name: 'MINUTO LIBRE' };
+  var chosenFormat = Formats[0];
 
   var formatPicker = new FormatPicker({
-    cards: document.querySelectorAll('.format-card'),
-    onSelect: function (choice) {
-      chosenFormat = choice;
-      document.getElementById('formatBadge').textContent = choice.name + ' — ' + choice.time + 'S';
+    cards: document.querySelectorAll('.mode-card'),
+    formats: Formats,
+    onSelect: function (format) {
+      chosenFormat = format;
+      document.getElementById('formatBadge').textContent = format.name + ' — ' + format.description.toUpperCase();
       fighterSelector.reset();
       showScreen('Select');
     }
@@ -35,8 +37,7 @@ function initializeApp() {
     mcData: McData,
     onFight: function (choice) {
       var params = new URLSearchParams({
-        formato: chosenFormat.format,
-        tiempo: chosenFormat.time,
+        formato: chosenFormat.key,
         nombreA: choice.left.nombreMC,
         nombreB: choice.right.nombreMC
       });

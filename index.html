@@ -13,12 +13,7 @@
 
     <div class="app">
         <header class="cm-brand">
-            <div class="cm-badge" aria-hidden="true">
-                <svg viewBox="0 0 120 120">
-                    <circle class="cm-badge__ring" cx="60" cy="60" r="50"></circle>
-                    <path class="cm-badge__dragon" d="M40 38c10-10 26-10 34 0 6 7 4 16-2 20 8 2 12 10 8 18-5 10-20 12-30 4-4 10-16 14-24 8-9-7-8-21 1-27-8-3-10-13-4-19 5-5 12-6 17-4z"></path>
-                </svg>
-            </div>
+            <img class="cm-badge" src="assets/images/logo-dragon.png" alt="Combate Mortal" />
             <span class="cm-brand__text chrome-text">Combate Mortal</span>
         </header>
         <div class="cm-tagline">Sangre, sudor y barras</div>
@@ -26,22 +21,46 @@
         <!-- ================= Selección de formato ================= -->
         <section class="screen active" id="screenFormat">
             <h2 class="format-h2">Selecciona el formato</h2>
-            <div class="format-options">
-                <div class="format-card" data-format="minutoLibre" data-time="60" data-name="MINUTO LIBRE">
-                    <h3>Minuto libre</h3>
-                    <p>60 segundos</p>
-                    <div class="format-icon">🔥</div>
-                </div>
-                <div class="format-card" data-format="tematica" data-time="120" data-name="TEMÁTICA">
-                    <h3>Temática</h3>
-                    <p>120 segundos</p>
-                    <div class="format-icon">🎭</div>
-                </div>
-                <div class="format-card" data-format="minutosLibre" data-time="120" data-name="MINUTOS LIBRE">
-                    <h3>Minutos libre</h3>
-                    <p>120 segundos</p>
-                    <div class="format-icon">⏳</div>
-                </div>
+            <div class="mode-grid">
+                <button class="mode-card mode-card--wide" data-format="minutoIdaVuelta">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">Minuto Ida y Vuelta</h3>
+                    <p class="mode-card__desc">60s × 2 entradas</p>
+                </button>
+                <button class="mode-card" data-format="cuatroXcuatro">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">4x4 Libre</h3>
+                    <p class="mode-card__desc">120 segundos</p>
+                </button>
+                <button class="mode-card" data-format="ochoXocho">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">8x8 Temática</h3>
+                    <p class="mode-card__desc">120s · palabra temática</p>
+                </button>
+                <button class="mode-card" data-format="doceXdoce">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">12x12 Ida y Vuelta</h3>
+                    <p class="mode-card__desc">30s × 3 entradas</p>
+                </button>
+                <button class="mode-card" data-format="dosXdos">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">2x2 Ida y Vuelta</h3>
+                    <p class="mode-card__desc">30s × 5 entradas</p>
+                </button>
+                <button class="mode-card mode-card--hero" data-format="fatality">
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <div class="mode-card__body">
+                        <h3 class="mode-card__title">Fatality</h3>
+                        <p class="mode-card__subtitle">Sin límite. Decide el jurado.</p>
+                        <span class="mode-card__play">Play</span>
+                    </div>
+                </button>
             </div>
         </section>
 

@@ -1,25 +1,46 @@
 /**
- * Controlador del panel de batalla: nombres/fotos de los MC, turno activo
- * y contador de etapa/batalla. No conoce nada del temporizador salvo el
- * callback opcional que se dispara al avanzar de batalla.
+ * Controlador del panel de batalla: nombres/fotos de los MC, turno activo,
+ * contador de etapa/batalla y, para formatos "ida y vuelta", el contador de
+ * entrada. No conoce nada del temporizador salvo los callbacks opcionales
+ * que se disparan al avanzar de batalla o de entrada.
  */
 export class BattleHUD {
   /**
    * @param {Object} config
    * @param {Object} config.elements - Elementos del DOM
    * @param {Array} config.mcData - Catálogo de MCs (data/mcs.js)
+   * @param {Object} [config.format] - Formato elegido (data/formats.js)
    * @param {Function} [config.onNextBattle] - Se invoca al pasar de batalla
+   * @param {Function} [config.onRoundReset] - Se invoca al avanzar de entrada
    */
-  constructor({ elements, mcData, onNextBattle }) {
+  constructor({ elements, mcData, format, onNextBattle, onRoundReset }) {
     this.elements = elements;
     this.mcData = mcData || [];
+    this.format = format || null;
     this.onNextBattle = onNextBattle;
+    this.onRoundReset = onRoundReset;
     this.activeSide = 'a';
     this.battle = 1;
+    this.entrada = 1;
 
     this.setupFightersFromURL();
     this.updateTurnUI();
+    this.setupEntradas();
     this.bindEvents();
+  }
+
+  /**
+   * Mostrar/ocultar y preparar el contador de entrada para formatos
+   * "ida y vuelta" (mode: 'turns').
+   */
+  setupEntradas() {
+    const isTurns = this.format && this.format.mode === 'turns';
+    this.elements.entradaField.hidden = !isTurns;
+    if (!isTurns) return;
+
+    this.entradaTotal = this.format.entradas || 1;
+    this.elements.entradaTotal.textContent = this.entradaTotal;
+    this.setEntrada(1);
   }
 
   /**
@@ -98,13 +119,40 @@ export class BattleHUD {
     this.setBattle(this.battle + 1);
     this.activeSide = 'a';
     this.updateTurnUI();
+    if (this.format && this.format.mode === 'turns') this.setEntrada(1);
     if (typeof this.onNextBattle === 'function') {
       this.onNextBattle();
     }
   }
 
+  /**
+   * Fijar el número de entrada actual (sin disparar efectos secundarios).
+   * @param {number} n
+   */
+  setEntrada(n) {
+    this.entrada = Math.min(this.entradaTotal, Math.max(1, n));
+    this.elements.entradaNum.textContent = this.entrada;
+  }
+
+  /**
+   * Avanzar a la siguiente entrada: cambia el turno y pide reiniciar el
+   * cronómetro para la nueva entrada (mismo patrón que "Siguiente batalla",
+   * pero sin incrementar el número de batalla).
+   */
+  nextEntrada() {
+    if (this.entrada >= this.entradaTotal) return;
+    this.setEntrada(this.entrada + 1);
+    this.swapTurn();
+    if (typeof this.onRoundReset === 'function') {
+      this.onRoundReset();
+    }
+  }
+
   bindEvents() {
-    const { mcA, mcB, btnTurno, btnSiguienteBatalla, battleUp, battleDown } = this.elements;
+    const {
+      mcA, mcB, btnTurno, btnSiguienteBatalla, battleUp, battleDown,
+      entradaUp, entradaDown
+    } = this.elements;
 
     mcA.addEventListener('click', () => {
       this.activeSide = 'a';
@@ -120,6 +168,9 @@ export class BattleHUD {
 
     battleUp.addEventListener('click', () => this.setBattle(this.battle + 1));
     battleDown.addEventListener('click', () => this.setBattle(this.battle - 1));
+
+    entradaUp.addEventListener('click', () => this.nextEntrada());
+    entradaDown.addEventListener('click', () => this.setEntrada(this.entrada - 1));
 
     document.addEventListener('keydown', (event) => {
       const tag = document.activeElement && document.activeElement.tagName;

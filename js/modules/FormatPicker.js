@@ -1,21 +1,21 @@
 /**
- * Selección del formato de batalla (minuto libre, temática, minutos libre).
+ * Selección del formato de batalla, a partir de data/formats.js.
  */
 export class FormatPicker {
   /**
    * @param {Object} config
-   * @param {NodeList|Element[]} config.cards - Tarjetas .format-card con data-format/data-time/data-name
-   * @param {Function} config.onSelect - Se invoca con { format, time, name } al elegir una tarjeta
+   * @param {NodeList|Element[]} config.cards - Tarjetas .mode-card con data-format="key"
+   * @param {Array} config.formats - Catálogo de formatos (data/formats.js)
+   * @param {Function} config.onSelect - Se invoca con el objeto de formato elegido
    */
-  constructor({ cards, onSelect }) {
+  constructor({ cards, formats, onSelect }) {
     this.onSelect = onSelect;
+    this.formats = formats;
+
     cards.forEach((card) => {
       card.addEventListener('click', () => {
-        this.onSelect({
-          format: card.dataset.format,
-          time: parseInt(card.dataset.time, 10),
-          name: card.dataset.name
-        });
+        const format = this.formats.find((f) => f.key === card.dataset.format);
+        if (format) this.onSelect(format);
       });
     });
   }

@@ -2,19 +2,17 @@ import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import McData from '../data/mcs.js';
+import Formats from '../data/formats.js';
 
-// Datos temáticos
+// Banco de palabras para el formato temático — conceptos amplios que dan
+// pie a barras (emociones, vida, calle, existencial), sin repetir tema.
 const THEME_WORDS = [
-  'Venganza', 'Envidia', 'Lealtad', 'Ego', 'Traicion',
-  'Orgullo', 'Dominio', 'Respeto'
+  'Venganza', 'Envidia', 'Lealtad', 'Ego', 'Traición', 'Orgullo', 'Dominio',
+  'Respeto', 'Libertad', 'Poder', 'Miedo', 'Muerte', 'Familia', 'Dinero',
+  'Fama', 'Soledad', 'Guerra', 'Paz', 'Justicia', 'Mentira', 'Verdad',
+  'Destino', 'Locura', 'Fe', 'Sangre', 'Raíces', 'Corona', 'Caos',
+  'Redención', 'Espejo', 'Silencio', 'Sombra'
 ];
-
-// Mapeo de formatos a nombres
-const FORMAT_NAMES = {
-  'minutoLibre': 'MINUTO LIBRE',
-  'tematica': 'TEMÁTICA',
-  'minutosLibre': 'MINUTOS LIBRE'
-};
 
 /**
  * Inicializar la aplicación de temporizador
@@ -22,25 +20,14 @@ const FORMAT_NAMES = {
 function initializeTimer() {
   // Recuperar parámetros de la URL
   const urlParams = new URLSearchParams(window.location.search);
-
-  // Valores predeterminados
-  let initialTime = 60;
-  let currentFormat = "minutoLibre";
-  let formatName = "MINUTO LIBRE";
-
-  // Obtener valores de parámetros
-  if (urlParams.has('formato')) currentFormat = urlParams.get('formato');
-  if (urlParams.has('tiempo')) initialTime = parseInt(urlParams.get('tiempo'));
-
-  // Obtener nombre de formato
-  if (FORMAT_NAMES[currentFormat]) {
-    formatName = FORMAT_NAMES[currentFormat];
-  }
+  const formatKey = urlParams.get('formato') || Formats[0].key;
+  const format = Formats.find((f) => f.key === formatKey) || Formats[0];
 
   // Elementos del DOM
   const elements = {
     formatInfo: document.getElementById('formatInfo'),
     timeNumber: document.getElementById('countdown'),
+    timeLabel: document.getElementById('timeLabel'),
     wordLabel: document.getElementById('word-label'),
     startButton: document.getElementById('btnIniciar'),
     resetButton: document.getElementById('btnReiniciar'),
@@ -53,12 +40,13 @@ function initializeTimer() {
   // Inicializar el controlador del temporizador
   const timerController = new TimerController({
     elements,
-    initialTime,
-    formatName,
+    initialTime: format.time,
+    formatName: format.name,
+    mode: format.mode,
     themeWords: THEME_WORDS
   });
 
-  // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla)
+  // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla, entrada)
   const battleHUD = new BattleHUD({
     elements: {
       mcA: document.getElementById('mcA'),
@@ -76,11 +64,18 @@ function initializeTimer() {
       battleNum: document.getElementById('battleNum'),
       battleUp: document.getElementById('battleUp'),
       battleDown: document.getElementById('battleDown'),
+      entradaField: document.getElementById('entradaField'),
+      entradaNum: document.getElementById('entradaNum'),
+      entradaTotal: document.getElementById('entradaTotal'),
+      entradaUp: document.getElementById('entradaUp'),
+      entradaDown: document.getElementById('entradaDown'),
       btnTurno: document.getElementById('btnTurno'),
       btnSiguienteBatalla: document.getElementById('btnSiguienteBatalla')
     },
     mcData: McData,
-    onNextBattle: () => timerController.resetTimer()
+    format,
+    onNextBattle: () => timerController.resetTimer(),
+    onRoundReset: () => timerController.resetTimer()
   });
 
   initLightning();
@@ -115,4 +110,4 @@ function initLightning() {
 }
 
 // Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', initializeTimer); 
+document.addEventListener('DOMContentLoaded', initializeTimer);
