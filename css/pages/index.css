@@ -390,6 +390,28 @@ body {
 .fight-button.visible { opacity: 1; pointer-events: auto; transform: scale(1); }
 .fight-button:hover { transform: scale(1.05); }
 
+.select-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-back {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.65);
+  padding: 0.6rem 1.6rem;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-back:hover { transform: scale(1.05); border-color: var(--color-primary); box-shadow: var(--shadow-box); }
+.btn-back:active { transform: scale(0.97); }
+
 @media (max-width: 480px) {
   .cm-brand__text { font-size: 1.4rem; }
   .fighter-slot { width: 150px; height: 190px; }

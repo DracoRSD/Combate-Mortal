@@ -45,6 +45,11 @@ function initializeApp() {
     }
   });
 
+  document.getElementById('btnVolverFormato').addEventListener('click', function () {
+    fighterSelector.reset();
+    showScreen('Format');
+  });
+
   window.addEventListener('beforeunload', function () { cleanupVideos(); });
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
