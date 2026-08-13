@@ -38,26 +38,46 @@ export class CharacterSelector {
    */
   createCharacterGrid() {
     const fragment = document.createDocumentFragment();
-    
+
     this.characterData.forEach((character, index) => {
       const card = document.createElement('div');
       card.className = 'character-card';
       card.dataset.index = index;
-      
+
       const img = document.createElement('img');
       img.alt = character.nombreMC;
       img.dataset.lazy = 'true';
-      
-      card.appendChild(img);
+
+      const fallback = document.createElement('div');
+      fallback.className = 'character-card__fallback';
+      fallback.textContent = character.nombreMC.trim().charAt(0).toUpperCase();
+
+      const label = document.createElement('div');
+      label.className = 'character-card__label';
+      label.textContent = character.nombreMC;
+      if (character.bandera) {
+        const flag = document.createElement('span');
+        flag.className = 'character-card__flag';
+        flag.textContent = character.bandera;
+        label.appendChild(flag);
+      }
+
+      card.append(img, fallback, label);
       fragment.appendChild(card);
       this.cardElements[index] = card;
-      
-      // Lazy load de imagen
-      lazyLoadImage(img, character.urlFoto || '/api/placeholder/100/100');
+
+      // Lazy load de imagen; si falla, se muestra la inicial de respaldo
+      if (character.urlFoto) {
+        lazyLoadImage(img, character.urlFoto).then((ok) => {
+          if (!ok) card.classList.add('is-broken');
+        });
+      } else {
+        card.classList.add('is-broken');
+      }
     });
-    
+
     this.elements.characterGrid.appendChild(fragment);
-    
+
     // Usar delegación de eventos para mejor rendimiento
     this.elements.characterGrid.addEventListener('click', (event) => this.handleCardClick(event));
   }
@@ -110,31 +130,48 @@ export class CharacterSelector {
     const characterEl = isLeft ? this.elements.leftCharacter : this.elements.rightCharacter;
     const img = isLeft ? this.elements.leftCharacterImg : this.elements.rightCharacterImg;
     const video = isLeft ? this.elements.leftCharacterVideo : this.elements.rightCharacterVideo;
+    const fallback = isLeft ? this.elements.leftCharacterFallback : this.elements.rightCharacterFallback;
     const name = isLeft ? this.elements.leftCharacterName : this.elements.rightCharacterName;
-    
+
     placeholder.style.display = 'none';
     characterEl.classList.add('visible');
-    
+    fallback.textContent = character.nombreMC.trim().charAt(0).toUpperCase();
+    fallback.style.display = 'none';
+
+    function showFallback() {
+      video.style.display = 'none';
+      img.style.display = 'none';
+      fallback.style.display = 'flex';
+    }
+
     // Gestión de video/imagen
     if (character.urlVideo && character.urlVideo.trim() && character.urlVideo !== 'assets/videos/mcs/') {
       video.src = character.urlVideo;
       video.style.display = 'block';
       img.style.display = 'none';
       video.load();
-      
+
       // Cargar video async sin bloquear
       video.play().catch(() => {
         // Si falla el video, usar imagen
         video.style.display = 'none';
-        img.src = character.urlFoto || '/api/placeholder/300/400';
-        img.style.display = 'block';
+        if (character.urlFoto) {
+          img.onerror = showFallback;
+          img.src = character.urlFoto;
+          img.style.display = 'block';
+        } else {
+          showFallback();
+        }
       });
-    } else {
-      img.src = character.urlFoto || '/api/placeholder/300/400';
+    } else if (character.urlFoto) {
+      img.onerror = showFallback;
+      img.src = character.urlFoto;
       img.style.display = 'block';
       video.style.display = 'none';
+    } else {
+      showFallback();
     }
-    
+
     name.textContent = character.nombreMC;
   }
   

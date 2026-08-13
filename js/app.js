@@ -58,9 +58,11 @@ class CombateMortal {
       rightCharacter: document.getElementById('rightCharacter'),
       leftCharacterImg: document.getElementById('leftCharacterImg'),
       leftCharacterVideo: document.getElementById('leftCharacterVideo'),
+      leftCharacterFallback: document.getElementById('leftCharacterFallback'),
       leftCharacterName: document.getElementById('leftCharacterName'),
       rightCharacterImg: document.getElementById('rightCharacterImg'),
       rightCharacterVideo: document.getElementById('rightCharacterVideo'),
+      rightCharacterFallback: document.getElementById('rightCharacterFallback'),
       rightCharacterName: document.getElementById('rightCharacterName')
     });
   }
@@ -96,9 +98,11 @@ class CombateMortal {
         rightCharacter: this.elements.rightCharacter,
         leftCharacterImg: this.elements.leftCharacterImg,
         leftCharacterVideo: this.elements.leftCharacterVideo,
+        leftCharacterFallback: this.elements.leftCharacterFallback,
         leftCharacterName: this.elements.leftCharacterName,
         rightCharacterImg: this.elements.rightCharacterImg,
         rightCharacterVideo: this.elements.rightCharacterVideo,
+        rightCharacterFallback: this.elements.rightCharacterFallback,
         rightCharacterName: this.elements.rightCharacterName
       },
       characterData: McData,
