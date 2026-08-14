@@ -676,6 +676,13 @@ body, body * {
   text-shadow: var(--shadow-text);
 }
 
+.winner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
 @media (max-width: 480px) {
   .cm-brand__text { font-size: 1.3rem; }
   .format-info { font-size: 1.2rem; padding: 6px 16px; }

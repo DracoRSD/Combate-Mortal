@@ -141,6 +141,27 @@ function initializeTimer() {
     winnerScreen.hide();
   });
 
+  // "Revancha": cuando el jurado da una réplica, se recarga la pantalla
+  // completa de cero (vida, cronómetro, batalla/entrada, turno) para los
+  // mismos MC, forzando el formato estándar de réplica (4x4 libre, 120s).
+  const revanchaFormat = Formats.find((f) => f.key === 'cuatroXcuatro') || format;
+  document.getElementById('btnRevancha').addEventListener('click', () => {
+    const params = new URLSearchParams({
+      formato: revanchaFormat.key,
+      nombreA: urlParams.get('nombreA') || '',
+      nombreB: urlParams.get('nombreB') || ''
+    });
+    window.location.href = 'contador.html?' + params.toString();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if ((event.key === 'r' || event.key === 'R') && !document.getElementById('winnerOverlay').hidden) {
+      document.getElementById('btnRevancha').click();
+    }
+  });
+
+  enableGridKeyboardNav(document.getElementById('winnerOverlay'), { layout: 'linear' });
+
   const controls = document.getElementById('controls');
   const duel = document.querySelector('.duel');
   enableGridKeyboardNav(controls, {
