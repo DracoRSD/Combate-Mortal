@@ -150,18 +150,9 @@ export class BattleHUD {
 
   bindEvents() {
     const {
-      mcA, mcB, btnTurno, btnSiguienteBatalla, battleUp, battleDown,
+      btnTurno, btnSiguienteBatalla, battleUp, battleDown,
       entradaUp, entradaDown
     } = this.elements;
-
-    mcA.addEventListener('click', () => {
-      this.activeSide = 'a';
-      this.updateTurnUI();
-    });
-    mcB.addEventListener('click', () => {
-      this.activeSide = 'b';
-      this.updateTurnUI();
-    });
 
     btnTurno.addEventListener('click', () => this.swapTurn());
     btnSiguienteBatalla.addEventListener('click', () => this.nextBattle());

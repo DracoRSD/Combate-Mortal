@@ -1,6 +1,7 @@
 import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
 import { DamageSystem } from './modules/DamageSystem.js';
+import { WinnerScreen } from './modules/WinnerScreen.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
@@ -48,13 +49,16 @@ function initializeTimer() {
     themeWords: THEME_WORDS
   });
 
+  const frameA = document.getElementById('mcAFrame');
+  const frameB = document.getElementById('mcBFrame');
+
   // Inicializar la barra de vida y el efecto de golpe de cada MC
   const damageSystem = new DamageSystem({
     elements: {
       hpAFill: document.getElementById('hpAFill'),
       hpBFill: document.getElementById('hpBFill'),
-      frameA: document.querySelector('#mcA .mc-frame'),
-      frameB: document.querySelector('#mcB .mc-frame')
+      frameA,
+      frameB
     }
   });
 
@@ -108,8 +112,46 @@ function initializeTimer() {
     if (event.key === 'g' || event.key === 'G') applyGolpe();
   });
 
+  // "Reiniciar" reinicia todo el estado de la batalla en curso: el
+  // cronómetro y también la vida/efectos de daño de ambos MC.
+  document.getElementById('btnReiniciar').addEventListener('click', () => {
+    damageSystem.reset();
+  });
+
+  // Pantalla de ganador: Enter (o click) sobre la foto de un MC muestra
+  // solo su retrato en grande.
+  const winnerScreen = new WinnerScreen({
+    elements: {
+      overlay: document.getElementById('winnerOverlay'),
+      photo: document.getElementById('winnerPhoto'),
+      fallback: document.getElementById('winnerFallback'),
+      name: document.getElementById('winnerName'),
+      closeButton: document.getElementById('btnCerrarGanador'),
+      mcAPhoto: document.getElementById('mcAPhoto'),
+      mcAFallback: document.getElementById('mcAFallback'),
+      mcAName: document.getElementById('mcAName'),
+      mcBPhoto: document.getElementById('mcBPhoto'),
+      mcBFallback: document.getElementById('mcBFallback'),
+      mcBName: document.getElementById('mcBName')
+    }
+  });
+  frameA.addEventListener('click', () => winnerScreen.show('a'));
+  frameB.addEventListener('click', () => winnerScreen.show('b'));
+
   const controls = document.getElementById('controls');
-  enableGridKeyboardNav(controls, { layout: 'linear' });
+  const duel = document.querySelector('.duel');
+  enableGridKeyboardNav(controls, {
+    layout: 'linear',
+    onEdge: (key) => {
+      if (key === 'ArrowUp' || key === 'ArrowLeft') focusFirstNavItem(duel);
+    }
+  });
+  enableGridKeyboardNav(duel, {
+    layout: 'linear',
+    onEdge: (key) => {
+      if (key === 'ArrowDown' || key === 'ArrowRight') focusFirstNavItem(controls);
+    }
+  });
   focusFirstNavItem(controls);
 
   initLightning();
