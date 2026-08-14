@@ -36,6 +36,7 @@ export class DamageSystem {
     this.hp[side] = Math.max(0, this.hp[side] - DAMAGE_PER_HIT);
     this.updateBar(side);
     this.triggerHitEffect(side);
+    if (this.hp[side] <= 0) this.setDefeated(side, true);
   }
 
   triggerHitEffect(side) {
@@ -45,10 +46,24 @@ export class DamageSystem {
     frame.classList.add('is-hit');
   }
 
+  /**
+   * Oscurecer (o restaurar) el retrato de un MC cuando se queda sin vida,
+   * como el "K.O." de un juego de lucha.
+   * @param {'a'|'b'} side
+   * @param {boolean} isDefeated
+   */
+  setDefeated(side, isDefeated) {
+    const frame = side === 'a' ? this.elements.frameA : this.elements.frameB;
+    const mc = frame.closest('.mc');
+    if (mc) mc.classList.toggle('is-defeated', isDefeated);
+  }
+
   reset() {
     this.hp.a = MAX_HP;
     this.hp.b = MAX_HP;
     this.updateBar('a');
     this.updateBar('b');
+    this.setDefeated('a', false);
+    this.setDefeated('b', false);
   }
 }
