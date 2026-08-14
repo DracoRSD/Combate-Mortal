@@ -1,83 +1,8 @@
-// Datos de los MCs
+// Datos de los MCs — línea del torneo Combate Mortal Freestyle (16 participantes)
 const McData = [
   {
-    nombreMC: "Sm",
-    urlFoto: "assets/images/mcs/sm.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Numenosis",
-    urlFoto: "assets/images/mcs/numenosis.jpg",
-    urlVideo: "assets/videos/mcs/numenosis.mp4"
-  },
-  {
-    nombreMC: "Melvin la Cura",
-    urlFoto: "assets/images/mcs/Melvin.jpg",
-    urlVideo: "assets/videos/"
-  },
-  {
-    nombreMC: "Dinamita",
-    urlFoto: "assets/images/mcs/dinamita.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Chase",
-    urlFoto: "assets/images/mcs/chase.jpg",
-    urlVideo: "assets/videos/mcs/chase.mp4"
-  },
-  {
-    nombreMC: "MR",
-    urlFoto: "assets/images/mcs/mr.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Kiko Flow",
-    urlFoto: "assets/images/mcs/kikoflow.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "KDT",
-    urlFoto: "assets/images/mcs/kdt.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
     nombreMC: "Felpa Divo",
-    urlFoto: "assets/images/mcs/felpa.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Jhon",
-    urlFoto: "assets/images/mcs/jhon.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Matsumura",
-    urlFoto: "assets/images/mcs/matsumura.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Dkpo",
-    urlFoto: "assets/images/mcs/Dkpo.jpg",
-    urlVideo: "assets/videos/mcs/dkpo.mp4"
-  },
-  {
-    nombreMC: "UFO",
-    urlFoto: "assets/images/mcs/ufo.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Inty",
-    urlFoto: "assets/images/mcs/inty.jpg",
-    urlVideo: "assets/videos/mcs/"
-  },
-  {
-    nombreMC: "Rvper",
-    urlFoto: "assets/images/mcs/rvper.jpg",
-    urlVideo: "assets/videos/mcs/rvper.mp4"
-  },
-  {
-    nombreMC: "Adonys",
-    urlFoto: "assets/images/mcs/Adonys.jpg",
+    urlFoto: "assets/images/mcs/felpa-divo.jpg",
     urlVideo: "assets/videos/mcs/"
   },
   {
@@ -88,13 +13,78 @@ const McData = [
     bandera: "🇨🇱"
   },
   {
+    nombreMC: "Larrix",
+    urlFoto: "assets/images/mcs/larrix.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Exodo",
+    urlFoto: "assets/images/mcs/exodo.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Diddy Glow",
+    urlFoto: "assets/images/mcs/diddy-glow.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Fat N",
+    urlFoto: "assets/images/mcs/fat-n.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Ufo",
+    urlFoto: "assets/images/mcs/ufo.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Kenyari",
+    urlFoto: "assets/images/mcs/kenyari.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "KG",
+    urlFoto: "assets/images/mcs/kg.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Nume",
+    urlFoto: "assets/images/mcs/nume.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Pandora",
+    urlFoto: "assets/images/mcs/pandora.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "Sophia",
+    urlFoto: "assets/images/mcs/sophia.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
     nombreMC: "Mecha",
     urlFoto: "assets/images/mcs/mecha.jpg",
     urlVideo: "assets/videos/mcs/",
     pais: "Argentina",
     bandera: "🇦🇷"
   },
+  {
+    nombreMC: "Valles T",
+    urlFoto: "assets/images/mcs/valles-t.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
+  {
+    nombreMC: "D Kapo",
+    urlFoto: "assets/images/mcs/d-kapo.jpg",
+    urlVideo: "assets/videos/mcs/dkpo.mp4"
+  },
+  {
+    nombreMC: "El Menor",
+    urlFoto: "assets/images/mcs/el-menor.jpg",
+    urlVideo: "assets/videos/mcs/"
+  },
 ];
 
 // Exportar datos para usarlos en otros archivos
-export default McData; 
+export default McData;

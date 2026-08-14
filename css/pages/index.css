@@ -1,0 +1,446 @@
+/* Estilos para la pantalla de selección de formato y luchadores */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -10%, #132540 0%, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 90% 100%, #0d1d33 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 5% 95%, #0d1d33 0%, transparent 55%),
+    var(--color-background);
+  font-family: 'Bebas Neue', sans-serif;
+  color: var(--color-text);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* Selección pensada para operarse con flechas + Enter (control remoto/teclado
+   en escenario), no con mouse: se oculta el cursor en toda la pantalla. */
+body, body * {
+  cursor: none !important;
+}
+
+.chrome-text {
+  background: var(--gradient-chrome);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 18px rgba(63, 182, 255, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.bolt-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.app {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ---------- Marca ---------- */
+.cm-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 0.5rem;
+}
+.cm-badge {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(63, 182, 255, 0.75));
+}
+.cm-brand__text {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  letter-spacing: 0.03em;
+}
+.cm-tagline {
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  opacity: 0.85;
+  margin-top: -0.75rem;
+}
+
+.screen { display: none; width: 100%; flex-direction: column; align-items: center; gap: 1.5rem; }
+.screen.active { display: flex; }
+
+/* ---------- Selección de formato ---------- */
+.format-h2 {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  color: var(--color-primary);
+  text-shadow: var(--shadow-text);
+  text-align: center;
+}
+/* ============================================================
+   Rejilla de modos (estilo fighter-select / mode-select).
+   4 columnas x 2 filas: "Minuto Ida y Vuelta" ocupa 2 columnas
+   en la fila 1 (mode-card--wide); "Fatality" ocupa las 2 filas
+   en la última columna (mode-card--hero). El resto cae solo por
+   orden en el HTML (auto-placement de Grid).
+   ============================================================ */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, minmax(140px, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.mode-card {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 2px solid var(--color-border);
+  background: none;
+  padding: 0;
+  color: var(--color-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.mode-card:hover,
+.mode-card:focus-visible {
+  transform: scale(1.035);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 28px rgba(63, 182, 255, 0.55), 0 0 60px rgba(63, 182, 255, 0.25);
+  z-index: 2;
+}
+.mode-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.mode-card--wide { grid-column: span 2; grid-row: 1; }
+
+.mode-card__art {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    radial-gradient(130% 150% at 30% 100%, #1c3a5e 0%, #0a1728 70%);
+}
+.mode-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(4, 6, 12, 0.55) 70%, rgba(4, 6, 12, 0.92) 100%);
+}
+.mode-card__title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 14px 16px 2px;
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(1rem, 2.2vw, 1.3rem);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+.mode-card__desc {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0 16px 14px;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  color: var(--color-secondary);
+}
+
+/* Tarjeta grande "Fatality": ocupa las 2 filas de la última columna */
+.mode-card--hero {
+  grid-column: 4;
+  grid-row: 1 / span 2;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  border-color: var(--color-primary);
+}
+.mode-card--hero .mode-card__art {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    radial-gradient(140% 90% at 50% 0%, #234a72 0%, #0a1a2e 65%);
+}
+.mode-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 18px 16px 22px;
+  text-align: center;
+}
+.mode-card--hero .mode-card__title { padding: 0; font-size: clamp(1.2rem, 3vw, 1.6rem); }
+.mode-card__subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+}
+.mode-card__play {
+  margin-top: 0.3rem;
+  padding: 0.55rem 2.2rem;
+  border-radius: 8px;
+  background: #ffd034;
+  color: var(--color-text-dark);
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1rem;
+  transition: box-shadow 0.25s ease;
+}
+.mode-card--hero:hover .mode-card__play { box-shadow: 0 0 22px rgba(255, 208, 52, 0.6); }
+
+@media (max-width: 720px) {
+  .mode-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .mode-card { grid-column: 1; grid-row: auto; min-height: 130px; }
+  .mode-card--hero { min-height: 210px; }
+}
+
+/* ---------- Vista previa VS ---------- */
+.format-badge {
+  font-family: 'Anton', sans-serif;
+  background: var(--gradient-primary);
+  color: var(--color-text-dark);
+  padding: 6px 18px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-box);
+}
+
+.duel-preview { display: flex; align-items: center; justify-content: center; gap: 1.5rem; width: 100%; flex-wrap: wrap; }
+.fighter-slot {
+  width: 200px;
+  height: 250px;
+  border: 3px dashed var(--color-border);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #889;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.fighter-slot:hover { border-color: var(--color-primary); }
+.fighter-slot.filled { border-style: solid; border-color: var(--color-primary); background: #0d1420; cursor: default; }
+.fighter-slot img,
+.fighter-slot video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: none; }
+.fighter-slot.filled.has-media img,
+.fighter-slot.filled.has-media video { display: block; }
+.fighter-slot__fallback {
+  display: none;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Anton', sans-serif;
+  font-size: 3rem;
+  color: var(--color-accent);
+  background: linear-gradient(160deg, #0d1420, #16233a);
+}
+.fighter-slot.filled:not(.has-media) .fighter-slot__fallback { display: flex; }
+.fighter-slot__name {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.82);
+  padding: 6px 8px;
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: none;
+}
+.fighter-slot.filled .fighter-slot__name { display: block; }
+.fighter-slot__icon { font-size: 2.4rem; opacity: 0.7; }
+.fighter-slot__text { font-size: 0.85rem; margin-top: 0.3rem; padding: 0 0.5rem; }
+.fighter-slot.filled .fighter-slot__icon,
+.fighter-slot.filled .fighter-slot__text { display: none; }
+
+.vs-badge {
+  font-family: 'Anton', sans-serif;
+  font-size: 2.4rem;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-radius: 14px;
+  padding: 0.4rem 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0.4;
+  transition: opacity 0.3s ease, border-color 0.3s ease;
+}
+.vs-badge.visible { opacity: 1; border-color: var(--color-primary); box-shadow: var(--shadow-box); }
+
+.select-hint {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+.select-hint.side-left { color: var(--color-player-left); }
+.select-hint.side-right { color: var(--color-player-right); }
+
+/* ---------- Grilla de luchadores ---------- */
+/* 8 columnas x 2 filas para los 16 MC: pensado para que la pantalla de
+   selección entre completa en cámara al transmitir, sin tener que
+   scrollear. Se reduce a menos columnas en pantallas angostas. */
+.fighter-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+  max-width: 1400px;
+  width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .fighter-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .fighter-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.fighter-card {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 3 / 4;
+  background: #0d1420;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fighter-card:hover,
+.fighter-card:focus-visible { transform: translateY(-4px); border-color: var(--color-primary); box-shadow: var(--shadow-box); }
+.fighter-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.fighter-card.side-left { border-color: var(--color-player-left); box-shadow: 0 0 12px rgba(72, 198, 255, 0.5); }
+.fighter-card.side-right { border-color: var(--color-player-right); box-shadow: 0 0 12px rgba(127, 143, 255, 0.5); }
+.fighter-card.side-both { border-color: var(--color-accent); box-shadow: 0 0 12px rgba(127, 220, 255, 0.5); }
+.fighter-card img {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: #0d1420;
+}
+.fighter-card img.loaded { opacity: 1; }
+.fighter-card__fallback {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--color-accent);
+  background: linear-gradient(160deg, #0d1420, #16233a);
+}
+.fighter-card.no-photo img { display: none; }
+.fighter-card.no-photo .fighter-card__fallback { display: flex; }
+.fighter-card__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 4px;
+  background: rgba(0, 0, 0, 0.8);
+  border-top: 1px solid var(--color-border);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fight-button {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.4rem;
+  padding: 0.75rem 2.5rem;
+  border: none;
+  border-radius: 30px;
+  background: var(--gradient-primary);
+  color: var(--color-text-dark);
+  cursor: pointer;
+  box-shadow: var(--shadow-box);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.85);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.fight-button.visible { opacity: 1; pointer-events: auto; transform: scale(1); }
+.fight-button:hover, .fight-button:focus-visible { transform: scale(1.05); }
+.fight-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.select-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-back {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.65);
+  padding: 0.6rem 1.6rem;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-back:hover, .btn-back:focus-visible { transform: scale(1.05); border-color: var(--color-primary); box-shadow: var(--shadow-box); }
+.btn-back:active { transform: scale(0.97); }
+.btn-back:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .cm-brand__text { font-size: 1.4rem; }
+  .fighter-slot { width: 150px; height: 190px; }
+  .vs-badge { font-size: 1.6rem; padding: 0.3rem 0.7rem; }
+  .fight-button { font-size: 1.15rem; padding: 0.6rem 1.8rem; }
+}
