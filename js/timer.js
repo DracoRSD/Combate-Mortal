@@ -52,14 +52,35 @@ function initializeTimer() {
   const frameA = document.getElementById('mcAFrame');
   const frameB = document.getElementById('mcBFrame');
 
-  // Inicializar la barra de vida y el efecto de golpe de cada MC
+  // Pantalla de ganador: se muestra sola la foto en grande del MC elegido.
+  const winnerScreen = new WinnerScreen({
+    elements: {
+      overlay: document.getElementById('winnerOverlay'),
+      photo: document.getElementById('winnerPhoto'),
+      fallback: document.getElementById('winnerFallback'),
+      name: document.getElementById('winnerName'),
+      closeButton: document.getElementById('btnCerrarGanador'),
+      mcAPhoto: document.getElementById('mcAPhoto'),
+      mcAFallback: document.getElementById('mcAFallback'),
+      mcAName: document.getElementById('mcAName'),
+      mcBPhoto: document.getElementById('mcBPhoto'),
+      mcBFallback: document.getElementById('mcBFallback'),
+      mcBName: document.getElementById('mcBName')
+    }
+  });
+  frameA.addEventListener('click', () => winnerScreen.show('a'));
+  frameB.addEventListener('click', () => winnerScreen.show('b'));
+
+  // Inicializar la barra de vida y el efecto de golpe de cada MC. Cuando un
+  // lado se queda sin vida, el otro gana automáticamente.
   const damageSystem = new DamageSystem({
     elements: {
       hpAFill: document.getElementById('hpAFill'),
       hpBFill: document.getElementById('hpBFill'),
       frameA,
       frameB
-    }
+    },
+    onDefeat: (side) => winnerScreen.show(side === 'a' ? 'b' : 'a')
   });
 
   // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla, entrada)
@@ -93,6 +114,7 @@ function initializeTimer() {
     onNextBattle: () => {
       timerController.resetTimer();
       damageSystem.reset();
+      winnerScreen.hide();
     },
     onRoundReset: () => timerController.resetTimer()
   });
@@ -116,27 +138,8 @@ function initializeTimer() {
   // cronómetro y también la vida/efectos de daño de ambos MC.
   document.getElementById('btnReiniciar').addEventListener('click', () => {
     damageSystem.reset();
+    winnerScreen.hide();
   });
-
-  // Pantalla de ganador: Enter (o click) sobre la foto de un MC muestra
-  // solo su retrato en grande.
-  const winnerScreen = new WinnerScreen({
-    elements: {
-      overlay: document.getElementById('winnerOverlay'),
-      photo: document.getElementById('winnerPhoto'),
-      fallback: document.getElementById('winnerFallback'),
-      name: document.getElementById('winnerName'),
-      closeButton: document.getElementById('btnCerrarGanador'),
-      mcAPhoto: document.getElementById('mcAPhoto'),
-      mcAFallback: document.getElementById('mcAFallback'),
-      mcAName: document.getElementById('mcAName'),
-      mcBPhoto: document.getElementById('mcBPhoto'),
-      mcBFallback: document.getElementById('mcBFallback'),
-      mcBName: document.getElementById('mcBName')
-    }
-  });
-  frameA.addEventListener('click', () => winnerScreen.show('a'));
-  frameB.addEventListener('click', () => winnerScreen.show('b'));
 
   const controls = document.getElementById('controls');
   const duel = document.querySelector('.duel');

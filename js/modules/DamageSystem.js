@@ -10,9 +10,12 @@ export class DamageSystem {
   /**
    * @param {Object} config
    * @param {Object} config.elements - { hpAFill, hpBFill, frameA, frameB }
+   * @param {Function} [config.onDefeat] - Se invoca con el lado ('a'|'b')
+   *   que se queda sin vida, para declarar ganador al otro automáticamente.
    */
-  constructor({ elements }) {
+  constructor({ elements, onDefeat }) {
     this.elements = elements;
+    this.onDefeat = onDefeat;
     this.hp = { a: MAX_HP, b: MAX_HP };
     this.updateBar('a');
     this.updateBar('b');
@@ -36,7 +39,10 @@ export class DamageSystem {
     this.hp[side] = Math.max(0, this.hp[side] - DAMAGE_PER_HIT);
     this.updateBar(side);
     this.triggerHitEffect(side);
-    if (this.hp[side] <= 0) this.setDefeated(side, true);
+    if (this.hp[side] <= 0) {
+      this.setDefeated(side, true);
+      if (typeof this.onDefeat === 'function') this.onDefeat(side);
+    }
   }
 
   triggerHitEffect(side) {
