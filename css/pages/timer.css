@@ -202,8 +202,8 @@ body, body * {
 }
 
 /* Retrato grande estilo pantalla de VS (Tekken): panel rectangular con
-   esquinas achaflanadas hacia el lado del timer, en vez del antiguo
-   avatar circular pequeño. */
+   esquinas rectas parejas en ambos lados, en vez del antiguo avatar
+   circular pequeño. */
 .mc-frame {
   position: relative;
   width: clamp(200px, 25vw, 340px);
@@ -213,16 +213,7 @@ body, body * {
   background: #0d1420;
   box-shadow: 0 0 24px rgba(5, 7, 15, 0.6);
   overflow: hidden;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.mc[data-side="a"] .mc-frame {
-  clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%);
-}
-
-.mc[data-side="b"] .mc-frame {
-  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%, 0 88%);
 }
 
 .mc.is-active .mc-frame {
@@ -247,6 +238,14 @@ body, body * {
   object-fit: cover;
   object-position: top center;
   background: #0d1420;
+}
+
+/* Las fotos traen un banner "Participante confirmado" quemado en la
+   parte superior; se recorta agrandando la imagen y desplazándola
+   hacia arriba dentro del marco. */
+.mc-frame__photo {
+  transform: scale(1.35) translateY(-14%);
+  transform-origin: center top;
 }
 
 .mc-frame__fallback {
