@@ -201,6 +201,40 @@ body, body * {
   border-color: var(--color-primary);
 }
 
+/* ---------- Barra de vida (estilo juego de lucha) ---------- */
+.hp-bar {
+  width: clamp(200px, 25vw, 340px);
+  height: 14px;
+  padding: 2px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  background: rgba(5, 7, 15, 0.8);
+  display: flex;
+}
+
+.mc[data-side="b"] .hp-bar {
+  justify-content: flex-end;
+}
+
+.hp-bar__fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #3ddc84, #7fdcff);
+  box-shadow: 0 0 10px rgba(61, 220, 132, 0.55);
+  transition: width 0.4s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hp-bar__fill.is-warn {
+  background: linear-gradient(90deg, var(--color-warn), #ffdd7a);
+  box-shadow: 0 0 10px rgba(255, 181, 69, 0.55);
+}
+
+.hp-bar__fill.is-critical {
+  background: linear-gradient(90deg, var(--color-danger), #ff8a7a);
+  box-shadow: 0 0 12px rgba(255, 59, 82, 0.65);
+}
+
 /* Retrato grande estilo pantalla de VS (Tekken): panel rectangular con
    esquinas rectas parejas en ambos lados, en vez del antiguo avatar
    circular pequeño. */
@@ -261,6 +295,50 @@ body, body * {
 
 .mc-frame__fallback.is-visible {
   display: flex;
+}
+
+/* ---------- Efecto de golpe: flash rojo + sacudida al recibir daño ---------- */
+.mc-frame__hitflash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 30, 50, 0.75);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mc-frame.is-hit .mc-frame__hitflash {
+  animation: hit-flash 0.45s ease-out;
+}
+
+.mc-frame.is-hit {
+  animation: hit-shake 0.45s ease-out;
+}
+
+.mc-frame.is-hit .mc-frame__photo {
+  animation: hit-tint 0.45s ease-out;
+}
+
+@keyframes hit-flash {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  40% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+@keyframes hit-tint {
+  0% { filter: brightness(1); }
+  10% { filter: brightness(1.6); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes hit-shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-8px); }
+  30% { transform: translateX(7px); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(1px); }
 }
 
 .mc-name {
@@ -430,6 +508,18 @@ body, body * {
   color: var(--color-text-dark);
   border-color: var(--color-primary);
   font-weight: bold;
+}
+
+.btn-hit {
+  background: linear-gradient(45deg, var(--color-danger), #ff8a3d);
+  color: var(--color-text-dark);
+  border-color: var(--color-danger);
+  font-weight: bold;
+}
+
+.btn-hit:hover,
+.btn-hit:focus-visible {
+  box-shadow: 0 0 20px rgba(255, 59, 82, 0.5);
 }
 
 .hint {

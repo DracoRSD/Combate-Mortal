@@ -44,10 +44,12 @@
     <div class="duel">
         <div class="mc" data-side="a" id="mcA">
             <div class="mc-turn-tag" id="tagA">TURNO</div>
+            <div class="hp-bar"><div class="hp-bar__fill" id="hpAFill"></div></div>
             <div class="mc-frame">
                 <canvas class="mc-frame__bolts" data-bolts></canvas>
                 <img id="mcAPhoto" class="mc-frame__photo" alt="" />
                 <div class="mc-frame__fallback" id="mcAFallback"></div>
+                <div class="mc-frame__hitflash"></div>
             </div>
             <div class="mc-name" id="mcAName">MC 1</div>
             <div class="mc-country" id="mcACountry"></div>
@@ -71,10 +73,12 @@
 
         <div class="mc" data-side="b" id="mcB">
             <div class="mc-turn-tag" id="tagB">TURNO</div>
+            <div class="hp-bar"><div class="hp-bar__fill" id="hpBFill"></div></div>
             <div class="mc-frame">
                 <canvas class="mc-frame__bolts" data-bolts></canvas>
                 <img id="mcBPhoto" class="mc-frame__photo" alt="" />
                 <div class="mc-frame__fallback" id="mcBFallback"></div>
+                <div class="mc-frame__hitflash"></div>
             </div>
             <div class="mc-name" id="mcBName">MC 2</div>
             <div class="mc-country" id="mcBCountry"></div>
@@ -85,6 +89,7 @@
 
     <div class="controls" id="controls">
         <button id="btnIniciar" class="btn-start" data-nav-item>Iniciar</button>
+        <button id="btnGolpe" class="btn-hit" data-nav-item>Golpe</button>
         <button id="btnReiniciar" class="btn-reset" data-nav-item>Reiniciar</button>
         <button id="btnTurno" class="btn-turn" data-nav-item>Cambiar turno</button>
         <button id="btnSiguienteBatalla" class="btn-next" data-nav-item>Siguiente batalla</button>
@@ -92,7 +97,7 @@
     </div>
 
     <p class="hint">
-        <kbd>Espacio</kbd> iniciar &nbsp;·&nbsp; <kbd>Retroceso</kbd> reiniciar &nbsp;·&nbsp;
+        <kbd>Espacio</kbd> iniciar &nbsp;·&nbsp; <kbd>G</kbd> golpe &nbsp;·&nbsp; <kbd>Retroceso</kbd> reiniciar &nbsp;·&nbsp;
         <kbd>T</kbd> turno &nbsp;·&nbsp; <kbd>N</kbd> siguiente batalla &nbsp;·&nbsp; <kbd>Esc</kbd> volver
     </p>
 

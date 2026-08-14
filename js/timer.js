@@ -1,5 +1,6 @@
 import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
+import { DamageSystem } from './modules/DamageSystem.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
@@ -47,6 +48,16 @@ function initializeTimer() {
     themeWords: THEME_WORDS
   });
 
+  // Inicializar la barra de vida y el efecto de golpe de cada MC
+  const damageSystem = new DamageSystem({
+    elements: {
+      hpAFill: document.getElementById('hpAFill'),
+      hpBFill: document.getElementById('hpBFill'),
+      frameA: document.querySelector('#mcA .mc-frame'),
+      frameB: document.querySelector('#mcB .mc-frame')
+    }
+  });
+
   // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla, entrada)
   const battleHUD = new BattleHUD({
     elements: {
@@ -75,8 +86,26 @@ function initializeTimer() {
     },
     mcData: McData,
     format,
-    onNextBattle: () => timerController.resetTimer(),
+    onNextBattle: () => {
+      timerController.resetTimer();
+      damageSystem.reset();
+    },
     onRoundReset: () => timerController.resetTimer()
+  });
+
+  // Botón de golpe: le resta vida y aplica el efecto visual al MC que NO
+  // tiene el turno (el que está recibiendo la barra del que rapea).
+  const golpeButton = document.getElementById('btnGolpe');
+  const applyGolpe = () => {
+    const target = battleHUD.activeSide === 'a' ? 'b' : 'a';
+    damageSystem.hit(target);
+  };
+  golpeButton.addEventListener('click', applyGolpe);
+
+  document.addEventListener('keydown', (event) => {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (event.key === 'g' || event.key === 'G') applyGolpe();
   });
 
   const controls = document.getElementById('controls');
