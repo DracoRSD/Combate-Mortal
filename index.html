@@ -1,108 +1,104 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Combate Mortal</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Combate Mortal Freestyle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/base/variables.css">
+    <link rel="stylesheet" href="css/pages/index.css">
 </head>
-
 <body>
-  <div class="game-container">
-    
-    <!-- Header -->
-    <div class="header">
-      <div class="header-title">
-        <span class="header-text">Combate</span>
-        <img src="assets/images/Fondo-logo.jpg" alt="Logo" class="header-logo">
-        <span class="header-text">Mortal</span>
-      </div>
+    <canvas id="boltCanvas" class="bolt-canvas"></canvas>
+
+    <div class="app">
+        <header class="cm-brand">
+            <img class="cm-badge" src="assets/images/logo-dragon.png" alt="Combate Mortal" />
+            <span class="cm-brand__text chrome-text">Combate Mortal</span>
+        </header>
+        <div class="cm-tagline">Sangre, sudor y barras</div>
+
+        <!-- ================= Selección de formato ================= -->
+        <section class="screen active" id="screenFormat">
+            <h2 class="format-h2">Selecciona el formato</h2>
+            <div class="mode-grid" id="formatGrid">
+                <button class="mode-card mode-card--wide" data-format="minutoIdaVuelta" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">Minuto Ida y Vuelta</h3>
+                    <p class="mode-card__desc">60s × 2 entradas</p>
+                </button>
+                <button class="mode-card" data-format="cuatroXcuatro" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">4x4 Libre</h3>
+                    <p class="mode-card__desc">120 segundos</p>
+                </button>
+                <button class="mode-card" data-format="ochoXocho" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">8x8 Temática</h3>
+                    <p class="mode-card__desc">120s · palabra temática</p>
+                </button>
+                <button class="mode-card" data-format="doceXdoce" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">12x12 Ida y Vuelta</h3>
+                    <p class="mode-card__desc">30s × 3 entradas</p>
+                </button>
+                <button class="mode-card" data-format="dosXdos" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">2x2 Ida y Vuelta</h3>
+                    <p class="mode-card__desc">30s × 5 entradas</p>
+                </button>
+                <button class="mode-card mode-card--hero" data-format="fatality" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <div class="mode-card__body">
+                        <h3 class="mode-card__title">Fatality</h3>
+                        <p class="mode-card__subtitle">Sin límite. Decide el jurado.</p>
+                        <span class="mode-card__play">Play</span>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= Selección de luchadores ================= -->
+        <section class="screen" id="screenSelect">
+            <div class="format-badge" id="formatBadge">MINUTO LIBRE — 60S</div>
+
+            <div class="duel-preview">
+                <div class="fighter-slot" id="slotLeft">
+                    <img alt="" />
+                    <video muted loop playsinline>Tu navegador no soporta video.</video>
+                    <div class="fighter-slot__fallback"></div>
+                    <div class="fighter-slot__icon">⚔️</div>
+                    <div class="fighter-slot__text">Selecciona tu luchador</div>
+                    <div class="fighter-slot__name"></div>
+                </div>
+                <div class="vs-badge" id="vsBadge">VS</div>
+                <div class="fighter-slot" id="slotRight">
+                    <img alt="" />
+                    <video muted loop playsinline>Tu navegador no soporta video.</video>
+                    <div class="fighter-slot__fallback"></div>
+                    <div class="fighter-slot__icon">⚔️</div>
+                    <div class="fighter-slot__text">Selecciona tu luchador</div>
+                    <div class="fighter-slot__name"></div>
+                </div>
+            </div>
+
+            <div class="select-hint side-left" id="selectHint">Selecciona el primer luchador</div>
+
+            <div class="fighter-grid" id="fighterGrid"></div>
+
+            <div class="select-controls" id="selectControls">
+                <button class="btn-back" id="btnVolverFormato" data-nav-item>Volver</button>
+                <button class="fight-button" id="fightButton" data-nav-item>¡Fight!</button>
+            </div>
+        </section>
     </div>
 
-    <!-- Sección de selección de formato -->
-    <div class="format-selection" id="formatSelection">
-      <h2>SELECCIONA EL FORMATO</h2>
-      <div class="format-options">
-        <div class="format-card" data-format="minutoLibre">
-          <h3>MINUTO LIBRE</h3>
-          <p>60 segundos</p>
-          <div class="format-icon">🔥</div>
-        </div>
-        <div class="format-card" data-format="tematica">
-          <h3>TEMÁTICA</h3>
-          <p>120 segundos</p>
-          <div class="format-icon">🎭</div>
-        </div>
-        <div class="format-card" data-format="minutosLibre">
-          <h3>MINUTOS LIBRE</h3>
-          <p>120 segundos</p>
-          <div class="format-icon">⏳</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Área de batalla (inicialmente oculta) -->
-    <div class="battle-area" id="battleArea" style="display: none;">
-      
-      <!-- Jugador izquierdo -->
-      <div class="player-container left">
-        <div class="character-placeholder" id="leftPlaceholder">
-          <div class="placeholder-icon">⚔️</div>
-          <div>Selecciona tu luchador</div>
-        </div>
-        <div class="selected-character" id="leftCharacter">
-          <img id="leftCharacterImg" src="" alt="" style="display: none;">
-          <video id="leftCharacterVideo" muted loop style="display: none;">
-            Tu navegador no soporta video.
-          </video>
-          <div class="character-name" id="leftCharacterName"></div>
-        </div>
-      </div>
-
-      <!-- Indicador VS -->
-      <div class="vs-indicator" id="vsIndicator">VS</div>
-
-      <!-- Jugador derecho -->
-      <div class="player-container right">
-        <div class="character-placeholder" id="rightPlaceholder">
-          <div class="placeholder-icon">⚔️</div>
-          <div>Selecciona tu luchador</div>
-        </div>
-        <div class="selected-character" id="rightCharacter">
-          <img id="rightCharacterImg" src="" alt="" style="display: none;">
-          <video id="rightCharacterVideo" muted loop style="display: none;">
-            Tu navegador no soporta video.
-          </video>
-          <div class="character-name" id="rightCharacterName"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sección de selección de personajes (inicialmente oculta) -->
-    <div class="selection-section" id="selectionSection" style="display: none;">
-      <div class="selection-indicator" id="selectionIndicator">
-        Selecciona el primer luchador
-      </div>
-      
-      <div class="character-grid" id="characterGrid">
-        <!-- Los cards se generarán aquí -->
-      </div>
-    </div>
-
-    <!-- Botón de lucha -->
-    <button class="fight-button" id="fightButton">¡FIGHT!</button>
-
-    <!-- Información del formato seleccionado -->
-    <div class="selected-format-info" id="selectedFormatInfo" style="display: none;">
-      <div class="format-badge" id="formatBadge"></div>
-    </div>
-  </div>
-
-  <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/index.js"></script>
 </body>
-
 </html>

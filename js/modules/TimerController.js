@@ -5,47 +5,49 @@ export class TimerController {
   /**
    * @param {Object} config - Configuración del temporizador
    * @param {Object} config.elements - Elementos del DOM
-   * @param {number} config.initialTime - Tiempo inicial en segundos
+   * @param {number|null} config.initialTime - Tiempo inicial en segundos (null en modo 'stopwatch')
    * @param {string} config.formatName - Nombre del formato
+   * @param {'single'|'tematica'|'stopwatch'} [config.mode] - Comportamiento del cronómetro
    * @param {string[]} config.themeWords - Lista de palabras para formato temático (opcional)
    */
-  constructor({ elements, initialTime, formatName, themeWords = [] }) {
+  constructor({ elements, initialTime, formatName, mode = 'single', themeWords = [] }) {
     this.elements = elements;
     this.initialTime = initialTime;
-    this.timeLeft = initialTime;
+    this.mode = mode;
+    this.timeLeft = mode === 'stopwatch' ? 0 : initialTime;
     this.formatName = formatName;
     this.themeWords = [...themeWords]; // Copia para no modificar el original
-    
+
     // Solo inicializar palabras para formato temático
-    if (formatName === 'TEMÁTICA') {
+    if (mode === 'tematica') {
       // Cargar palabras usadas de localStorage o inicializar como array vacío
       this.usedWords = this.loadUsedWords();
-      
+
       // Inicializar palabras disponibles (quitando las ya usadas)
       this.availableWords = this.initializeAvailableWords(themeWords);
-      
-      console.log('Palabras disponibles:', this.availableWords);
-      console.log('Palabras usadas:', this.usedWords);
     }
-    
+
     this.interval = null;
     this.isRunning = false;
     this.currentThemeWord = null;
-    
+
     // Configurar elementos iniciales
     this.elements.formatInfo.textContent = formatName;
-    this.elements.timeNumber.textContent = initialTime;
-    
+    this.elements.timeNumber.textContent = mode === 'stopwatch' ? '0:00' : initialTime;
+    if (mode === 'stopwatch' && this.elements.timeLabel) {
+      this.elements.timeLabel.textContent = 'TRANSCURRIDO';
+    }
+
     // Actualizar círculo SVG
     this.updateCircleSVG();
-    
+
     // Si es formato temático, mostrar palabra temática
-    if (formatName === 'TEMÁTICA') {
+    if (mode === 'tematica') {
       this.showRandomThemeWord();
     } else {
       this.elements.wordLabel.style.display = 'none';
     }
-    
+
     // Vincular eventos
     this.bindEvents();
   }
@@ -69,7 +71,7 @@ export class TimerController {
    */
   saveUsedWords() {
     // Solo guardar si estamos en formato temático
-    if (this.formatName !== 'TEMÁTICA') return;
+    if (this.mode !== 'tematica') return;
     
     try {
       localStorage.setItem('combateMortal_usedThemeWords', JSON.stringify(this.usedWords));
@@ -143,11 +145,12 @@ export class TimerController {
     // Recalcular circunferencia para stroke-dasharray
     this.radius = newRadius;
     this.circumference = 2 * Math.PI * this.radius;
-    
+
     this.elements.progressCircle.style.strokeDasharray = `${this.circumference} ${this.circumference}`;
-    
-    // Actualizar progreso con el valor actual
-    this.setProgress(this.timeLeft / this.initialTime);
+
+    // Actualizar progreso con el valor actual (en modo 'stopwatch' el anillo
+    // se mantiene siempre completo, ya que no hay un total contra el cual medir)
+    this.setProgress(this.mode === 'stopwatch' ? 1 : this.timeLeft / this.initialTime);
   }
   
   /**
@@ -165,13 +168,27 @@ export class TimerController {
   startTimer() {
     // Evitar múltiples intervalos
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
+    const startHadFocus = document.activeElement === this.elements.startButton;
     this.elements.startButton.disabled = true;
-    
+    // El navegador quita el foco de un botón que se deshabilita; lo movemos
+    // a Reiniciar para no perder la navegación por flechas mientras corre.
+    if (startHadFocus) this.elements.resetButton.focus();
+
     // Detener el intervalo anterior si existe
     if (this.interval) {
       clearInterval(this.interval);
+    }
+
+    // Modo 'stopwatch' (Fatality): cuenta hacia arriba sin fin automático,
+    // hasta que el jurado decida y el staff presione Reiniciar.
+    if (this.mode === 'stopwatch') {
+      this.interval = setInterval(() => {
+        this.timeLeft++;
+        this.elements.timeNumber.textContent = this.formatElapsed(this.timeLeft);
+      }, 1000);
+      return;
     }
 
     this.interval = setInterval(() => {
@@ -184,6 +201,17 @@ export class TimerController {
         this.playFinishSound();
       }
     }, 1000);
+  }
+
+  /**
+   * Formatear segundos transcurridos como m:ss (modo 'stopwatch')
+   * @param {number} totalSeconds
+   * @returns {string}
+   */
+  formatElapsed(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
   
   /**
@@ -202,14 +230,16 @@ export class TimerController {
    */
   resetTimer() {
     this.stopTimer();
-    
-    this.timeLeft = this.initialTime;
-    this.elements.timeNumber.textContent = this.timeLeft;
+
+    this.timeLeft = this.mode === 'stopwatch' ? 0 : this.initialTime;
+    this.elements.timeNumber.textContent = this.mode === 'stopwatch'
+      ? this.formatElapsed(0)
+      : this.timeLeft;
     this.setProgress(1);
     this.elements.startButton.disabled = false;
-    
+
     // Si es formato temático, mostrar nueva palabra al reiniciar
-    if (this.formatName === 'TEMÁTICA') {
+    if (this.mode === 'tematica') {
       this.showRandomThemeWord();
     }
   }
@@ -239,7 +269,7 @@ export class TimerController {
    * Mostrar una palabra temática aleatoria sin repetición
    */
   showRandomThemeWord() {
-    if (this.themeWords.length === 0 || this.formatName !== 'TEMÁTICA') return;
+    if (this.themeWords.length === 0 || this.mode !== 'tematica') return;
     
     // Si no quedan palabras disponibles, reiniciar todas las palabras
     if (this.availableWords.length === 0) {
@@ -281,6 +311,9 @@ export class TimerController {
    */
   handleKeyDown(event) {
     if (event.key === ' ' || event.key === 'Space') {
+      // Si el foco está en un botón, Espacio ya lo activa de forma nativa
+      // (dispara su propio listener de click); evita duplicar la acción.
+      if (event.target && event.target.tagName === 'BUTTON') return;
       if (!this.elements.startButton.disabled) {
         this.startTimer();
       }

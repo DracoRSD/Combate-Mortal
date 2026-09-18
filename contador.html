@@ -12,12 +12,7 @@
     <canvas id="boltCanvas" class="bolt-canvas"></canvas>
 
     <header class="cm-brand">
-        <div class="cm-badge" aria-hidden="true">
-            <svg viewBox="0 0 120 120">
-                <circle class="cm-badge__ring" cx="60" cy="60" r="50"></circle>
-                <path class="cm-badge__dragon" d="M40 38c10-10 26-10 34 0 6 7 4 16-2 20 8 2 12 10 8 18-5 10-20 12-30 4-4 10-16 14-24 8-9-7-8-21 1-27-8-3-10-13-4-19 5-5 12-6 17-4z"></path>
-            </svg>
-        </div>
+        <img class="cm-badge" src="assets/images/logo-dragon.png" alt="Combate Mortal" />
         <span class="cm-brand__text chrome-text">Combate Mortal</span>
     </header>
 
@@ -37,6 +32,11 @@
             <div class="battle-num">Batalla <span id="battleNum">1</span></div>
             <button class="step-btn" id="battleUp" aria-label="Siguiente batalla">+</button>
         </div>
+        <div class="battle-counter" id="entradaField" hidden>
+            <button class="step-btn" id="entradaDown" aria-label="Entrada anterior">&minus;</button>
+            <div class="battle-num">Entrada <span id="entradaNum">1</span>/<span id="entradaTotal">2</span></div>
+            <button class="step-btn" id="entradaUp" aria-label="Siguiente entrada">+</button>
+        </div>
     </div>
 
     <div class="format-info" id="formatInfo">MINUTO LIBRE</div>
@@ -44,11 +44,13 @@
     <div class="duel">
         <div class="mc" data-side="a" id="mcA">
             <div class="mc-turn-tag" id="tagA">TURNO</div>
-            <div class="mc-frame">
+            <div class="hp-bar"><div class="hp-bar__fill" id="hpAFill"></div></div>
+            <button type="button" class="mc-frame" id="mcAFrame" data-nav-item aria-label="Elegir a MC 1 como ganador">
                 <canvas class="mc-frame__bolts" data-bolts></canvas>
                 <img id="mcAPhoto" class="mc-frame__photo" alt="" />
                 <div class="mc-frame__fallback" id="mcAFallback"></div>
-            </div>
+                <div class="mc-frame__hitflash"></div>
+            </button>
             <div class="mc-name" id="mcAName">MC 1</div>
             <div class="mc-country" id="mcACountry"></div>
         </div>
@@ -65,17 +67,19 @@
 
             <div class="time-wrapper">
                 <div class="time-number" id="countdown">60</div>
-                <div class="time-label">SEGUNDOS</div>
+                <div class="time-label" id="timeLabel">SEGUNDOS</div>
             </div>
         </div>
 
         <div class="mc" data-side="b" id="mcB">
             <div class="mc-turn-tag" id="tagB">TURNO</div>
-            <div class="mc-frame">
+            <div class="hp-bar"><div class="hp-bar__fill" id="hpBFill"></div></div>
+            <button type="button" class="mc-frame" id="mcBFrame" data-nav-item aria-label="Elegir a MC 2 como ganador">
                 <canvas class="mc-frame__bolts" data-bolts></canvas>
                 <img id="mcBPhoto" class="mc-frame__photo" alt="" />
                 <div class="mc-frame__fallback" id="mcBFallback"></div>
-            </div>
+                <div class="mc-frame__hitflash"></div>
+            </button>
             <div class="mc-name" id="mcBName">MC 2</div>
             <div class="mc-country" id="mcBCountry"></div>
         </div>
@@ -83,18 +87,33 @@
 
     <div class="word-label" id="word-label">MORTAL</div>
 
-    <div class="controls">
-        <button id="btnIniciar" class="btn-start">Iniciar</button>
-        <button id="btnReiniciar" class="btn-reset">Reiniciar</button>
-        <button id="btnTurno" class="btn-turn">Cambiar turno</button>
-        <button id="btnSiguienteBatalla" class="btn-next">Siguiente batalla</button>
-        <button id="btnVolver" class="btn-back">Volver</button>
+    <div class="controls" id="controls">
+        <button id="btnIniciar" class="btn-start" data-nav-item>Iniciar</button>
+        <button id="btnGolpe" class="btn-hit" data-nav-item>Golpe</button>
+        <button id="btnReiniciar" class="btn-reset" data-nav-item>Reiniciar</button>
+        <button id="btnTurno" class="btn-turn" data-nav-item>Cambiar turno</button>
+        <button id="btnSiguienteBatalla" class="btn-next" data-nav-item>Siguiente batalla</button>
+        <button id="btnVolver" class="btn-back" data-nav-item>Volver</button>
     </div>
 
     <p class="hint">
-        <kbd>Espacio</kbd> iniciar &nbsp;·&nbsp; <kbd>Retroceso</kbd> reiniciar &nbsp;·&nbsp;
-        <kbd>T</kbd> turno &nbsp;·&nbsp; <kbd>N</kbd> siguiente batalla &nbsp;·&nbsp; <kbd>Esc</kbd> volver
+        <kbd>Espacio</kbd> iniciar &nbsp;·&nbsp; <kbd>G</kbd> golpe &nbsp;·&nbsp; <kbd>Retroceso</kbd> reiniciar &nbsp;·&nbsp;
+        <kbd>T</kbd> turno &nbsp;·&nbsp; <kbd>N</kbd> siguiente batalla &nbsp;·&nbsp; <kbd>Esc</kbd> volver &nbsp;·&nbsp;
+        <kbd>Enter</kbd> en una foto declara ganador &nbsp;·&nbsp; <kbd>R</kbd> réplica (con ganador en pantalla)
     </p>
+
+    <div class="winner-overlay" id="winnerOverlay" hidden>
+        <div class="winner-label">GANADOR</div>
+        <div class="winner-portrait">
+            <img id="winnerPhoto" class="winner-portrait__photo" alt="" />
+            <div class="winner-portrait__fallback" id="winnerFallback"></div>
+        </div>
+        <div class="winner-name" id="winnerName"></div>
+        <div class="winner-actions">
+            <button class="btn-start" id="btnRevancha" data-nav-item>Réplica</button>
+            <button class="btn-back" id="btnCerrarGanador" data-nav-item>Cerrar</button>
+        </div>
+    </div>
 
     <!-- Importar JavaScript modular con type="module" -->
     <script type="module" src="js/timer.js"></script>

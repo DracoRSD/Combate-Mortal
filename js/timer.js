@@ -1,20 +1,21 @@
 import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
+import { DamageSystem } from './modules/DamageSystem.js';
+import { WinnerScreen } from './modules/WinnerScreen.js';
 import { createBoltRenderer } from './utils/lightning.js';
+import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
+import Formats from '../data/formats.js';
 
-// Datos temáticos
+// Banco de palabras para el formato temático — conceptos amplios que dan
+// pie a barras (emociones, vida, calle, existencial), sin repetir tema.
 const THEME_WORDS = [
-  'Venganza', 'Envidia', 'Lealtad', 'Ego', 'Traicion',
-  'Orgullo', 'Dominio', 'Respeto'
+  'Venganza', 'Envidia', 'Lealtad', 'Ego', 'Traición', 'Orgullo', 'Dominio',
+  'Respeto', 'Libertad', 'Poder', 'Miedo', 'Muerte', 'Familia', 'Dinero',
+  'Fama', 'Soledad', 'Guerra', 'Paz', 'Justicia', 'Mentira', 'Verdad',
+  'Destino', 'Locura', 'Fe', 'Sangre', 'Raíces', 'Corona', 'Caos',
+  'Redención', 'Espejo', 'Silencio', 'Sombra'
 ];
-
-// Mapeo de formatos a nombres
-const FORMAT_NAMES = {
-  'minutoLibre': 'MINUTO LIBRE',
-  'tematica': 'TEMÁTICA',
-  'minutosLibre': 'MINUTOS LIBRE'
-};
 
 /**
  * Inicializar la aplicación de temporizador
@@ -22,25 +23,14 @@ const FORMAT_NAMES = {
 function initializeTimer() {
   // Recuperar parámetros de la URL
   const urlParams = new URLSearchParams(window.location.search);
-
-  // Valores predeterminados
-  let initialTime = 60;
-  let currentFormat = "minutoLibre";
-  let formatName = "MINUTO LIBRE";
-
-  // Obtener valores de parámetros
-  if (urlParams.has('formato')) currentFormat = urlParams.get('formato');
-  if (urlParams.has('tiempo')) initialTime = parseInt(urlParams.get('tiempo'));
-
-  // Obtener nombre de formato
-  if (FORMAT_NAMES[currentFormat]) {
-    formatName = FORMAT_NAMES[currentFormat];
-  }
+  const formatKey = urlParams.get('formato') || Formats[0].key;
+  const format = Formats.find((f) => f.key === formatKey) || Formats[0];
 
   // Elementos del DOM
   const elements = {
     formatInfo: document.getElementById('formatInfo'),
     timeNumber: document.getElementById('countdown'),
+    timeLabel: document.getElementById('timeLabel'),
     wordLabel: document.getElementById('word-label'),
     startButton: document.getElementById('btnIniciar'),
     resetButton: document.getElementById('btnReiniciar'),
@@ -53,12 +43,47 @@ function initializeTimer() {
   // Inicializar el controlador del temporizador
   const timerController = new TimerController({
     elements,
-    initialTime,
-    formatName,
+    initialTime: format.time,
+    formatName: format.name,
+    mode: format.mode,
     themeWords: THEME_WORDS
   });
 
-  // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla)
+  const frameA = document.getElementById('mcAFrame');
+  const frameB = document.getElementById('mcBFrame');
+
+  // Pantalla de ganador: se muestra sola la foto en grande del MC elegido.
+  const winnerScreen = new WinnerScreen({
+    elements: {
+      overlay: document.getElementById('winnerOverlay'),
+      photo: document.getElementById('winnerPhoto'),
+      fallback: document.getElementById('winnerFallback'),
+      name: document.getElementById('winnerName'),
+      closeButton: document.getElementById('btnCerrarGanador'),
+      mcAPhoto: document.getElementById('mcAPhoto'),
+      mcAFallback: document.getElementById('mcAFallback'),
+      mcAName: document.getElementById('mcAName'),
+      mcBPhoto: document.getElementById('mcBPhoto'),
+      mcBFallback: document.getElementById('mcBFallback'),
+      mcBName: document.getElementById('mcBName')
+    }
+  });
+  frameA.addEventListener('click', () => winnerScreen.show('a'));
+  frameB.addEventListener('click', () => winnerScreen.show('b'));
+
+  // Inicializar la barra de vida y el efecto de golpe de cada MC. Cuando un
+  // lado se queda sin vida, el otro gana automáticamente.
+  const damageSystem = new DamageSystem({
+    elements: {
+      hpAFill: document.getElementById('hpAFill'),
+      hpBFill: document.getElementById('hpBFill'),
+      frameA,
+      frameB
+    },
+    onDefeat: (side) => winnerScreen.show(side === 'a' ? 'b' : 'a')
+  });
+
+  // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla, entrada)
   const battleHUD = new BattleHUD({
     elements: {
       mcA: document.getElementById('mcA'),
@@ -76,12 +101,82 @@ function initializeTimer() {
       battleNum: document.getElementById('battleNum'),
       battleUp: document.getElementById('battleUp'),
       battleDown: document.getElementById('battleDown'),
+      entradaField: document.getElementById('entradaField'),
+      entradaNum: document.getElementById('entradaNum'),
+      entradaTotal: document.getElementById('entradaTotal'),
+      entradaUp: document.getElementById('entradaUp'),
+      entradaDown: document.getElementById('entradaDown'),
       btnTurno: document.getElementById('btnTurno'),
       btnSiguienteBatalla: document.getElementById('btnSiguienteBatalla')
     },
     mcData: McData,
-    onNextBattle: () => timerController.resetTimer()
+    format,
+    onNextBattle: () => {
+      timerController.resetTimer();
+      damageSystem.reset();
+      winnerScreen.hide();
+    },
+    onRoundReset: () => timerController.resetTimer()
   });
+
+  // Botón de golpe: le resta vida y aplica el efecto visual al MC que NO
+  // tiene el turno (el que está recibiendo la barra del que rapea).
+  const golpeButton = document.getElementById('btnGolpe');
+  const applyGolpe = () => {
+    const target = battleHUD.activeSide === 'a' ? 'b' : 'a';
+    damageSystem.hit(target);
+  };
+  golpeButton.addEventListener('click', applyGolpe);
+
+  document.addEventListener('keydown', (event) => {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (event.key === 'g' || event.key === 'G') applyGolpe();
+  });
+
+  // "Reiniciar" reinicia todo el estado de la batalla en curso: el
+  // cronómetro y también la vida/efectos de daño de ambos MC.
+  document.getElementById('btnReiniciar').addEventListener('click', () => {
+    damageSystem.reset();
+    winnerScreen.hide();
+  });
+
+  // "Revancha": cuando el jurado da una réplica, se recarga la pantalla
+  // completa de cero (vida, cronómetro, batalla/entrada, turno) para los
+  // mismos MC, forzando el formato estándar de réplica (4x4 libre, 120s).
+  const revanchaFormat = Formats.find((f) => f.key === 'cuatroXcuatro') || format;
+  document.getElementById('btnRevancha').addEventListener('click', () => {
+    const params = new URLSearchParams({
+      formato: revanchaFormat.key,
+      nombreA: urlParams.get('nombreA') || '',
+      nombreB: urlParams.get('nombreB') || ''
+    });
+    window.location.href = 'contador.html?' + params.toString();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if ((event.key === 'r' || event.key === 'R') && !document.getElementById('winnerOverlay').hidden) {
+      document.getElementById('btnRevancha').click();
+    }
+  });
+
+  enableGridKeyboardNav(document.getElementById('winnerOverlay'), { layout: 'linear' });
+
+  const controls = document.getElementById('controls');
+  const duel = document.querySelector('.duel');
+  enableGridKeyboardNav(controls, {
+    layout: 'linear',
+    onEdge: (key) => {
+      if (key === 'ArrowUp' || key === 'ArrowLeft') focusFirstNavItem(duel);
+    }
+  });
+  enableGridKeyboardNav(duel, {
+    layout: 'linear',
+    onEdge: (key) => {
+      if (key === 'ArrowDown' || key === 'ArrowRight') focusFirstNavItem(controls);
+    }
+  });
+  focusFirstNavItem(controls);
 
   initLightning();
 }
@@ -115,4 +210,4 @@ function initLightning() {
 }
 
 // Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', initializeTimer); 
+document.addEventListener('DOMContentLoaded', initializeTimer);
