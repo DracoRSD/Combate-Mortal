@@ -1,80 +1,10 @@
-/* Estilos para la página del temporizador */
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--color-background);
-  background:
-    radial-gradient(ellipse 70% 45% at 50% -10%, #132540 0%, transparent 60%),
-    radial-gradient(ellipse 55% 40% at 90% 100%, #0d1d33 0%, transparent 55%),
-    radial-gradient(ellipse 55% 40% at 5% 95%, #0d1d33 0%, transparent 55%),
-    var(--color-background);
-  font-family: 'Bebas Neue', sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* Estilos propios de la pantalla del contador (Etapa/Batalla, formato,
+   duelo, barra de vida, círculo del tiempo, controles y pantalla de
+   ganador). Los estilos compartidos con el resto de la app (body, marca,
+   fondo de rayos, texto cromado) viven en index.css, cargado en la misma
+   página. */
+#screenContador {
   gap: 18px;
-  padding: 18px 16px 26px;
-  color: var(--color-text);
-  overflow-x: hidden;
-  overflow-y: auto;
-  cursor: none;
-}
-
-/* Controles pensados para operarse con flechas + Enter (control remoto/
-   teclado en escenario), no con mouse: se oculta el cursor en toda la
-   pantalla. */
-body, body * {
-  cursor: none !important;
-}
-
-.chrome-text {
-  background: var(--gradient-chrome);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 18px rgba(63, 182, 255, 0.45);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ---------- Fondo de rayos ---------- */
-.bolt-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-/* ---------- Marca ---------- */
-.cm-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.cm-badge {
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  object-fit: contain;
-  filter: drop-shadow(0 0 8px rgba(63, 182, 255, 0.75));
-}
-
-.cm-brand__text {
-  font-family: 'Anton', 'Bebas Neue', sans-serif;
-  font-size: 1.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 /* ---------- Barra de etapa / batalla ---------- */
@@ -743,7 +673,6 @@ body, body * {
 }
 
 @media (max-width: 480px) {
-  .cm-brand__text { font-size: 1.3rem; }
   .format-info { font-size: 1.2rem; padding: 6px 16px; }
   .bracket-bar { padding: 0.5rem 0.5rem; }
   .bracket-field, .battle-counter { padding: 0.15rem 0.7rem; }

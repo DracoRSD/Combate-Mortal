@@ -9,24 +9,38 @@ export class BattleHUD {
    * @param {Object} config
    * @param {Object} config.elements - Elementos del DOM
    * @param {Array} config.mcData - Catálogo de MCs (data/mcs.js)
-   * @param {Object} [config.format] - Formato elegido (data/formats.js)
    * @param {Function} [config.onNextBattle] - Se invoca al pasar de batalla
    * @param {Function} [config.onRoundReset] - Se invoca al avanzar de entrada
    */
-  constructor({ elements, mcData, format, onNextBattle, onRoundReset }) {
+  constructor({ elements, mcData, onNextBattle, onRoundReset }) {
     this.elements = elements;
     this.mcData = mcData || [];
-    this.format = format || null;
+    this.format = null;
     this.onNextBattle = onNextBattle;
     this.onRoundReset = onRoundReset;
     this.activeSide = 'a';
     this.battle = 1;
     this.entrada = 1;
 
-    this.setupFightersFromURL();
+    this.bindEvents();
+  }
+
+  /**
+   * Preparar el panel para una batalla nueva: coloca a los dos MC, y
+   * reinicia turno/batalla/entrada. Se llama cada vez que se entra al
+   * contador (desde el torneo o desde la selección libre de MC).
+   * @param {string} nameA
+   * @param {string} nameB
+   * @param {Object} format - Formato elegido (data/formats.js)
+   */
+  startBattle(nameA, nameB, format) {
+    this.format = format;
+    this.setFighter('a', this.findMC(nameA) || { nombreMC: nameA });
+    this.setFighter('b', this.findMC(nameB) || { nombreMC: nameB });
+    this.setBattle(1);
+    this.activeSide = 'a';
     this.updateTurnUI();
     this.setupEntradas();
-    this.bindEvents();
   }
 
   /**
@@ -51,15 +65,6 @@ export class BattleHUD {
     if (!name) return null;
     const target = name.trim().toLowerCase();
     return this.mcData.find(mc => mc.nombreMC.trim().toLowerCase() === target) || null;
-  }
-
-  setupFightersFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const nameA = params.get('nombreA') || 'MC 1';
-    const nameB = params.get('nombreB') || 'MC 2';
-
-    this.setFighter('a', this.findMC(nameA) || { nombreMC: nameA });
-    this.setFighter('b', this.findMC(nameB) || { nombreMC: nameB });
   }
 
   /**
@@ -166,6 +171,7 @@ export class BattleHUD {
     document.addEventListener('keydown', (event) => {
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (!this.elements.mcA.closest('.screen.active')) return;
 
       if (event.key === 't' || event.key === 'T') this.swapTurn();
       else if (event.key === 'n' || event.key === 'N') this.nextBattle();

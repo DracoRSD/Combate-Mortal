@@ -5,51 +5,59 @@ export class TimerController {
   /**
    * @param {Object} config - Configuración del temporizador
    * @param {Object} config.elements - Elementos del DOM
-   * @param {number|null} config.initialTime - Tiempo inicial en segundos (null en modo 'stopwatch')
-   * @param {string} config.formatName - Nombre del formato
-   * @param {'single'|'tematica'|'stopwatch'} [config.mode] - Comportamiento del cronómetro
-   * @param {string[]} config.themeWords - Lista de palabras para formato temático (opcional)
+   * @param {string[]} [config.themeWords] - Lista de palabras para formato temático
+   * @param {Function} [config.onBack] - Se invoca al pedir "Volver" (Esc / botón)
    */
-  constructor({ elements, initialTime, formatName, mode = 'single', themeWords = [] }) {
+  constructor({ elements, themeWords = [], onBack }) {
     this.elements = elements;
-    this.initialTime = initialTime;
-    this.mode = mode;
-    this.timeLeft = mode === 'stopwatch' ? 0 : initialTime;
-    this.formatName = formatName;
     this.themeWords = [...themeWords]; // Copia para no modificar el original
-
-    // Solo inicializar palabras para formato temático
-    if (mode === 'tematica') {
-      // Cargar palabras usadas de localStorage o inicializar como array vacío
-      this.usedWords = this.loadUsedWords();
-
-      // Inicializar palabras disponibles (quitando las ya usadas)
-      this.availableWords = this.initializeAvailableWords(themeWords);
-    }
+    this.onBack = onBack;
 
     this.interval = null;
     this.isRunning = false;
     this.currentThemeWord = null;
-
-    // Configurar elementos iniciales
-    this.elements.formatInfo.textContent = formatName;
-    this.elements.timeNumber.textContent = mode === 'stopwatch' ? '0:00' : initialTime;
-    if (mode === 'stopwatch' && this.elements.timeLabel) {
-      this.elements.timeLabel.textContent = 'TRANSCURRIDO';
-    }
+    this.mode = 'single';
+    this.initialTime = null;
+    this.timeLeft = 0;
+    this.formatName = '';
 
     // Actualizar círculo SVG
     this.updateCircleSVG();
 
-    // Si es formato temático, mostrar palabra temática
-    if (mode === 'tematica') {
-      this.showRandomThemeWord();
-    } else {
+    // Vincular eventos
+    this.bindEvents();
+  }
+
+  /**
+   * Configurar el cronómetro para una batalla nueva (nombre, modo y tiempo
+   * del formato elegido), y reiniciarlo listo para arrancar. Se llama cada
+   * vez que se entra al contador, no solo una vez al cargar la página.
+   * @param {Object} format - Formato elegido (data/formats.js)
+   */
+  applyFormat(format) {
+    this.mode = format.mode || 'single';
+    this.initialTime = this.mode === 'stopwatch' ? null : format.time;
+    this.formatName = format.name;
+
+    if (this.mode === 'tematica' && !this.usedWords) {
+      this.usedWords = this.loadUsedWords();
+    }
+    if (this.mode === 'tematica') {
+      this.availableWords = this.initializeAvailableWords(this.themeWords);
+    }
+
+    this.elements.formatInfo.textContent = this.formatName;
+    if (this.elements.timeLabel) {
+      this.elements.timeLabel.textContent = this.mode === 'stopwatch' ? 'TRANSCURRIDO' : 'SEGUNDOS';
+    }
+
+    // resetTimer() ya elige una palabra nueva cuando el modo es 'tematica';
+    // para el resto de los modos hay que ocultar la etiqueta explícitamente.
+    if (this.mode !== 'tematica' && this.elements.wordLabel) {
       this.elements.wordLabel.style.display = 'none';
     }
 
-    // Vincular eventos
-    this.bindEvents();
+    this.resetTimer();
   }
   
   /**
@@ -128,8 +136,11 @@ export class TimerController {
    */
   updateCircleSVG() {
     const circleTimerWidth = this.elements.circleTimer.offsetWidth;
+    // Sin ancho real (p. ej. la pantalla del contador está oculta) no hay
+    // nada que medir todavía; se recalcula en cuanto vuelva a ser visible.
+    if (!circleTimerWidth) return;
     const svg = this.elements.progressRing;
-    
+
     // Actualizar dimensiones del SVG
     svg.setAttribute('width', circleTimerWidth);
     svg.setAttribute('height', circleTimerWidth);
@@ -245,12 +256,14 @@ export class TimerController {
   }
   
   /**
-   * Volver a la pantalla de selección
+   * Volver a la pantalla de selección (torneo o formato/MC, según de dónde
+   * se haya entrado al contador).
    */
   goBack() {
-    // Guardar palabras usadas antes de navegar
+    this.stopTimer();
+    // Guardar palabras usadas antes de salir del contador
     this.saveUsedWords();
-    window.location.href = 'index.html';
+    if (typeof this.onBack === 'function') this.onBack();
   }
   
   /**
@@ -310,6 +323,8 @@ export class TimerController {
    * @param {KeyboardEvent} event - Evento de teclado
    */
   handleKeyDown(event) {
+    if (!this.elements.circleTimer.closest('.screen.active')) return;
+
     if (event.key === ' ' || event.key === 'Space') {
       // Si el foco está en un botón, Espacio ya lo activa de forma nativa
       // (dispara su propio listener de click); evita duplicar la acción.
