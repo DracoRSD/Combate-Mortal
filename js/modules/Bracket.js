@@ -30,15 +30,15 @@ export class Bracket {
     this.save();
   }
 
+  /**
+   * Bracket vacío: los 8 cupos de Octavos empiezan sin MC asignado, para
+   * que se vayan colocando a mano a medida que se van confirmando en el
+   * evento (en vez de sembrar todo el roster automáticamente).
+   */
   buildDefault() {
     const state = {};
     STAGE_META.forEach((stage) => {
       state[stage.key] = Array.from({ length: stage.size }, emptyMatch);
-    });
-    this.mcData.forEach((mc, i) => {
-      const matchIndex = Math.floor(i / 2);
-      const side = i % 2 === 0 ? 'a' : 'b';
-      if (state.octavos[matchIndex]) state.octavos[matchIndex][side] = mc.nombreMC;
     });
     return state;
   }

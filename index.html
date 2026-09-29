@@ -19,24 +19,17 @@
         </header>
         <div class="cm-tagline">Sangre, sudor y barras</div>
 
-        <!-- ================= Torneo ================= -->
-        <section class="screen active" id="screenTorneo">
-            <div class="torneo-header">
-                <h2 class="format-h2">Torneo</h2>
-                <div class="torneo-actions">
-                    <button class="btn-back" id="btnBatallaSuelta" data-nav-item>Batalla suelta</button>
-                    <button class="btn-back" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
-                </div>
-            </div>
-            <div class="bracket-stages" id="bracketStages"></div>
-        </section>
-
         <!-- ================= Selección de formato ================= -->
-        <section class="screen" id="screenFormat">
-            <button class="btn-back btn-back--torneo" id="btnVolverTorneo" data-nav-item>&lsaquo; Torneo</button>
+        <section class="screen active" id="screenFormat">
             <h2 class="format-h2">Selecciona el formato</h2>
             <div class="mode-grid" id="formatGrid">
-                <button class="mode-card mode-card--wide" data-format="minutoIdaVuelta" data-nav-item>
+                <button class="mode-card" id="modeTorneoCard" data-nav-item>
+                    <div class="mode-card__art"></div>
+                    <div class="mode-card__scrim"></div>
+                    <h3 class="mode-card__title">Torneo</h3>
+                    <p class="mode-card__desc">Eliminación directa</p>
+                </button>
+                <button class="mode-card" data-format="minutoIdaVuelta" data-nav-item>
                     <div class="mode-card__art"></div>
                     <div class="mode-card__scrim"></div>
                     <h3 class="mode-card__title">Minuto Ida y Vuelta</h3>
@@ -76,6 +69,18 @@
                     </div>
                 </button>
             </div>
+        </section>
+
+        <!-- ================= Torneo ================= -->
+        <section class="screen" id="screenTorneo">
+            <div class="torneo-header">
+                <button class="btn-back btn-back--torneo" id="btnTorneoVolver" data-nav-item>&lsaquo; Formato</button>
+                <h2 class="format-h2">Torneo</h2>
+                <div class="torneo-actions">
+                    <button class="btn-back" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
+                </div>
+            </div>
+            <div class="bracket-stages" id="bracketStages"></div>
         </section>
 
         <!-- ================= Selección de luchadores ================= -->

@@ -54,13 +54,14 @@ function initializeApp() {
     }
   });
 
-  document.getElementById('btnBatallaSuelta').addEventListener('click', function () {
-    showScreen('Format');
-    focusFirstNavItem(formatGrid);
-  });
-  document.getElementById('btnVolverTorneo').addEventListener('click', function () {
+  document.getElementById('modeTorneoCard').addEventListener('click', function () {
+    bracketView.render();
     showScreen('Torneo');
     focusFirstNavItem(bracketStages);
+  });
+  document.getElementById('btnTorneoVolver').addEventListener('click', function () {
+    showScreen('Format');
+    focusFirstNavItem(formatGrid);
   });
   document.getElementById('btnReiniciarTorneo').addEventListener('click', function () {
     if (window.confirm('¿Reiniciar el torneo? Se perderá todo el progreso del bracket.')) {
@@ -73,7 +74,7 @@ function initializeApp() {
 
   // ---------- Selección de formato ----------
   var formatPicker = new FormatPicker({
-    cards: document.querySelectorAll('.mode-card'),
+    cards: document.querySelectorAll('.mode-card[data-format]'),
     formats: Formats,
     onSelect: function (format) {
       chosenFormat = format;
@@ -303,7 +304,7 @@ function initializeApp() {
     }
   }
 
-  focusFirstNavItem(bracketStages);
+  focusFirstNavItem(formatGrid);
 
   window.addEventListener('beforeunload', function () { cleanupVideos(); });
 

@@ -101,10 +101,10 @@ body, body * {
 }
 /* ============================================================
    Rejilla de modos (estilo fighter-select / mode-select).
-   4 columnas x 2 filas: "Minuto Ida y Vuelta" ocupa 2 columnas
-   en la fila 1 (mode-card--wide); "Fatality" ocupa las 2 filas
-   en la última columna (mode-card--hero). El resto cae solo por
-   orden en el HTML (auto-placement de Grid).
+   4 columnas x 2 filas: "Fatality" ocupa las 2 filas en la última
+   columna (mode-card--hero); las otras 6 tarjetas (Torneo + los 5
+   formatos) son del mismo tamaño y caen solas por orden en el HTML
+   (auto-placement de Grid) en las 3 columnas restantes.
    ============================================================ */
 .mode-grid {
   display: grid;
@@ -138,8 +138,6 @@ body, body * {
   z-index: 2;
 }
 .mode-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-
-.mode-card--wide { grid-column: span 2; grid-row: 1; }
 
 .mode-card__art {
   position: absolute;
