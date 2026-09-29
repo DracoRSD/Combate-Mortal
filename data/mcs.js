@@ -23,9 +23,11 @@ const McData = [
     urlVideo: "assets/videos/mcs/"
   },
   {
-    nombreMC: "Diddy Glow",
-    urlFoto: "assets/images/mcs/diddy-glow.jpg",
-    urlVideo: "assets/videos/mcs/"
+    nombreMC: "R16",
+    urlFoto: "assets/images/mcs/r16.jpg",
+    urlVideo: "assets/videos/mcs/",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "Fat N",
@@ -43,9 +45,11 @@ const McData = [
     urlVideo: "assets/videos/mcs/"
   },
   {
-    nombreMC: "KG",
-    urlFoto: "assets/images/mcs/kg.jpg",
-    urlVideo: "assets/videos/mcs/"
+    nombreMC: "Dinamita",
+    urlFoto: "assets/images/mcs/dinamita.jpg",
+    urlVideo: "assets/videos/mcs/",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "Nume",
