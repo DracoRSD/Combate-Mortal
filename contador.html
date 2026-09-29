@@ -18,24 +18,39 @@
 
     <div class="bracket-bar">
         <div class="bracket-field">
-            <label for="stageSelect">Etapa</label>
-            <select id="stageSelect">
-                <option>Octavos de Final</option>
-                <option>Cuartos de Final</option>
-                <option>Repesca</option>
-                <option>Semifinal</option>
-                <option>Final</option>
-            </select>
+            <span class="bracket-field__icon" aria-hidden="true">🏆</span>
+            <div class="bracket-field__body">
+                <label for="stageSelect">Etapa</label>
+                <select id="stageSelect">
+                    <option>Octavos de Final</option>
+                    <option>Cuartos de Final</option>
+                    <option>Repesca</option>
+                    <option>Semifinal</option>
+                    <option>Final</option>
+                </select>
+            </div>
         </div>
         <div class="battle-counter">
-            <button class="step-btn" id="battleDown" aria-label="Batalla anterior">&minus;</button>
-            <div class="battle-num">Batalla <span id="battleNum">1</span></div>
-            <button class="step-btn" id="battleUp" aria-label="Siguiente batalla">+</button>
+            <span class="bracket-field__icon" aria-hidden="true">🥊</span>
+            <div class="bracket-field__body">
+                <label>Batalla</label>
+                <div class="battle-counter__controls">
+                    <button class="step-btn" id="battleDown" aria-label="Batalla anterior">&minus;</button>
+                    <div class="battle-num"><span id="battleNum">1</span></div>
+                    <button class="step-btn" id="battleUp" aria-label="Siguiente batalla">+</button>
+                </div>
+            </div>
         </div>
         <div class="battle-counter" id="entradaField" hidden>
-            <button class="step-btn" id="entradaDown" aria-label="Entrada anterior">&minus;</button>
-            <div class="battle-num">Entrada <span id="entradaNum">1</span>/<span id="entradaTotal">2</span></div>
-            <button class="step-btn" id="entradaUp" aria-label="Siguiente entrada">+</button>
+            <span class="bracket-field__icon" aria-hidden="true">🔁</span>
+            <div class="bracket-field__body">
+                <label>Entrada</label>
+                <div class="battle-counter__controls">
+                    <button class="step-btn" id="entradaDown" aria-label="Entrada anterior">&minus;</button>
+                    <div class="battle-num"><span id="entradaNum">1</span>/<span id="entradaTotal">2</span></div>
+                    <button class="step-btn" id="entradaUp" aria-label="Siguiente entrada">+</button>
+                </div>
+            </div>
         </div>
     </div>
 
