@@ -451,23 +451,39 @@ body, body * {
    la ronda anterior. El progreso persiste en localStorage.
    ============================================================ */
 .torneo-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
+  gap: 1rem;
   width: 100%;
+  max-width: 1300px;
+}
+
+.torneo-header .format-h2 {
+  margin: 0;
+  text-align: center;
 }
 
 .torneo-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 0.6rem;
 }
 
 .btn-back--torneo {
-  align-self: flex-start;
+  justify-self: start;
   font-size: 0.9rem;
   padding: 0.4rem 1rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .torneo-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.6rem;
+  }
+  .btn-back--torneo { justify-self: center; }
 }
 
 .bracket-stages {

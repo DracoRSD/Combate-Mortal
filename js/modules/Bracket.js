@@ -1,4 +1,7 @@
-const STORAGE_KEY = 'cmTorneoBracket';
+// v2: el bracket ya no siembra el roster completo en Octavos (arranca
+// vacío); la clave cambió para que un torneo guardado con la versión
+// anterior (con los 16 MC ya puestos) no se cargue en su lugar.
+const STORAGE_KEY = 'cmTorneoBracket_v2';
 
 // Orden de aparición de las rondas y formato fijo de cada una. Las etapas
 // posteriores a Octavos se llenan solas con los ganadores (o perdedores,
