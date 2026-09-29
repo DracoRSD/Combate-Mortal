@@ -2,6 +2,7 @@ import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
 import { DamageSystem } from './modules/DamageSystem.js';
 import { WinnerScreen } from './modules/WinnerScreen.js';
+import { Bracket } from './modules/Bracket.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
 import McData from '../data/mcs.js';
@@ -25,6 +26,14 @@ function initializeTimer() {
   const urlParams = new URLSearchParams(window.location.search);
   const formatKey = urlParams.get('formato') || Formats[0].key;
   const format = Formats.find((f) => f.key === formatKey) || Formats[0];
+
+  // Si la batalla viene del bracket del torneo, el resultado se registra
+  // solo en cuanto se declara un ganador, para que al volver (Volver /
+  // goBack) el cuadro ya muestre al ganador avanzado a la siguiente ronda.
+  const isTorneo = urlParams.get('torneo') === '1';
+  const torneoEtapa = urlParams.get('etapa');
+  const torneoMatch = parseInt(urlParams.get('match'), 10);
+  const bracket = isTorneo ? new Bracket(McData) : null;
 
   // Elementos del DOM
   const elements = {
@@ -68,8 +77,17 @@ function initializeTimer() {
       mcBName: document.getElementById('mcBName')
     }
   });
-  frameA.addEventListener('click', () => winnerScreen.show('a'));
-  frameB.addEventListener('click', () => winnerScreen.show('b'));
+  // Punto único de declaración de ganador (clic manual en una foto, o KO
+  // automático al llegar a 0 de vida): además de mostrar la pantalla de
+  // ganador, si la batalla viene del bracket del torneo registra el
+  // resultado ahí para que la siguiente ronda quede lista.
+  const declareWinner = (side) => {
+    winnerScreen.show(side);
+    if (isTorneo) bracket.setWinner(torneoEtapa, torneoMatch, side);
+  };
+
+  frameA.addEventListener('click', () => declareWinner('a'));
+  frameB.addEventListener('click', () => declareWinner('b'));
 
   // Inicializar la barra de vida y el efecto de golpe de cada MC. Cuando un
   // lado se queda sin vida, el otro gana automáticamente.
@@ -80,7 +98,7 @@ function initializeTimer() {
       frameA,
       frameB
     },
-    onDefeat: (side) => winnerScreen.show(side === 'a' ? 'b' : 'a')
+    onDefeat: (side) => declareWinner(side === 'a' ? 'b' : 'a')
   });
 
   // Inicializar el panel de batalla (nombres/fotos de MC, turno, batalla, entrada)
@@ -151,6 +169,11 @@ function initializeTimer() {
       nombreA: urlParams.get('nombreA') || '',
       nombreB: urlParams.get('nombreB') || ''
     });
+    if (isTorneo) {
+      params.set('torneo', '1');
+      params.set('etapa', torneoEtapa);
+      params.set('match', String(torneoMatch));
+    }
     window.location.href = 'contador.html?' + params.toString();
   });
 

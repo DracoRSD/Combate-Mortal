@@ -1,5 +1,7 @@
 import { FormatPicker } from './modules/FormatPicker.js';
 import { FighterSelector } from './modules/FighterSelector.js';
+import { Bracket } from './modules/Bracket.js';
+import { BracketView } from './modules/BracketView.js';
 import { createBoltRenderer } from './utils/lightning.js';
 import { cleanupVideos } from './utils/performance.js';
 import { enableGridKeyboardNav, focusFirstNavItem } from './utils/keyboardGrid.js';
@@ -16,6 +18,47 @@ function initializeApp() {
   var chosenFormat = Formats[0];
   var formatGrid = document.getElementById('formatGrid');
   var fighterGrid = document.getElementById('fighterGrid');
+  var bracketStages = document.getElementById('bracketStages');
+
+  var bracket = new Bracket(McData);
+  var bracketView = new BracketView({
+    stagesEl: bracketStages,
+    picker: {
+      overlay: document.getElementById('bracketPicker'),
+      grid: document.getElementById('bracketPickerGrid'),
+      closeButton: document.getElementById('bracketPickerClose')
+    },
+    bracket: bracket,
+    formats: Formats,
+    onStartBattle: function (stage, index, format, mcA, mcB) {
+      var params = new URLSearchParams({
+        formato: format.key,
+        nombreA: mcA,
+        nombreB: mcB,
+        torneo: '1',
+        etapa: stage,
+        match: String(index)
+      });
+      window.location.href = 'contador.html?' + params.toString();
+    }
+  });
+
+  document.getElementById('btnBatallaSuelta').addEventListener('click', function () {
+    showScreen('Format');
+    focusFirstNavItem(formatGrid);
+  });
+  document.getElementById('btnVolverTorneo').addEventListener('click', function () {
+    showScreen('Torneo');
+    focusFirstNavItem(bracketStages);
+  });
+  document.getElementById('btnReiniciarTorneo').addEventListener('click', function () {
+    if (window.confirm('¿Reiniciar el torneo? Se perderá todo el progreso del bracket.')) {
+      bracket.reset();
+      bracketView.render();
+    }
+  });
+
+  enableGridKeyboardNav(bracketStages, { layout: 'grid' });
 
   var formatPicker = new FormatPicker({
     cards: document.querySelectorAll('.mode-card'),
@@ -73,7 +116,7 @@ function initializeApp() {
       }
     }
   });
-  focusFirstNavItem(formatGrid);
+  focusFirstNavItem(bracketStages);
 
   window.addEventListener('beforeunload', function () { cleanupVideos(); });
 
