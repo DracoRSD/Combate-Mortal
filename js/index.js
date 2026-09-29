@@ -35,6 +35,7 @@ function initializeApp() {
   var formatGrid = document.getElementById('formatGrid');
   var fighterGrid = document.getElementById('fighterGrid');
   var bracketStages = document.getElementById('bracketStages');
+  var torneoHeader = document.querySelector('.torneo-header');
   var controls = document.getElementById('controls');
   var duel = document.querySelector('.duel');
 
@@ -70,7 +71,18 @@ function initializeApp() {
     }
   });
 
-  enableGridKeyboardNav(bracketStages, { layout: 'grid' });
+  enableGridKeyboardNav(torneoHeader, {
+    layout: 'linear',
+    onEdge: function (key) {
+      if (key === 'ArrowDown' || key === 'ArrowRight') focusFirstNavItem(bracketStages);
+    }
+  });
+  enableGridKeyboardNav(bracketStages, {
+    layout: 'grid',
+    onEdge: function (key) {
+      if (key === 'ArrowUp') focusFirstNavItem(torneoHeader);
+    }
+  });
 
   // ---------- Selección de formato ----------
   var formatPicker = new FormatPicker({
