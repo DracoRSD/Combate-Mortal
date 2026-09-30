@@ -528,6 +528,60 @@ body, body * {
   gap: 12px;
 }
 
+/* Bracket principal (Octavos→Cuartos→Semifinal→Final) como dos mitades
+   espejadas que convergen al centro, en vez de una fila por ronda. Cada
+   columna reparte sus cruces con space-around para quedar centrada frente
+   a los dos cruces de la ronda anterior que la alimentan. */
+.bracket-tree {
+  display: flex;
+  align-items: stretch;
+  gap: 0.7rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.bracket-tree__col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 0.7rem;
+}
+
+.bracket-tree__col--final { justify-content: center; }
+
+.bracket-tree__col--octavos-left { order: 1; }
+.bracket-tree__col--cuartos-left { order: 2; }
+.bracket-tree__col--semifinal-left { order: 3; }
+.bracket-tree__col--final { order: 4; }
+.bracket-tree__col--semifinal-right { order: 5; }
+.bracket-tree__col--cuartos-right { order: 6; }
+.bracket-tree__col--octavos-right { order: 7; }
+
+.bracket-tree .bracket-stage__header {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .bracket-tree {
+    flex-direction: column;
+  }
+  .bracket-tree__col {
+    order: 0 !important;
+    justify-content: flex-start;
+  }
+  .bracket-tree__header--mirror {
+    display: none;
+  }
+}
+
 .bracket-match {
   position: relative;
   display: flex;

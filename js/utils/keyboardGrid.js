@@ -32,22 +32,29 @@ function findSpatialNeighbor(items, current, key) {
     const dx = x - curX;
     const dy = y - curY;
 
+    // Un umbral chico evita que dos elementos de la misma columna/fila (que
+    // deberían compartir centro) cuenten como "vecino en esa dirección" por
+    // un redondeo de subpíxel: un dx/dy de 0.01px igual pasa el filtro
+    // "> 0" y, al ser ~0, gana cualquier score sin importar cuán lejos esté
+    // en el eje perpendicular (p.ej. saltar dentro de la misma columna de
+    // Octavos en vez de cruzar a Cuartos).
+    const EPS = 4;
     let primary;
     let secondary;
     if (key === 'ArrowDown') {
-      if (dy <= 0) return;
+      if (dy <= EPS) return;
       primary = dy;
       secondary = dx;
     } else if (key === 'ArrowUp') {
-      if (dy >= 0) return;
+      if (dy >= -EPS) return;
       primary = -dy;
       secondary = dx;
     } else if (key === 'ArrowRight') {
-      if (dx <= 0) return;
+      if (dx <= EPS) return;
       primary = dx;
       secondary = dy;
     } else if (key === 'ArrowLeft') {
-      if (dx >= 0) return;
+      if (dx >= -EPS) return;
       primary = -dx;
       secondary = dy;
     } else {
@@ -55,7 +62,9 @@ function findSpatialNeighbor(items, current, key) {
     }
 
     // La distancia perpendicular pesa más para preferir el elemento
-    // alineado con el actual antes que uno más cercano pero descentrado.
+    // alineado con el actual antes que uno más cercano pero descentrado
+    // (p.ej. en el bracket del torneo, Cuartos gana sobre un Octavos
+    // "espejo" perfectamente alineado pero mucho más lejos).
     const score = primary + Math.abs(secondary) * 2;
     if (score < bestScore) {
       bestScore = score;

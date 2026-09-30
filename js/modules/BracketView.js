@@ -40,33 +40,81 @@ export class BracketView {
 
   render() {
     const fragment = document.createDocumentFragment();
-
-    STAGE_META.forEach((stage) => {
-      const format = this.formatOf(stage.key);
-
-      const section = document.createElement('div');
-      section.className = 'bracket-stage';
-
-      const header = document.createElement('div');
-      header.className = 'bracket-stage__header';
-      header.innerHTML =
-        '<h3 class="bracket-stage__title">' + stage.label + '</h3>' +
-        '<span class="bracket-stage__format">' + format.name + ' &middot; ' + format.description.toUpperCase() + '</span>';
-      section.appendChild(header);
-
-      const matchesEl = document.createElement('div');
-      matchesEl.className = 'bracket-stage__matches';
-
-      this.bracket.state[stage.key].forEach((match, index) => {
-        matchesEl.appendChild(this.buildMatchCard(stage, index, match));
-      });
-
-      section.appendChild(matchesEl);
-      fragment.appendChild(section);
-    });
+    fragment.appendChild(this.buildTree());
+    fragment.appendChild(this.buildStandaloneStage('tercerPuesto'));
 
     this.stagesEl.innerHTML = '';
     this.stagesEl.appendChild(fragment);
+  }
+
+  /**
+   * Octavos → Cuartos → Semifinal → Final como dos mitades espejadas que
+   * convergen al centro (una mitad de cada lado del cuadro), en vez de
+   * apilar cada ronda completa en su propia fila. En mobile el CSS vuelve
+   * a apilar todo (ver .bracket-tree en index.css).
+   */
+  buildTree() {
+    const tree = document.createElement('div');
+    tree.className = 'bracket-tree';
+
+    const halves = [
+      { stageKey: 'octavos', filter: (i) => i < 4, colClass: 'bracket-tree__col--octavos-left' },
+      { stageKey: 'octavos', filter: (i) => i >= 4, colClass: 'bracket-tree__col--octavos-right', mirror: true },
+      { stageKey: 'cuartos', filter: (i) => i < 2, colClass: 'bracket-tree__col--cuartos-left' },
+      { stageKey: 'cuartos', filter: (i) => i >= 2, colClass: 'bracket-tree__col--cuartos-right', mirror: true },
+      { stageKey: 'semifinal', filter: (i) => i === 0, colClass: 'bracket-tree__col--semifinal-left' },
+      { stageKey: 'semifinal', filter: (i) => i === 1, colClass: 'bracket-tree__col--semifinal-right', mirror: true },
+      { stageKey: 'final', filter: () => true, colClass: 'bracket-tree__col--final' }
+    ];
+
+    halves.forEach((half) => tree.appendChild(this.buildTreeColumn(half)));
+
+    return tree;
+  }
+
+  buildTreeColumn({ stageKey, filter, colClass, mirror }) {
+    const stage = STAGE_META.find((s) => s.key === stageKey);
+    const format = this.formatOf(stageKey);
+
+    const col = document.createElement('div');
+    col.className = 'bracket-tree__col ' + colClass;
+    col.appendChild(this.buildStageHeader(stage, format, mirror));
+
+    this.bracket.state[stageKey].forEach((match, index) => {
+      if (!filter(index)) return;
+      col.appendChild(this.buildMatchCard(stage, index, match));
+    });
+
+    return col;
+  }
+
+  /** Ronda que se muestra aparte del bracket principal (no converge al
+   * centro): hoy sólo Tercer y Cuarto Puesto. */
+  buildStandaloneStage(stageKey) {
+    const stage = STAGE_META.find((s) => s.key === stageKey);
+    const format = this.formatOf(stageKey);
+
+    const section = document.createElement('div');
+    section.className = 'bracket-stage';
+    section.appendChild(this.buildStageHeader(stage, format));
+
+    const matchesEl = document.createElement('div');
+    matchesEl.className = 'bracket-stage__matches';
+    this.bracket.state[stageKey].forEach((match, index) => {
+      matchesEl.appendChild(this.buildMatchCard(stage, index, match));
+    });
+    section.appendChild(matchesEl);
+
+    return section;
+  }
+
+  buildStageHeader(stage, format, mirror) {
+    const header = document.createElement('div');
+    header.className = 'bracket-stage__header' + (mirror ? ' bracket-tree__header--mirror' : '');
+    header.innerHTML =
+      '<h3 class="bracket-stage__title">' + stage.label + '</h3>' +
+      '<span class="bracket-stage__format">' + format.name + ' &middot; ' + format.description.toUpperCase() + '</span>';
+    return header;
   }
 
   buildMatchCard(stage, index, match) {
