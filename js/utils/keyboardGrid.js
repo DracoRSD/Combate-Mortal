@@ -87,7 +87,13 @@ export function enableGridKeyboardNav(container, options = {}) {
   const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
   function getItems() {
-    return Array.from(container.querySelectorAll(itemSelector));
+    // Un MC ya usado en otro cupo queda deshabilitado (disabled) pero
+    // sigue siendo [data-nav-item]; un <button disabled> nunca puede
+    // recibir foco, así que dejarlo en la lista hace que la flecha que
+    // "aterriza" ahí no mueva nada (o, si es el primero, que no se
+    // enfoque nada al abrir el selector). Se descarta acá para que la
+    // navegación salte directo al siguiente MC disponible.
+    return Array.from(container.querySelectorAll(itemSelector)).filter((el) => !el.disabled);
   }
 
   container.addEventListener('keydown', (event) => {
@@ -130,6 +136,11 @@ export function enableGridKeyboardNav(container, options = {}) {
  * @param {string} [itemSelector]
  */
 export function focusFirstNavItem(container, itemSelector = '[data-nav-item]') {
-  const item = container.querySelector(itemSelector);
-  if (item) item.focus();
+  const items = container.querySelectorAll(itemSelector);
+  for (const item of items) {
+    if (!item.disabled) {
+      item.focus();
+      return;
+    }
+  }
 }
