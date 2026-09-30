@@ -186,29 +186,60 @@ export class BracketView {
 
       if (redoBtn) {
         const card = redoBtn.closest('.bracket-match');
-        this.bracket.clearWinner(card.dataset.stage, parseInt(card.dataset.index, 10));
+        const stage = card.dataset.stage;
+        const index = parseInt(card.dataset.index, 10);
+        this.bracket.clearWinner(stage, index);
         this.render();
+        this.focusMatch(stage, index);
       }
     });
 
     this.picker.grid.addEventListener('click', (event) => {
       const card = event.target.closest('.fighter-card');
       if (!card || !this.pickerTarget) return;
+      const { stage, index, side } = this.pickerTarget;
       const name = card.dataset.name;
-      this.bracket.assign(this.pickerTarget.stage, this.pickerTarget.index, this.pickerTarget.side, name);
+      this.bracket.assign(stage, index, side, name);
       this.closePicker();
       this.render();
+      this.focusMatch(stage, index);
     });
 
-    this.picker.closeButton.addEventListener('click', () => this.closePicker());
+    this.picker.closeButton.addEventListener('click', () => this.cancelPicker());
     this.picker.overlay.addEventListener('click', (event) => {
-      if (event.target === this.picker.overlay) this.closePicker();
+      if (event.target === this.picker.overlay) this.cancelPicker();
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !this.picker.overlay.hidden) this.closePicker();
+      if (event.key === 'Escape' && !this.picker.overlay.hidden) this.cancelPicker();
     });
 
-    enableGridKeyboardNav(this.picker.grid, { layout: 'grid' });
+    enableGridKeyboardNav(this.picker.closeButton.parentElement, {
+      layout: 'linear',
+      onEdge: (key) => {
+        if (key === 'ArrowDown' || key === 'ArrowRight') focusFirstNavItem(this.picker.grid);
+      }
+    });
+    enableGridKeyboardNav(this.picker.grid, {
+      layout: 'grid',
+      onEdge: (key) => {
+        if (key === 'ArrowUp') this.picker.closeButton.focus();
+      }
+    });
+  }
+
+  /**
+   * Foco de vuelta al cruce recién tocado tras cerrar/recalcular el
+   * bracket (asignar un MC, rehacer un resultado): sin esto el elemento
+   * enfocado queda destruido por el render() y el navegador manda el
+   * foco a <body>, dejando las flechas sin nada que mover.
+   */
+  focusMatch(stage, index) {
+    const card = this.stagesEl.querySelector(
+      '.bracket-match[data-stage="' + stage + '"][data-index="' + index + '"]'
+    );
+    const navItem = card && card.querySelector('[data-nav-item]');
+    if (navItem) navItem.focus();
+    else focusFirstNavItem(this.stagesEl);
   }
 
   openPicker(stage, index, side) {
@@ -251,5 +282,13 @@ export class BracketView {
   closePicker() {
     this.picker.overlay.hidden = true;
     this.pickerTarget = null;
+  }
+
+  /** Cerrar el selector sin elegir MC (Cerrar/Escape/click afuera): vuelve
+   * el foco al cruce que lo abrió en vez de dejarlo caer a <body>. */
+  cancelPicker() {
+    const target = this.pickerTarget;
+    this.closePicker();
+    if (target) this.focusMatch(target.stage, target.index);
   }
 }
