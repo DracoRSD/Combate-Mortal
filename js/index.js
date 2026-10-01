@@ -250,6 +250,13 @@ function initializeApp() {
     winnerScreen.hide();
   });
 
+  // Cerrar la pantalla de ganador de una batalla que vino del torneo
+  // devuelve directo al bracket (ya actualizado con el resultado), en vez
+  // de dejar al usuario en el contador de esa batalla ya resuelta.
+  document.getElementById('btnCerrarGanador').addEventListener('click', function () {
+    if (torneoContext) goHome();
+  });
+
   // "Réplica": el jurado pide repetir la batalla en curso, con el formato
   // estándar de réplica (4x4 libre, 120s), conservando el contexto del
   // torneo si la batalla venía de ahí.
