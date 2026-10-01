@@ -12,11 +12,15 @@
   --color-player-left: #48c6ff;
   --color-player-right: #7f8fff;
 
-  /* Llaves del torneo: mitad izquierda azul / mitad derecha roja,
-     como en el póster de llaves, con un acento amarillo grafiti. */
-  --color-bracket-left: #1e3fd6;
-  --color-bracket-right: #d91e35;
-  --color-bracket-accent: #ffd400;
+  /* Llaves del torneo: paleta "tormenta eléctrica" de la marca (cielo
+     nocturno, rayos azul-cian, núcleo blanco-azulado, franja de nombre
+     azul acero semitransparente, logo cromado). */
+  --color-bracket-night: #050b1a;
+  --color-bracket-midnight: #0b1e3f;
+  --color-bracket-fill: rgba(61, 90, 128, 0.6);
+  --color-bracket-glow: #4fc3f7;
+  --color-bracket-core: #e8f6ff;
+  --color-bracket-final: #1e90ff;
 
   /* Estado crítico (temporizador) */
   --color-warn: #ffb545;

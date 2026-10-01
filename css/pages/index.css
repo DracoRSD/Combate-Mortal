@@ -459,9 +459,9 @@ body, body * {
   inset: -1.5rem -1rem;
   z-index: -1;
   background:
-    radial-gradient(circle at 15% 70%, rgba(30, 63, 214, 0.35) 0%, rgba(30, 63, 214, 0) 55%),
-    radial-gradient(circle at 85% 75%, rgba(217, 30, 53, 0.3) 0%, rgba(217, 30, 53, 0) 55%),
-    linear-gradient(160deg, #140b2e 0%, #0a0718 100%);
+    radial-gradient(circle at 50% 30%, rgba(79, 195, 247, 0.22) 0%, rgba(79, 195, 247, 0) 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(5, 11, 26, 0) 0%, var(--color-bracket-night) 100%),
+    linear-gradient(180deg, var(--color-bracket-midnight) 0%, var(--color-bracket-night) 100%);
 }
 
 .torneo-header {
@@ -479,8 +479,8 @@ body, body * {
   display: inline-block;
   padding: 0.3rem 1.4rem;
   background: #ffffff;
-  border: 3px solid var(--color-bracket-left);
-  color: var(--color-bracket-left);
+  border: 3px solid var(--color-bracket-glow);
+  color: var(--color-bracket-final);
   text-shadow: none;
   letter-spacing: 0.08em;
 }
@@ -610,25 +610,21 @@ body, body * {
 .bracket-match__vs {
   font-family: 'Anton', sans-serif;
   font-size: 0.8rem;
-  color: #ffffff;
+  color: var(--color-bracket-core);
   opacity: 0.9;
   letter-spacing: 0.06em;
 }
 
-/* Llaves: mitad izquierda azul, mitad derecha roja, final en azul más
-   grande, como el póster de referencia del torneo. */
-.bracket-tree__col--octavos-left .bracket-slot,
-.bracket-tree__col--cuartos-left .bracket-slot,
-.bracket-tree__col--semifinal-left .bracket-slot,
-.bracket-tree__col--final .bracket-slot {
-  background: var(--color-bracket-left);
-}
-.bracket-tree__col--octavos-right .bracket-slot,
-.bracket-tree__col--cuartos-right .bracket-slot,
-.bracket-tree__col--semifinal-right .bracket-slot {
-  background: var(--color-bracket-right);
+/* Llaves: franja de nombre azul acero semitransparente en todas las
+   rondas, y la Final en azul eléctrico más brillante (el "portal"),
+   como en la tormenta de la marca. */
+.bracket-tree .bracket-slot {
+  background: var(--color-bracket-fill);
+  border-color: var(--color-bracket-core);
 }
 .bracket-tree__col--final .bracket-slot {
+  background: var(--color-bracket-final);
+  box-shadow: 0 0 20px rgba(79, 195, 247, 0.45);
   min-height: 62px;
   font-size: 1.05rem;
 }
