@@ -7,11 +7,16 @@ export class TimerController {
    * @param {Object} config.elements - Elementos del DOM
    * @param {string[]} [config.themeWords] - Lista de palabras para formato temático
    * @param {Function} [config.onBack] - Se invoca al pedir "Volver" (Esc / botón)
+   * @param {Function} [config.onTimeUp] - Se invoca al llegar a 0 (además de
+   *   detener el cronómetro y sonar la alarma), para que el llamador decida
+   *   si corresponde pasar de entrada automáticamente (formatos "ida y
+   *   vuelta") o dejarlo detenido como en el resto de los formatos.
    */
-  constructor({ elements, themeWords = [], onBack }) {
+  constructor({ elements, themeWords = [], onBack, onTimeUp }) {
     this.elements = elements;
     this.themeWords = [...themeWords]; // Copia para no modificar el original
     this.onBack = onBack;
+    this.onTimeUp = onTimeUp;
 
     this.interval = null;
     this.isRunning = false;
@@ -210,6 +215,7 @@ export class TimerController {
       if (this.timeLeft <= 0) {
         this.stopTimer();
         this.playFinishSound();
+        if (typeof this.onTimeUp === 'function') this.onTimeUp();
       }
     }, 1000);
   }

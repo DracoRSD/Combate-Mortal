@@ -152,7 +152,17 @@ function initializeApp() {
       progressCircle: document.querySelector('.progress-ring__circle')
     },
     themeWords: THEME_WORDS,
-    onBack: goHome
+    onBack: goHome,
+    // Formatos "ida y vuelta" (12x12, Minuto Ida y Vuelta, 2x2): al
+    // agotarse el tiempo de una entrada se pasa solo a la siguiente
+    // (cambia el turno y reinicia el cronómetro) en vez de quedar
+    // detenido, salvo que ya sea la última entrada.
+    onTimeUp: function () {
+      if (!battleHUD.format || battleHUD.format.mode !== 'turns') return;
+      if (battleHUD.entrada >= battleHUD.entradaTotal) return;
+      battleHUD.nextEntrada();
+      timerController.startTimer();
+    }
   });
 
   var frameA = document.getElementById('mcAFrame');

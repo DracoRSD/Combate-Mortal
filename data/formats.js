@@ -37,8 +37,8 @@ const Formats = [
     name: '12X12 IDA Y VUELTA',
     time: 30,
     mode: 'turns',
-    entradas: 3,
-    description: '30s × 3 entradas'
+    entradas: 4,
+    description: '30s × 4 entradas'
   },
   {
     key: 'dosXdos',
