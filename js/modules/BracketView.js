@@ -74,11 +74,10 @@ export class BracketView {
 
   buildTreeColumn({ stageKey, filter, colClass, mirror }) {
     const stage = STAGE_META.find((s) => s.key === stageKey);
-    const format = this.formatOf(stageKey);
 
     const col = document.createElement('div');
     col.className = 'bracket-tree__col ' + colClass;
-    col.appendChild(this.buildStageHeader(stage, format, mirror));
+    col.appendChild(this.buildStageHeader(stage, mirror));
 
     this.bracket.state[stageKey].forEach((match, index) => {
       if (!filter(index)) return;
@@ -92,11 +91,10 @@ export class BracketView {
    * centro): hoy sólo Tercer y Cuarto Puesto. */
   buildStandaloneStage(stageKey) {
     const stage = STAGE_META.find((s) => s.key === stageKey);
-    const format = this.formatOf(stageKey);
 
     const section = document.createElement('div');
     section.className = 'bracket-stage';
-    section.appendChild(this.buildStageHeader(stage, format));
+    section.appendChild(this.buildStageHeader(stage));
 
     const matchesEl = document.createElement('div');
     matchesEl.className = 'bracket-stage__matches';
@@ -108,12 +106,10 @@ export class BracketView {
     return section;
   }
 
-  buildStageHeader(stage, format, mirror) {
+  buildStageHeader(stage, mirror) {
     const header = document.createElement('div');
     header.className = 'bracket-stage__header' + (mirror ? ' bracket-tree__header--mirror' : '');
-    header.innerHTML =
-      '<h3 class="bracket-stage__title">' + stage.label + '</h3>' +
-      '<span class="bracket-stage__format">' + format.name + ' &middot; ' + format.description.toUpperCase() + '</span>';
+    header.innerHTML = '<h3 class="bracket-stage__title">' + stage.label + '</h3>';
     return header;
   }
 

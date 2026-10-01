@@ -514,14 +514,6 @@ body, body * {
   text-shadow: var(--shadow-text);
 }
 
-.bracket-stage__format {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-secondary);
-  opacity: 0.8;
-}
-
 .bracket-stage__matches {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
