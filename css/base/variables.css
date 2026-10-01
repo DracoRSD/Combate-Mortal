@@ -12,6 +12,12 @@
   --color-player-left: #48c6ff;
   --color-player-right: #7f8fff;
 
+  /* Llaves del torneo: mitad izquierda azul / mitad derecha roja,
+     como en el póster de llaves, con un acento amarillo grafiti. */
+  --color-bracket-left: #1e3fd6;
+  --color-bracket-right: #d91e35;
+  --color-bracket-accent: #ffd400;
+
   /* Estado crítico (temporizador) */
   --color-warn: #ffb545;
   --color-danger: #ff3b52;

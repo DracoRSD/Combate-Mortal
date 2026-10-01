@@ -450,6 +450,20 @@ body, body * {
    con los ganadores (o perdedores, para el Tercer y Cuarto Puesto) de
    la ronda anterior. El progreso persiste en localStorage.
    ============================================================ */
+#screenTorneo {
+  position: relative;
+}
+#screenTorneo::before {
+  content: '';
+  position: absolute;
+  inset: -1.5rem -1rem;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% 70%, rgba(30, 63, 214, 0.35) 0%, rgba(30, 63, 214, 0) 55%),
+    radial-gradient(circle at 85% 75%, rgba(217, 30, 53, 0.3) 0%, rgba(217, 30, 53, 0) 55%),
+    linear-gradient(160deg, #140b2e 0%, #0a0718 100%);
+}
+
 .torneo-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -462,6 +476,13 @@ body, body * {
 .torneo-header .format-h2 {
   margin: 0;
   text-align: center;
+  display: inline-block;
+  padding: 0.3rem 1.4rem;
+  background: #ffffff;
+  border: 3px solid var(--color-bracket-left);
+  color: var(--color-bracket-left);
+  text-shadow: none;
+  letter-spacing: 0.08em;
 }
 
 .torneo-actions {
@@ -580,18 +601,38 @@ body, body * {
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
   padding: 0.7rem;
 }
 
 .bracket-match__vs {
   font-family: 'Anton', sans-serif;
-  font-size: 0.85rem;
-  color: var(--color-secondary);
-  opacity: 0.7;
+  font-size: 0.8rem;
+  color: #ffffff;
+  opacity: 0.9;
+  letter-spacing: 0.06em;
 }
+
+/* Llaves: mitad izquierda azul, mitad derecha roja, final en azul más
+   grande, como el póster de referencia del torneo. */
+.bracket-tree__col--octavos-left .bracket-slot,
+.bracket-tree__col--cuartos-left .bracket-slot,
+.bracket-tree__col--semifinal-left .bracket-slot,
+.bracket-tree__col--final .bracket-slot {
+  background: var(--color-bracket-left);
+}
+.bracket-tree__col--octavos-right .bracket-slot,
+.bracket-tree__col--cuartos-right .bracket-slot,
+.bracket-tree__col--semifinal-right .bracket-slot {
+  background: var(--color-bracket-right);
+}
+.bracket-tree__col--final .bracket-slot {
+  min-height: 62px;
+  font-size: 1.05rem;
+}
+.bracket-tree__col--final .bracket-slot__name { font-size: 1.1rem; }
 
 .bracket-slot {
   display: flex;
@@ -600,7 +641,7 @@ body, body * {
   width: 100%;
   min-height: 48px;
   background: #0d1420;
-  border: 2px solid var(--color-border);
+  border: 2px solid rgba(255, 255, 255, 0.85);
   border-radius: 8px;
   padding: 0.3rem 0.6rem;
   color: inherit;
