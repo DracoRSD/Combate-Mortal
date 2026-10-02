@@ -64,12 +64,29 @@ function initializeApp() {
     showScreen('Format');
     focusFirstNavItem(formatGrid);
   });
-  document.getElementById('btnReiniciarTorneo').addEventListener('click', function () {
-    if (window.confirm('¿Reiniciar el torneo? Se perderá todo el progreso del bracket.')) {
-      bracket.reset();
-      bracketView.render();
+  // Confirmación en dos pulsaciones (sin window.confirm: el diálogo nativo
+  // no existe dentro de un iframe aislado y rompe el manejo por teclado).
+  var btnReiniciarTorneo = document.getElementById('btnReiniciarTorneo');
+  var reiniciarArmado = null;
+  function desarmarReinicio() {
+    if (reiniciarArmado) clearTimeout(reiniciarArmado);
+    reiniciarArmado = null;
+    btnReiniciarTorneo.classList.remove('is-armed');
+    btnReiniciarTorneo.textContent = 'Reiniciar torneo';
+  }
+  btnReiniciarTorneo.addEventListener('click', function () {
+    if (!reiniciarArmado) {
+      btnReiniciarTorneo.classList.add('is-armed');
+      btnReiniciarTorneo.textContent = '¿Seguro? Pulsa otra vez';
+      reiniciarArmado = setTimeout(desarmarReinicio, 4000);
+      return;
     }
+    desarmarReinicio();
+    bracket.reset();
+    bracketView.render();
+    focusFirstNavItem(bracketStages);
   });
+  btnReiniciarTorneo.addEventListener('blur', desarmarReinicio);
 
   enableGridKeyboardNav(torneoHeader, {
     layout: 'linear',

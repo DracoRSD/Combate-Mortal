@@ -500,6 +500,12 @@ body, body * {
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
+.llaves__corner.is-armed {
+  background: #8f1424;
+  border-color: #ff8a7a;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 138, 122, 0.45), 0 0 12px rgba(255, 59, 82, 0.7);
+}
 .llaves__corner--left { left: 1.6cqw; }
 .llaves__corner--right { right: 1.6cqw; }
 .llaves__corner:hover,
