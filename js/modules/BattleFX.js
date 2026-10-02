@@ -25,7 +25,20 @@ function rand(min, max) {
   return min + Math.random() * (max - min);
 }
 
-/* ---------- Rayos procedurales (SVG) ---------- */
+/* ---------- Rayos ---------- */
+
+/**
+ * Imágenes de rayos sobre fondo negro (WebP ~1024 px de alto, como data
+ * URI). Se dibujan con mix-blend-mode: screen, así que sólo se ve el rayo.
+ * Mientras la lista esté vacía se generan rayos procedurales en SVG con el
+ * mismo comportamiento (revelado, parpadeo, vibración, resplandor).
+ */
+const LIGHTNING_IMAGES = [];
+
+const BOLT_REVEAL_MS = 75;
+const BOLT_FLICKER_MS = 350;
+const BOLT_AFTERGLOW_MS = 400;
+const BOLT_TOTAL_MS = BOLT_REVEAL_MS + BOLT_FLICKER_MS + BOLT_AFTERGLOW_MS;
 
 function displace(x0, y0, x1, y1, amount) {
   let pts = [[x0, y0], [x1, y1]];
@@ -47,70 +60,125 @@ function pathOf(pts) {
   return 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
 }
 
-class Lightning {
-  constructor(svg, flash) {
-    this.svg = svg;
-    this.flash = flash;
-    this.timer = null;
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
+/** Rayo procedural en un lienzo de 400×1000 (misma caja que una imagen). */
+function proceduralBolt(strong) {
+  const x0 = 200 + rand(-60, 60);
+  const main = displace(x0, 0, x0 + rand(-120, 120), 1000, 260);
+  const paths = [pathOf(main)];
+  const branches = 2 + Math.floor(Math.random() * 3);
+  for (let b = 0; b < branches; b++) {
+    const at = main[Math.floor(main.length * rand(0.15, 0.8))];
+    const len = rand(150, 380);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    paths.push(pathOf(displace(at[0], at[1], at[0] + dir * len * rand(0.4, 1), at[1] + len * rand(0.5, 1), len * 0.4)));
   }
-
-  resize() {
-    this.w = window.innerWidth;
-    this.h = window.innerHeight;
-    this.svg.setAttribute('viewBox', '0 0 ' + this.w + ' ' + this.h);
-  }
-
-  bolt(x0, y0, x1, y1, strong) {
-    const len = Math.hypot(x1 - x0, y1 - y0);
-    const main = displace(x0, y0, x1, y1, len * 0.35);
-    const paths = [pathOf(main)];
-    const branches = 2 + Math.floor(Math.random() * 3);
-    for (let b = 0; b < branches; b++) {
-      const at = main[Math.floor(main.length * rand(0.2, 0.8))];
-      const bl = len * rand(0.15, 0.4);
-      const dir = Math.random() < 0.5 ? -1 : 1;
-      const ex = at[0] + dir * bl * rand(0.4, 1);
-      const ey = at[1] + bl * rand(0.5, 1);
-      paths.push(pathOf(displace(at[0], at[1], ex, ey, bl * 0.4)));
-    }
-
-    const g = svgEl('g');
-    g.setAttribute('class', 'battle-bolt' + (strong ? ' battle-bolt--strong' : ''));
-    paths.forEach((d, i) => {
-      const scale = i === 0 ? 1 : 0.6;
-      [['battle-bolt__halo', 16], ['battle-bolt__glow', 6], ['battle-bolt__core', strong ? 3 : 2]].forEach(([cls, width]) => {
-        const p = svgEl('path');
-        p.setAttribute('d', d);
-        p.setAttribute('class', cls);
-        p.setAttribute('stroke-width', (width * scale).toFixed(1));
-        g.appendChild(p);
-      });
+  const svg = svgEl('svg');
+  svg.setAttribute('viewBox', '0 0 400 1000');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('class', 'battle-bolt__shape');
+  paths.forEach((d, i) => {
+    const scale = i === 0 ? 1 : 0.6;
+    [['battle-bolt__halo', 18], ['battle-bolt__glow', 7], ['battle-bolt__core', strong ? 3.2 : 2.2]].forEach(([cls, width]) => {
+      const p = svgEl('path');
+      p.setAttribute('d', d);
+      p.setAttribute('class', cls);
+      p.setAttribute('stroke-width', (width * scale).toFixed(1));
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(p);
     });
-    this.svg.appendChild(g);
-    setTimeout(() => g.remove(), strong ? 800 : 500);
+  });
+  return svg;
+}
+
+function imageBolt(src) {
+  const img = document.createElement('img');
+  img.className = 'battle-bolt__shape battle-bolt__shape--img';
+  img.src = src;
+  img.alt = '';
+  img.draggable = false;
+  return img;
+}
+
+class Lightning {
+  constructor(layer, flash, screen) {
+    this.layer = layer;
+    this.flash = flash;
+    this.screen = screen;
+    this.timer = null;
+    this.lastStrong = 0;
+  }
+
+  shape(strong, avoid) {
+    if (!LIGHTNING_IMAGES.length) return { el: proceduralBolt(strong), key: Math.random() };
+    let key = Math.floor(Math.random() * LIGHTNING_IMAGES.length);
+    if (LIGHTNING_IMAGES.length > 1 && key === avoid) key = (key + 1) % LIGHTNING_IMAGES.length;
+    return { el: imageBolt(LIGHTNING_IMAGES[key]), key };
+  }
+
+  /**
+   * Un rayo en la posición dada: se revela de arriba abajo con clip-path,
+   * parpadea irregularmente (vibrando unos píxeles entre parpadeos), y deja
+   * un resplandor residual que se apaga. `phase` 'a'/'b' alterna la
+   * visibilidad entre dos formas en el mismo sitio (rayo fuerte).
+   */
+  spawn({ xPct, heightPct, flip, strong, phase, avoid }) {
+    const { el, key } = this.shape(strong, avoid);
+    const bolt = document.createElement('div');
+    bolt.className = 'battle-bolt' + (strong ? ' battle-bolt--strong' : '') + (phase ? ' battle-bolt--' + phase : '');
+    bolt.style.left = xPct + '%';
+    bolt.style.height = heightPct + 'vh';
+    bolt.style.setProperty('--flip', flip ? '-1' : '1');
+    bolt.style.setProperty('--jx', (rand(2, 4) * (Math.random() < 0.5 ? -1 : 1)).toFixed(1) + 'px');
+    bolt.style.setProperty('--jy', (rand(2, 4) * (Math.random() < 0.5 ? -1 : 1)).toFixed(1) + 'px');
+    bolt.appendChild(el);
+    this.layer.appendChild(bolt);
+    setTimeout(() => bolt.remove(), BOLT_TOTAL_MS + 100);
+    return key;
+  }
+
+  /** Luz breve sobre el borde de las tarjetas y el suelo. */
+  light() {
+    this.screen.classList.remove('is-lit');
+    void this.screen.offsetWidth;
+    this.screen.classList.add('is-lit');
+  }
+
+  /* Las tarjetas ocupan los laterales (≈0-28 % y 72-100 % del ancho) y los
+     rayos van detrás de ellas, así que casi siempre caen por la columna
+     central y, a veces, por los bordes exteriores. */
+  ambientX() {
+    const r = Math.random();
+    if (r < 0.7) return rand(28, 60);
+    return r < 0.85 ? rand(-2, 8) : rand(84, 94);
   }
 
   ambient() {
-    const x = this.w * rand(0.1, 0.9);
-    this.bolt(x, this.h * rand(-0.15, 0.05), x + this.w * rand(-0.12, 0.12), this.h * rand(0.45, 0.75), false);
+    this.spawn({ xPct: this.ambientX(), heightPct: rand(60, 100), flip: Math.random() < 0.5, strong: false });
     this.flash.fire('is-flash');
+    this.light();
   }
 
+  /**
+   * Rayo fuerte: dos formas distintas en la misma posición alternando
+   * durante el parpadeo (el rayo "cambia de forma"), y otro en el lado
+   * opuesto, con destello de pantalla al 20 % (más al llegar a 0).
+   */
   strong(level) {
     // Varios eventos pueden encadenarse en el mismo instante (fin de
     // entrada → cambio de turno → arranque); un solo rayo fuerte basta.
     const now = performance.now();
-    if (level !== 'final' && now - (this.lastStrong || 0) < 300) return;
+    if (level !== 'final' && now - this.lastStrong < 300) return;
     this.lastStrong = now;
-    const side = Math.random() < 0.5 ? 0.28 : 0.72;
-    this.bolt(this.w * side, -this.h * 0.1, this.w * (side + rand(-0.1, 0.1)), this.h * rand(0.6, 0.8), true);
+
+    const x = Math.random() < 0.5 ? rand(30, 42) : rand(54, 66);
+    const flip = Math.random() < 0.5;
+    const first = this.spawn({ xPct: x, heightPct: rand(85, 100), flip, strong: true, phase: 'a' });
+    this.spawn({ xPct: x, heightPct: rand(85, 100), flip, strong: true, phase: 'b', avoid: first });
     setTimeout(() => {
-      const x = this.w * (1 - side);
-      this.bolt(x, -this.h * 0.05, x + this.w * rand(-0.1, 0.1), this.h * rand(0.5, 0.7), true);
+      this.spawn({ xPct: 96 - x, heightPct: rand(60, 90), flip: !flip, strong: true });
     }, 90);
     this.flash.fire(level === 'final' ? 'is-flash-final' : 'is-flash-strong');
+    this.light();
   }
 
   startAmbient() {
@@ -128,7 +196,7 @@ class Lightning {
   }
 
   clear() {
-    this.svg.innerHTML = '';
+    this.layer.innerHTML = '';
   }
 }
 
@@ -354,7 +422,7 @@ function init() {
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const flash = new Flash(document.getElementById('battleFlash'));
-  const lightning = new Lightning(document.getElementById('battleLightning'), flash);
+  const lightning = new Lightning(document.getElementById('battleLightning'), flash, screen);
   const particles = new Particles(document.getElementById('battleParticles'));
   const circleTimer = screen.querySelector('.circle-timer');
   new TimerRing(circleTimer);
@@ -378,13 +446,21 @@ function init() {
     }
   }
 
+  let activatedAt = 0;
   new MutationObserver(() => {
     const now = screen.classList.contains('active');
     if (now === active) return;
     active = now;
-    if (active) wake();
+    if (active) { activatedAt = performance.now(); wake(); }
     syncAmbient();
   }).observe(screen, { attributes: true, attributeFilter: ['class'] });
+
+  // Las mutaciones de una misma acción (colocar a los MC y mostrar la
+  // pantalla) llegan juntas; el turno inicial de una batalla nueva no es un
+  // "cambio de turno" y no debe disparar rayo.
+  function justActivated() {
+    return performance.now() - activatedAt < 100;
+  }
 
   // ---- Cronómetro: arranque, últimos 10 s, llegada a 0 ----
   const startButton = document.getElementById('btnIniciar');
@@ -440,7 +516,7 @@ function init() {
     const turn = mcA.classList.contains('is-active');
     if (turn === lastTurn) return;
     lastTurn = turn;
-    if (active) lightning.strong('strong');
+    if (active && !justActivated()) lightning.strong('strong');
   }).observe(mcA, { attributes: true, attributeFilter: ['class'] });
 
   // ---- Golpe: chispas al destellar la tarjeta ----

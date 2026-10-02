@@ -7,8 +7,9 @@
    Paleta: negro azulado #020611, azul profundo #0a1f44, azul eléctrico
    #1e90ff, cian claro #7fd0ff, blanco azulado #eaf6ff.
 
-   Rendimiento: sólo se animan transform y opacity (y el stroke-dashoffset
-   del anillo, que ya existía); nada de blur ni filtros sobre capas grandes.
+   Rendimiento: sólo se animan transform, opacity y clip-path (y el
+   stroke-dashoffset del anillo, que ya existía); nada de blur ni filtros
+   sobre capas grandes.
    Los estilos compartidos (body, marca, texto cromado) viven en index.css. */
 :root {
   --b-night: #020611;
@@ -136,37 +137,105 @@ body:has(#screenContador.active) .bolt-canvas {
   height: 100%;
 }
 
-.battle-bolt path {
+/* Luz breve sobre el suelo cuando cae un rayo (sólo opacity). */
+.battle-bg__floorlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 45vh;
+  background: radial-gradient(ellipse 70% 80% at 50% 100%, rgba(127, 208, 255, 0.55) 0%, rgba(30, 144, 255, 0.2) 45%, rgba(30, 144, 255, 0) 75%);
+  opacity: 0;
+}
+#screenContador.is-lit .battle-bg__floorlight { animation: floor-light 350ms steps(1, end); }
+@keyframes floor-light {
+  0% { opacity: 0.9; } 25% { opacity: 0.3; } 50% { opacity: 0.8; } 75% { opacity: 0.25; } 100% { opacity: 0; }
+}
+
+/* ---------- Rayos: caja de 400×1000 (imagen o SVG procedural) ----------
+   El rayo se revela de arriba abajo (clip-path), parpadea a saltos
+   (opacity) vibrando unos píxeles (transform) y deja un resplandor residual
+   que se apaga. Siempre detrás de las tarjetas y del contador (la capa
+   .battle-bg va con z-index negativo). */
+.battle-bolt {
+  --flip: 1;
+  --jx: 3px;
+  --jy: -2px;
+  position: absolute;
+  top: -4vh;
+  aspect-ratio: 2 / 5;
+  transform-origin: 50% 0;
+  will-change: transform, opacity, clip-path;
+  opacity: 1;
+  clip-path: inset(0 0 100% 0);
+  animation:
+    bolt-reveal 75ms linear forwards,
+    bolt-flicker 350ms 75ms steps(1, end) forwards,
+    bolt-afterglow 400ms 425ms ease-out forwards;
+}
+.battle-bolt--b { animation-name: bolt-reveal, bolt-flicker-b, bolt-afterglow; }
+
+.battle-bolt__shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.battle-bolt__shape--img {
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+.battle-bolt__shape path {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  animation: bolt-flicker 150ms steps(1, end) forwards, bolt-fade 500ms ease-out forwards;
 }
-.battle-bolt--strong path { animation-duration: 180ms, 800ms; }
 .battle-bolt__halo { stroke: var(--b-electric); opacity: 0.3; }
-.battle-bolt__glow { stroke: var(--b-electric); opacity: 0.7; }
+.battle-bolt__glow { stroke: var(--b-electric); opacity: 0.75; }
 .battle-bolt__core { stroke: var(--b-white); }
 
-/* Parpadeo doble: on / off / on dentro de los primeros 150 ms y luego se
-   desvanece. */
+@keyframes bolt-reveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+/* Parpadeo irregular 1 → 0.3 → 1 → 0, moviendo el rayo 2-4 px y variando
+   la escala entre parpadeos para que vibre. */
 @keyframes bolt-flicker {
-  0% { visibility: visible; }
-  40% { visibility: hidden; }
-  60% { visibility: visible; }
+  0% { opacity: 1; transform: scaleX(var(--flip)) translate(0, 0) scale(1); }
+  22% { opacity: 0.3; transform: scaleX(var(--flip)) translate(var(--jx), var(--jy)) scale(1.015); }
+  40% { opacity: 1; transform: scaleX(var(--flip)) translate(calc(var(--jx) * -1), var(--jy)) scale(0.99); }
+  62% { opacity: 0.35; transform: scaleX(var(--flip)) translate(var(--jx), calc(var(--jy) * -1)) scale(1.02); }
+  78% { opacity: 1; transform: scaleX(var(--flip)) translate(0, var(--jy)) scale(1); }
+  100% { opacity: 0; transform: scaleX(var(--flip)) translate(0, 0) scale(1); }
 }
-@keyframes bolt-fade {
-  0%, 35% { opacity: 1; }
+/* Segunda forma del rayo fuerte: visible justo cuando la primera no. */
+@keyframes bolt-flicker-b {
+  0% { opacity: 0; transform: scaleX(var(--flip)) translate(0, 0) scale(1); }
+  22% { opacity: 1; transform: scaleX(var(--flip)) translate(var(--jx), var(--jy)) scale(1.01); }
+  40% { opacity: 0.3; transform: scaleX(var(--flip)) translate(calc(var(--jx) * -1), 0) scale(1.02); }
+  62% { opacity: 1; transform: scaleX(var(--flip)) translate(var(--jx), calc(var(--jy) * -1)) scale(0.99); }
+  78% { opacity: 0.3; transform: scaleX(var(--flip)) translate(0, var(--jy)) scale(1); }
+  100% { opacity: 0; transform: scaleX(var(--flip)) translate(0, 0) scale(1); }
+}
+@keyframes bolt-afterglow {
+  0% { opacity: 0.35; }
   100% { opacity: 0; }
 }
-.battle-bolt__halo { animation-name: bolt-flicker, bolt-fade-halo; }
-@keyframes bolt-fade-halo {
-  0%, 35% { opacity: 0.3; }
-  100% { opacity: 0; }
+
+/* Luz del rayo sobre el borde de las tarjetas (sólo opacity). */
+.mc-card::after {
+  content: '';
+  position: absolute;
+  inset: -0.3vh;
+  border-radius: 4px;
+  box-shadow: 0 0 1.6vh 0.3vh rgba(234, 246, 255, 0.9), 0 0 5vh 0.8vh rgba(127, 208, 255, 0.5);
+  opacity: 0;
+  pointer-events: none;
 }
-.battle-bolt__glow { animation-name: bolt-flicker, bolt-fade-glow; }
-@keyframes bolt-fade-glow {
-  0%, 35% { opacity: 0.7; }
-  100% { opacity: 0; }
+#screenContador.is-lit .mc-card::after { animation: edge-light 350ms steps(1, end); }
+@keyframes edge-light {
+  0% { opacity: 0.9; } 25% { opacity: 0.25; } 50% { opacity: 0.75; } 75% { opacity: 0.2; } 100% { opacity: 0; }
 }
 
 .battle-flash {
