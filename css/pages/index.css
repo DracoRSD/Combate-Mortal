@@ -459,9 +459,21 @@ body, body * {
   inset: -1.5rem -1rem;
   z-index: -1;
   background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 170 260'><path d='M60 -10L10 110L45 110L20 230L100 90L62 90L95 -10Z' fill='%234FC3F7' opacity='0.5'/></svg>") left top / 170px 260px no-repeat,
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 170 260'><path d='M110 -10L160 110L125 110L150 230L70 90L108 90L75 -10Z' fill='%234FC3F7' opacity='0.5'/></svg>") right top / 170px 260px no-repeat,
     radial-gradient(circle at 50% 30%, rgba(79, 195, 247, 0.22) 0%, rgba(79, 195, 247, 0) 60%),
     radial-gradient(ellipse at 50% 0%, rgba(5, 11, 26, 0) 0%, var(--color-bracket-night) 100%),
     linear-gradient(180deg, var(--color-bracket-midnight) 0%, var(--color-bracket-night) 100%);
+}
+/* Marca de agua del dragón detrás de las llaves, como en el póster. */
+#screenTorneo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url('../../assets/images/logo-dragon.png') no-repeat center 36% / min(680px, 80%) auto;
+  opacity: 0.1;
+  pointer-events: none;
 }
 
 .torneo-header {
@@ -476,14 +488,20 @@ body, body * {
 .torneo-header .format-h2 {
   margin: 0;
   text-align: center;
-  display: inline-block;
-  padding: 0.3rem 1.4rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.45rem 1.8rem;
   background: #ffffff;
   border: 3px solid var(--color-bracket-glow);
   color: var(--color-bracket-final);
   text-shadow: none;
   letter-spacing: 0.08em;
+  line-height: 1;
 }
+.llaves-badge__title { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.llaves-badge__subtitle { font-size: 0.7rem; letter-spacing: 0.12em; }
 
 .torneo-actions {
   display: flex;
@@ -541,6 +559,26 @@ body, body * {
   gap: 12px;
 }
 
+/* Ronda aparte (Tercer y Cuarto Puesto): título como pestaña blanca y el
+   cruce centrado, igual que el bloque "PODIO" del póster. Sigue siendo un
+   cruce real y editable, no barras decorativas. */
+.bracket-stages > .bracket-stage > .bracket-stage__header {
+  justify-content: center;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.bracket-stages > .bracket-stage > .bracket-stage__header .bracket-stage__title {
+  padding: 0.3rem 1.2rem;
+  background: #ffffff;
+  color: var(--color-bracket-final);
+  text-shadow: none;
+  font-size: 1rem;
+}
+.bracket-stages > .bracket-stage > .bracket-stage__matches {
+  grid-template-columns: minmax(220px, 320px);
+  justify-content: center;
+}
+
 /* Bracket principal (Octavos→Cuartos→Semifinal→Final) como dos mitades
    espejadas que convergen al centro, en vez de una fila por ronda. Cada
    columna reparte sus cruces con space-around para quedar centrada frente
@@ -580,6 +618,21 @@ body, body * {
   border-bottom: none;
   padding-bottom: 0;
   text-align: center;
+}
+
+/* En el árbol de escritorio sólo la Final lleva rótulo (pestaña blanca,
+   como en el póster); en mobile los rótulos de ronda vuelven a mostrarse
+   porque ahí sí hacen falta para ubicarse en la pila. */
+@media (min-width: 901px) {
+  .bracket-tree .bracket-stage__header { display: none; }
+  .bracket-tree__col--final .bracket-stage__header { display: flex; }
+}
+.bracket-tree__col--final .bracket-stage__title {
+  padding: 0.25rem 1.1rem;
+  background: #ffffff;
+  color: var(--color-bracket-final);
+  text-shadow: none;
+  font-size: 1rem;
 }
 
 @media (max-width: 900px) {
