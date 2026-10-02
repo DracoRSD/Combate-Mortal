@@ -459,10 +459,16 @@ body, body * {
   z-index: -1;
   background: #060b1a;
 }
+/* En la pantalla de llaves la cabecera de la app se oculta para que el
+   póster use todo el alto disponible al proyectarlo. */
+.app:has(#screenTorneo.active) .cm-brand,
+.app:has(#screenTorneo.active) .cm-tagline {
+  display: none;
+}
 
 .llaves {
   position: relative;
-  width: min(100%, calc((100vh - 130px) * 0.8));
+  width: min(100%, 1500px);
   aspect-ratio: 4 / 5;
   margin: 0 auto;
   background: #060b1a url('../../assets/images/llaves-poster.jpg') center / 100% 100% no-repeat;
