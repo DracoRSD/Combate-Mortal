@@ -73,17 +73,13 @@
 
         <!-- ================= Torneo ================= -->
         <section class="screen" id="screenTorneo">
-            <div class="torneo-header">
-                <button class="btn-back btn-back--torneo" id="btnTorneoVolver" data-nav-item>&lsaquo; Formato</button>
-                <h2 class="format-h2 llaves-badge">
-                    <span class="llaves-badge__title">Llaves</span>
-                    <span class="llaves-badge__subtitle">Torneo Combate Mortal</span>
-                </h2>
-                <div class="torneo-actions">
-                    <button class="btn-back" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
+            <div class="llaves">
+                <div class="torneo-header">
+                    <button class="llaves__corner llaves__corner--left" id="btnTorneoVolver" data-nav-item>&lsaquo; Formato</button>
+                    <button class="llaves__corner llaves__corner--right" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
                 </div>
+                <div class="bracket-stages" id="bracketStages"></div>
             </div>
-            <div class="bracket-stages" id="bracketStages"></div>
         </section>
 
         <!-- ================= Selección de luchadores ================= -->
