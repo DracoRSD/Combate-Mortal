@@ -1,53 +1,240 @@
-/* Estilos propios de la pantalla del contador (Etapa/Batalla, formato,
-   duelo, barra de vida, círculo del tiempo, controles y pantalla de
-   ganador). Los estilos compartidos con el resto de la app (body, marca,
-   fondo de rayos, texto cromado) viven en index.css, cargado en la misma
-   página. */
-#screenContador {
-  gap: 18px;
+/* Pantalla de batalla (Etapa/Batalla, formato, duelo, barra de vida,
+   anillo del tiempo, controles y pantalla de ganador). Capa visual
+   cinematográfica: fondo de tormenta a pantalla completa, niebla, rayos y
+   partículas (js/modules/BattleFX.js), tarjetas con marco cromado y
+   reflejo, anillo con marcas y punta brillante. Todo escala con vh/clamp.
+
+   Paleta: negro azulado #020611, azul profundo #0a1f44, azul eléctrico
+   #1e90ff, cian claro #7fd0ff, blanco azulado #eaf6ff.
+
+   Rendimiento: sólo se animan transform y opacity (y el stroke-dashoffset
+   del anillo, que ya existía); nada de blur ni filtros sobre capas grandes.
+   Los estilos compartidos (body, marca, texto cromado) viven en index.css. */
+:root {
+  --b-night: #020611;
+  --b-deep: #0a1f44;
+  --b-electric: #1e90ff;
+  --b-cyan: #7fd0ff;
+  --b-white: #eaf6ff;
+  --b-hot: #ff5a2a;
+  --b-chrome: linear-gradient(160deg, #f4f7fa 0%, #9aa7b6 18%, #ffffff 32%, #5c6b7c 50%, #e8eef4 68%, #7d8b9b 84%, #f4f7fa 100%);
+  --b-chrome-text: linear-gradient(180deg, #ffffff 0%, #d9e4f0 35%, #8ea0b6 52%, #e6eef7 70%, #ffffff 100%);
+  --b-plate: linear-gradient(180deg, #1b2d4d 0%, #0a1f44 55%, #061430 100%);
+  --b-plate-border: rgba(30, 144, 255, 0.75);
+  --b-plate-shadow: 0 0 14px rgba(30, 144, 255, 0.35), inset 0 1px 0 rgba(234, 246, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
 }
 
-/* ---------- Barra de etapa / batalla ---------- */
+/* Composición a pantalla completa, estilo VS de juego de lucha: las dos
+   tarjetas a los lados y, en la columna central, de arriba abajo, las
+   placas de etapa/batalla y formato, el anillo del tiempo y los controles.
+   Las placas y los controles se posicionan sobre la columna central para
+   que todo quepa en 100vh con tarjetas de 62vh. */
+#screenContador {
+  position: relative;
+  gap: 0;
+  padding-bottom: 0;
+}
+
+@media (min-width: 901px) {
+  #screenContador > .bracket-bar,
+  #screenContador > .format-info,
+  #screenContador > .controls,
+  #screenContador > .word-label {
+    position: absolute;
+    left: 50%;
+    max-width: min(46vw, 760px);
+  }
+  #screenContador > .bracket-bar { top: 0.5vh; transform: translateX(-50%); }
+  #screenContador > .format-info { top: 9.5vh; transform: translateX(-50%); }
+  #screenContador > .word-label { top: 58vh; transform: translateX(-50%) skew(-8deg); }
+  #screenContador > .controls { bottom: 0.5vh; transform: translateX(-50%); width: max-content; }
+  #screenContador > .hint {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0.6vh;
+    max-width: none;
+  }
+}
+
+/* En batalla la marca de la app y los rayos globales de fondo se apagan:
+   el fondo de tormenta y la capa de efectos ocupan toda la pantalla. */
+.app:has(#screenContador.active) {
+  max-width: none;
+  padding: clamp(6px, 1.2vh, 16px) clamp(10px, 2vw, 32px) 1vh;
+}
+.app:has(#screenContador.active) .cm-brand,
+.app:has(#screenContador.active) .cm-tagline,
+body:has(#screenContador.active) .bolt-canvas {
+  display: none;
+}
+
+/* ---------- Fondo, viñeta, niebla, partículas, rayos, destello ---------- */
+.battle-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--b-night);
+}
+
+.battle-bg__image {
+  position: absolute;
+  inset: 0;
+  background-color: var(--b-night);
+  background-size: cover;
+  background-position: center 60%;
+  background-repeat: no-repeat;
+  will-change: transform;
+  animation: bg-zoom 40s ease-in-out infinite alternate;
+}
+
+@keyframes bg-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+.battle-bg__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, var(--b-night) 0%, rgba(2, 6, 17, 0) 26%, rgba(2, 6, 17, 0) 68%, var(--b-night) 100%),
+    radial-gradient(ellipse 72% 62% at 50% 50%, rgba(2, 6, 17, 0) 50%, rgba(2, 6, 17, 0.88) 100%);
+}
+
+.battle-fog {
+  position: absolute;
+  left: -50%;
+  width: 200%;
+  height: 40vh;
+  bottom: -4vh;
+  will-change: transform;
+  background:
+    radial-gradient(ellipse 22% 55% at 18% 70%, rgba(30, 144, 255, 0.55) 0%, rgba(30, 144, 255, 0) 70%),
+    radial-gradient(ellipse 28% 60% at 46% 85%, rgba(127, 208, 255, 0.4) 0%, rgba(127, 208, 255, 0) 70%),
+    radial-gradient(ellipse 24% 50% at 72% 65%, rgba(30, 144, 255, 0.5) 0%, rgba(30, 144, 255, 0) 70%),
+    radial-gradient(ellipse 30% 45% at 92% 90%, rgba(10, 31, 68, 0.9) 0%, rgba(10, 31, 68, 0) 70%);
+}
+.battle-fog--a { opacity: 0.22; animation: fog-drift-a 70s ease-in-out infinite alternate; }
+.battle-fog--b { opacity: 0.16; height: 32vh; animation: fog-drift-b 55s ease-in-out infinite alternate; }
+
+@keyframes fog-drift-a {
+  from { transform: translate3d(-8%, 0, 0); }
+  to { transform: translate3d(8%, -2%, 0); }
+}
+@keyframes fog-drift-b {
+  from { transform: translate3d(9%, 0, 0) scaleX(-1); }
+  to { transform: translate3d(-9%, -1.5%, 0) scaleX(-1); }
+}
+
+.battle-particles,
+.battle-lightning {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.battle-bolt path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: bolt-flicker 150ms steps(1, end) forwards, bolt-fade 500ms ease-out forwards;
+}
+.battle-bolt--strong path { animation-duration: 180ms, 800ms; }
+.battle-bolt__halo { stroke: var(--b-electric); opacity: 0.3; }
+.battle-bolt__glow { stroke: var(--b-electric); opacity: 0.7; }
+.battle-bolt__core { stroke: var(--b-white); }
+
+/* Parpadeo doble: on / off / on dentro de los primeros 150 ms y luego se
+   desvanece. */
+@keyframes bolt-flicker {
+  0% { visibility: visible; }
+  40% { visibility: hidden; }
+  60% { visibility: visible; }
+}
+@keyframes bolt-fade {
+  0%, 35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.battle-bolt__halo { animation-name: bolt-flicker, bolt-fade-halo; }
+@keyframes bolt-fade-halo {
+  0%, 35% { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+.battle-bolt__glow { animation-name: bolt-flicker, bolt-fade-glow; }
+@keyframes bolt-fade-glow {
+  0%, 35% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+.battle-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--b-cyan);
+  opacity: 0;
+}
+.battle-flash.is-flash { animation: screen-flash 320ms ease-out; }
+.battle-flash.is-flash-strong { animation: screen-flash-strong 520ms ease-out; }
+.battle-flash.is-flash-final { animation: screen-flash-final 900ms ease-out; }
+
+@keyframes screen-flash {
+  0% { opacity: 0; } 12% { opacity: 0.1; } 30% { opacity: 0.02; } 45% { opacity: 0.08; } 100% { opacity: 0; }
+}
+@keyframes screen-flash-strong {
+  0% { opacity: 0; } 10% { opacity: 0.2; } 30% { opacity: 0.05; } 45% { opacity: 0.16; } 100% { opacity: 0; }
+}
+@keyframes screen-flash-final {
+  0% { opacity: 0; } 8% { opacity: 0.34; } 30% { opacity: 0.12; } 45% { opacity: 0.26; } 100% { opacity: 0; }
+}
+
+/* Tecla F: efectos ambientales apagados (el JS detiene rayos aleatorios y
+   partículas; aquí se congelan niebla y zoom). */
+body.fx-off .battle-fog,
+body.fx-off .battle-particles { display: none; }
+body.fx-off .battle-bg__image { animation-play-state: paused; }
+
+/* ---------- Encabezado: placas metálicas ---------- */
 .bracket-bar {
   position: relative;
   display: flex;
   align-items: stretch;
   justify-content: center;
   flex-wrap: wrap;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%),
-    linear-gradient(180deg, #101c2e, #060b14);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 0.6rem 1.6rem;
-  box-shadow: var(--shadow-box), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: var(--b-plate);
+  border: 1px solid var(--b-plate-border);
+  border-radius: 10px;
+  padding: clamp(4px, 0.8vh, 10px) clamp(10px, 1.6vw, 26px);
+  box-shadow: var(--b-plate-shadow);
   overflow: hidden;
+  transition: opacity 0.6s ease;
 }
 
 .bracket-bar::before {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
-  height: 2px;
-  background: var(--gradient-primary);
-  opacity: 0.85;
+  height: 3px;
+  background: var(--b-chrome);
+  opacity: 0.9;
 }
 
 .bracket-field,
 .battle-counter {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.15rem 1.4rem;
+  gap: clamp(6px, 0.8vw, 12px);
+  padding: 0.15rem clamp(10px, 1.4vw, 24px);
 }
 
 .bracket-bar > * + * {
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid rgba(30, 144, 255, 0.35);
 }
 
 .bracket-field__icon {
-  font-size: 1.4rem;
-  filter: drop-shadow(0 0 6px rgba(63, 182, 255, 0.5));
+  font-size: clamp(1.1rem, 2.4vh, 1.6rem);
+  filter: drop-shadow(0 0 6px rgba(30, 144, 255, 0.6));
 }
 
 .bracket-field__body {
@@ -59,34 +246,35 @@
 .bracket-field label,
 .battle-counter label {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.68rem;
+  font-size: clamp(0.6rem, 1.2vh, 0.8rem);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--color-secondary);
-  opacity: 0.75;
+  color: var(--b-cyan);
+  opacity: 0.8;
 }
 
 .bracket-bar select {
   appearance: none;
   -webkit-appearance: none;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237fdcff'/%3E%3C/svg%3E") no-repeat right 0.6rem center,
-    #0d1420;
-  background-size: 10px 6px;
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237fd0ff'/%3E%3C/svg%3E") no-repeat right 0.6rem center,
+    linear-gradient(180deg, #0f2a55, #061430);
+  background-size: 10px 6px, auto;
+  color: var(--b-white);
+  border: 1px solid var(--b-plate-border);
   border-radius: 6px;
   padding: 0.3rem 1.6rem 0.3rem 0.55rem;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.05rem;
+  font-size: clamp(0.95rem, 2vh, 1.3rem);
   letter-spacing: 0.03em;
+  box-shadow: inset 0 1px 0 rgba(234, 246, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .bracket-bar select:hover,
 .bracket-bar select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 12px rgba(63, 182, 255, 0.4);
+  border-color: var(--b-cyan);
+  box-shadow: 0 0 12px rgba(30, 144, 255, 0.6), inset 0 1px 0 rgba(234, 246, 255, 0.3);
   outline: none;
 }
 
@@ -104,36 +292,37 @@
   font-family: 'Anton', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 1.3rem;
+  font-size: clamp(1.1rem, 2.6vh, 1.7rem);
   min-width: 1.6em;
   text-align: center;
 }
 
 .battle-num span {
-  color: var(--color-accent);
+  color: var(--b-cyan);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px rgba(127, 220, 255, 0.55);
+  text-shadow: 0 0 10px rgba(127, 208, 255, 0.65);
 }
 
 .step-btn {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: clamp(1.7rem, 3.4vh, 2.3rem);
+  height: clamp(1.7rem, 3.4vh, 2.3rem);
   border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: linear-gradient(180deg, #16233a, #0a1220);
-  color: var(--color-text);
+  border: 1px solid var(--b-plate-border);
+  background: linear-gradient(180deg, #1b2d4d, #061430);
+  color: var(--b-white);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(234, 246, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
   transition: border-color var(--transition-fast), color var(--transition-fast),
     box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .step-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-text-dark);
-  background: var(--gradient-primary);
-  box-shadow: 0 0 10px rgba(63, 182, 255, 0.55);
+  border-color: var(--b-cyan);
+  color: var(--b-night);
+  background: linear-gradient(180deg, var(--b-white), var(--b-cyan));
+  box-shadow: 0 0 10px rgba(30, 144, 255, 0.7);
 }
 
 .step-btn:active {
@@ -142,142 +331,275 @@
 
 /* ---------- Formato ---------- */
 .format-info {
+  position: relative;
   font-family: 'Anton', sans-serif;
-  font-size: 1.5rem;
-  color: var(--color-text-dark);
-  background: var(--gradient-primary);
-  padding: 8px 22px;
-  border-radius: 10px;
+  font-size: clamp(1.1rem, 3vh, 1.9rem);
+  color: var(--b-white);
+  background: var(--b-plate);
+  border: 1px solid var(--b-plate-border);
+  padding: clamp(5px, 0.9vh, 10px) clamp(16px, 2.4vw, 34px);
+  border-radius: 8px;
   z-index: 2;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: var(--shadow-box);
+  letter-spacing: 0.08em;
+  box-shadow: var(--b-plate-shadow);
+  text-shadow: 0 0 12px rgba(30, 144, 255, 0.7);
+  overflow: hidden;
+}
+.format-info::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--b-chrome);
 }
 
-/* ---------- Duelo (MC / timer / MC) ---------- */
+/* ---------- Duelo (MC / anillo / MC) ---------- */
 .duel {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) auto minmax(200px, 1fr);
+  grid-template-columns: minmax(0, auto) minmax(44vw, auto) minmax(0, auto);
   align-items: center;
   justify-content: center;
-  gap: clamp(0.75rem, 3vw, 2.5rem);
+  justify-items: center;
+  gap: clamp(0.75rem, 2vw, 3rem);
   width: 100%;
-  max-width: 1300px;
+  padding: 0 clamp(8px, 2vw, 40px);
+  box-sizing: border-box;
+  margin-bottom: clamp(10px, 7vh, 90px);
 }
 
 .mc {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: clamp(4px, 0.9vh, 12px);
 }
+
+/* Orden de arriba abajo: TURNO, nombre, barra de vida, tarjeta (el reflejo
+   de la tarjeta necesita el suelo libre debajo). */
+.mc-turn-tag { order: 1; }
+.mc-name { order: 2; }
+.mc-country { order: 3; }
+.hp-bar { order: 4; }
+.mc-card { order: 5; }
 
 .mc-turn-tag {
   font-family: 'Anton', sans-serif;
-  font-size: 0.8rem;
-  letter-spacing: 0.24em;
-  color: var(--color-border);
-  height: 1.6em;
-  padding: 0.15em 0.9em;
+  font-size: clamp(0.7rem, 1.6vh, 1rem);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: transparent;
+  height: 1.7em;
+  line-height: 1.5em;
+  padding: 0 1.1em;
   border: 1px solid transparent;
-  border-radius: 4px;
-  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  border-radius: 3px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 0;
+  transform: translateY(0.3em);
 }
 
 .mc.is-active .mc-turn-tag {
-  color: var(--color-text-dark);
-  background: var(--gradient-primary);
-  border-color: var(--color-primary);
+  opacity: 1;
+  transform: none;
+  color: var(--b-deep);
+  background: var(--b-chrome);
+  border-color: var(--b-white);
+  box-shadow: 0 0 14px rgba(30, 144, 255, 0.85), 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
-/* ---------- Barra de vida (estilo juego de lucha) ---------- */
+.mc-name {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(1.5rem, 4.6vh, 3.4rem);
+  line-height: 1.05;
+  text-align: center;
+  background: var(--b-chrome-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 0.8vh rgba(30, 144, 255, 0.75)) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.6));
+}
+
+.mc-country {
+  font-size: clamp(0.75rem, 1.5vh, 1rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--b-cyan);
+  opacity: 0.9;
+}
+
+.mc-country:empty {
+  display: none;
+}
+
+/* ---------- Barra de vida segmentada con bisel ---------- */
 .hp-bar {
-  width: clamp(200px, 25vw, 340px);
-  height: 14px;
+  position: relative;
+  width: min(46.5vh, 42vw);
+  height: clamp(14px, 2.4vh, 24px);
   padding: 2px;
-  border: 2px solid var(--color-border);
-  border-radius: 6px;
-  background: rgba(5, 7, 15, 0.8);
+  border: 2px solid #7d8b9b;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #060b16, #0a1f44 60%, #040812);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(0, 0, 0, 0.7), 0 0 10px rgba(30, 144, 255, 0.4);
   display: flex;
+  overflow: hidden;
 }
 
 .mc[data-side="b"] .hp-bar {
   justify-content: flex-end;
 }
 
+.hp-bar::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--b-night) calc(10% - 2px) 10%);
+  pointer-events: none;
+}
+
 .hp-bar__fill {
   width: 100%;
   height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #3ddc84, #7fdcff);
-  box-shadow: 0 0 10px rgba(61, 220, 132, 0.55);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #a6ffb0 0%, #3ddc84 45%, #15803d 100%);
+  box-shadow: 0 0 10px rgba(61, 220, 132, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   transition: width 0.4s ease, background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .hp-bar__fill.is-warn {
-  background: linear-gradient(90deg, var(--color-warn), #ffdd7a);
-  box-shadow: 0 0 10px rgba(255, 181, 69, 0.55);
+  background: linear-gradient(180deg, #fff1a8 0%, #ffd23f 45%, #b7791f 100%);
+  box-shadow: 0 0 10px rgba(255, 210, 63, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .hp-bar__fill.is-critical {
-  background: linear-gradient(90deg, var(--color-danger), #ff8a7a);
-  box-shadow: 0 0 12px rgba(255, 59, 82, 0.65);
+  background: linear-gradient(180deg, #ffb3a8 0%, #ff3b52 45%, #8f1424 100%);
+  box-shadow: 0 0 12px rgba(255, 59, 82, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Retrato grande estilo pantalla de VS (Tekken): panel rectangular con
-   esquinas rectas parejas en ambos lados, en vez del antiguo avatar
-   circular pequeño. */
-.mc-frame {
-  position: relative;
-  width: clamp(200px, 25vw, 340px);
-  aspect-ratio: 3 / 4;
-  border-radius: 10px;
-  border: 3px solid var(--color-border);
-  background: #0d1420;
-  box-shadow: 0 0 24px rgba(5, 7, 15, 0.6);
-  overflow: hidden;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-
-.mc-frame:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-}
-
-.mc.is-active .mc-frame {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(63, 182, 255, 0.4), 0 0 44px rgba(63, 182, 255, 0.55);
-}
-
-.mc-frame__bolts {
+.hp-bar__trail {
   position: absolute;
-  inset: -18%;
-  width: 136%;
-  height: 136%;
+  top: 2px;
+  bottom: 2px;
+  background: var(--b-white);
+  animation: hp-trail 0.55s ease-out forwards;
   pointer-events: none;
 }
 
+@keyframes hp-trail {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------- Tarjeta del MC: marco cromado, esquinas cortadas, reflejo ---------- */
+.mc-card {
+  position: relative;
+  width: min(46.5vh, 42vw);
+  aspect-ratio: 3 / 4;
+  transition: transform 0.35s ease;
+  -webkit-box-reflect: below 0.6vh linear-gradient(rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.25) 100%);
+}
+
+.mc.is-active .mc-card {
+  transform: scale(1.03);
+}
+
+/* Aura eléctrica pulsante del lado con el turno (sólo cambia opacity). */
+.mc-card::before {
+  content: '';
+  position: absolute;
+  inset: -0.4vh;
+  border-radius: 4px;
+  box-shadow: 0 0 2.2vh 0.3vh rgba(30, 144, 255, 0.9), 0 0 7vh 1vh rgba(30, 144, 255, 0.45);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.mc.is-active .mc-card::before {
+  opacity: 1;
+  animation: aura-pulse 1.4s ease-in-out infinite;
+}
+@keyframes aura-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.mc-frame {
+  --cut: clamp(10px, 2.2vh, 24px);
+  --bw: clamp(3px, 0.55vh, 6px);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  background: var(--b-chrome);
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.mc-frame:focus-visible {
+  outline: none;
+}
+.mc-frame:focus-visible::after {
+  box-shadow: inset 0 0 0 3px var(--b-cyan), inset 0 0 6vh rgba(30, 144, 255, 0.55);
+}
+
+/* El recorte en chaflán va en un contenedor interno: la foto lleva un
+   transform de zoom y, si el clip-path estuviera en ella misma, se movería
+   con ella y taparía el marco. */
+.mc-frame__inner,
+.mc-frame::after {
+  position: absolute;
+  inset: var(--bw);
+  clip-path: polygon(calc(var(--cut) - var(--bw)) 0, calc(100% - var(--cut) + var(--bw)) 0, 100% calc(var(--cut) - var(--bw)), 100% calc(100% - var(--cut) + var(--bw)), calc(100% - var(--cut) + var(--bw)) 100%, calc(var(--cut) - var(--bw)) 100%, 0 calc(100% - var(--cut) + var(--bw)), 0 calc(var(--cut) - var(--bw)));
+}
+.mc-frame__inner {
+  overflow: hidden;
+  background: var(--b-deep);
+}
+
 .mc-frame__photo,
-.mc-frame__fallback {
+.mc-frame__fallback,
+.mc-frame__hitflash {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  background: #0d1420;
 }
 
-/* Las fotos traen un banner "Participante confirmado" quemado en la
-   parte superior; se recorta agrandando la imagen y desplazándola
-   hacia arriba dentro del marco. */
+.mc-frame__photo,
+.mc-frame__fallback {
+  object-fit: cover;
+  object-position: top center;
+  background: var(--b-deep);
+}
+
+/* Las fotos traen un banner "Participante confirmado" quemado en la parte
+   superior; se recorta agrandando la imagen y desplazándola hacia arriba. */
 .mc-frame__photo {
   transform: scale(1.35) translateY(-14%);
   transform-origin: center top;
+  transition: filter 0.35s ease;
+}
+
+/* Lado sin el turno: foto atenuada y desaturada. */
+.mc:not(.is-active) .mc-frame__photo,
+.mc:not(.is-active) .mc-frame__fallback {
+  filter: brightness(0.7) saturate(0.6);
+}
+
+/* Brillo interior azul (y oscurecimiento al quedar sin vida). */
+.mc-frame::after {
+  content: '';
+  box-shadow: inset 0 0 6vh rgba(30, 144, 255, 0.5), inset 0 0 1.2vh rgba(127, 208, 255, 0.5);
+  pointer-events: none;
+  transition: background 0.8s ease;
 }
 
 .mc-frame__fallback {
@@ -285,58 +607,79 @@
   align-items: center;
   justify-content: center;
   font-family: 'Anton', sans-serif;
-  font-size: clamp(3.2rem, 9vw, 5.5rem);
-  color: var(--color-accent);
+  font-size: clamp(3.2rem, 16vh, 8rem);
+  color: var(--b-cyan);
   letter-spacing: 0.05em;
-  background: linear-gradient(160deg, #0d1420, #16233a);
+  background: linear-gradient(160deg, #0a1f44, #061430);
 }
 
 .mc-frame__fallback.is-visible {
   display: flex;
 }
 
-/* ---------- Efecto de golpe: flash rojo + sacudida al recibir daño ---------- */
-.mc-frame__hitflash {
+/* Arcos eléctricos recorriendo el marco del lado con el turno. */
+.mc-card__arcs {
   position: absolute;
-  inset: 0;
-  background: rgba(255, 30, 50, 0.75);
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mc.is-active .mc-card__arcs { opacity: 1; }
+
+.mc-card__arc {
+  fill: none;
+  stroke: var(--b-white);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 14 1378;
+  animation: arc-run 2.2s linear infinite, arc-flicker 0.22s steps(2, end) infinite;
+}
+.mc-card__arc--2 {
+  stroke: var(--b-cyan);
+  stroke-dasharray: 8 1384;
+  animation-duration: 3.1s, 0.17s;
+  animation-direction: reverse, normal;
+}
+@keyframes arc-run {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -1392; }
+}
+@keyframes arc-flicker {
+  0% { opacity: 1; }
+  100% { opacity: 0.35; }
+}
+
+/* ---------- Golpe: destello blanco, vibración de 150 ms ---------- */
+.mc-frame__hitflash {
+  background: var(--b-white);
   opacity: 0;
   pointer-events: none;
 }
 
 .mc-frame.is-hit .mc-frame__hitflash {
-  animation: hit-flash 0.45s ease-out;
+  animation: hit-flash 0.3s ease-out;
 }
 
 .mc-frame.is-hit {
-  animation: hit-shake 0.45s ease-out;
-}
-
-.mc-frame.is-hit .mc-frame__photo {
-  animation: hit-tint 0.45s ease-out;
+  animation: hit-shake 0.15s ease-out;
 }
 
 @keyframes hit-flash {
   0% { opacity: 0; }
-  10% { opacity: 1; }
-  40% { opacity: 0.25; }
+  10% { opacity: 0.95; }
+  45% { opacity: 0.25; }
   100% { opacity: 0; }
 }
 
-@keyframes hit-tint {
-  0% { filter: brightness(1); }
-  10% { filter: brightness(1.6); }
-  100% { filter: brightness(1); }
-}
-
 @keyframes hit-shake {
-  0%, 100% { transform: translateX(0); }
-  15% { transform: translateX(-8px); }
-  30% { transform: translateX(7px); }
-  45% { transform: translateX(-5px); }
-  60% { transform: translateX(4px); }
-  75% { transform: translateX(-2px); }
-  90% { transform: translateX(1px); }
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-7px, 2px); }
+  40% { transform: translate(6px, -2px); }
+  60% { transform: translate(-4px, 1px); }
+  80% { transform: translate(3px, -1px); }
 }
 
 /* ---------- Derrota: se queda sin vida, como un K.O. ---------- */
@@ -346,17 +689,14 @@
   transition: filter 0.8s ease;
 }
 
-.mc.is-defeated .mc-frame {
-  border-color: #262e3d;
-  box-shadow: none;
+.mc.is-defeated .mc-frame::after {
+  background: rgba(0, 0, 0, 0.45);
 }
 
-.mc.is-defeated .mc-frame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  pointer-events: none;
+.mc.is-defeated .mc-card::before,
+.mc.is-defeated .mc-card__arcs {
+  opacity: 0;
+  animation: none;
 }
 
 .mc.is-defeated .mc-turn-tag {
@@ -368,45 +708,49 @@
   opacity: 0.5;
 }
 
-.mc-name {
-  font-family: 'Anton', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: clamp(1.4rem, 3vw, 2.1rem);
-  text-align: center;
-}
-
-.mc-country {
-  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-secondary);
-  opacity: 0.9;
-}
-
-.mc-country:empty {
-  display: none;
-}
-
-/* ---------- Círculo del tiempo ---------- */
+/* ---------- Anillo del tiempo ---------- */
 .circle-timer {
   position: relative;
-  width: clamp(190px, 24vw, 300px);
+  width: clamp(190px, 34vh, 420px);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
-  animation: ring-glow 1.6s infinite ease-in-out;
-  overflow: hidden;
+  container-type: inline-size;
 }
 
-@keyframes ring-glow {
-  0% { box-shadow: 0 0 15px rgba(63, 182, 255, 0.5); }
-  50% { box-shadow: 0 0 30px rgba(63, 182, 255, 0.85); }
-  100% { box-shadow: 0 0 15px rgba(63, 182, 255, 0.5); }
+.circle-timer::before {
+  content: '';
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  box-shadow: 0 0 5vh 0.5vh rgba(30, 144, 255, 0.55), inset 0 0 4vh rgba(30, 144, 255, 0.25);
+  animation: ring-breathe 2.4s ease-in-out infinite;
+  transition: opacity 0.8s ease;
+}
+
+@keyframes ring-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.timer-ticks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.timer-ticks line {
+  stroke: rgba(127, 208, 255, 0.55);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+.timer-ticks line.is-major {
+  stroke: var(--b-white);
+  stroke-width: 1.6;
 }
 
 .progress-ring {
@@ -417,24 +761,79 @@
   width: 100%;
   height: 100%;
   z-index: 0;
+  overflow: visible;
+  transition: opacity 0.8s ease;
+}
+
+.progress-ring__track {
+  stroke: rgba(30, 144, 255, 0.16);
+  stroke-width: 10;
+  fill: transparent;
+}
+
+.progress-ring__glow {
+  stroke: var(--b-electric);
+  stroke-width: 20;
+  opacity: 0.32;
+  fill: transparent;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
 }
 
 .progress-ring__circle {
-  stroke: var(--color-primary);
-  stroke-width: 12;
+  stroke: var(--b-electric);
+  stroke-width: 10;
   fill: transparent;
+  stroke-linecap: round;
   transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-  filter: drop-shadow(0 0 8px var(--color-primary));
 }
 
-.circle-timer.warn .progress-ring__circle {
-  stroke: var(--color-warn);
-  filter: drop-shadow(0 0 8px var(--color-warn));
+.timer-tip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(8px, 1.5vh, 16px);
+  height: clamp(8px, 1.5vh, 16px);
+  margin: calc(clamp(8px, 1.5vh, 16px) / -2) 0 0 calc(clamp(8px, 1.5vh, 16px) / -2);
+  border-radius: 50%;
+  background: var(--b-white);
+  box-shadow: 0 0 1.2vh 0.4vh var(--b-electric), 0 0 3vh 0.8vh rgba(30, 144, 255, 0.6);
+  transition: transform 1s linear, opacity 0.3s ease;
+  pointer-events: none;
 }
+.timer-tip.is-hidden { opacity: 0; }
 
-.circle-timer.critical .progress-ring__circle {
-  stroke: var(--color-danger);
-  filter: drop-shadow(0 0 10px var(--color-danger));
+/* Arcos eléctricos orbitando el anillo mientras corre el tiempo. */
+.timer-arcs {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.circle-timer.is-running .timer-arcs { opacity: 1; }
+
+.timer-arc {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9cqw;
+  height: 4cqw;
+  margin: -2cqw 0 0 -4.5cqw;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 40'%3E%3Cpath d='M2 22 L18 14 L30 26 L44 10 L58 28 L72 16 L88 20' fill='none' stroke='%231e90ff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3Cpath d='M2 22 L18 14 L30 26 L44 10 L58 28 L72 16 L88 20' fill='none' stroke='%23eaf6ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+  animation: arc-orbit 2.8s linear infinite, arc-blink 0.3s steps(2, end) infinite;
+  animation-delay: calc(var(--i) * -0.93s), calc(var(--i) * -0.1s);
+}
+.timer-arc:nth-child(2) { animation-duration: 3.6s, 0.23s; animation-direction: reverse, normal; }
+.timer-arc:nth-child(3) { animation-duration: 2.2s, 0.37s; }
+
+@keyframes arc-orbit {
+  from { transform: rotate(0deg) translateY(-45cqw); }
+  to { transform: rotate(360deg) translateY(-45cqw); }
+}
+@keyframes arc-blink {
+  0% { opacity: 1; }
+  100% { opacity: 0.25; }
 }
 
 .time-wrapper {
@@ -444,49 +843,70 @@
 }
 
 .time-number {
-  font-size: clamp(3rem, 9vw, 5.5rem);
+  font-size: clamp(3rem, 12vh, 7.5rem);
   line-height: 1;
-  color: var(--color-text);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 16px rgba(63, 182, 255, 0.55);
   font-family: 'Anton', sans-serif;
-}
-
-.circle-timer.warn .time-number {
-  color: var(--color-warn);
-  text-shadow: 0 0 16px rgba(255, 181, 69, 0.55);
-}
-
-.circle-timer.critical .time-number {
-  color: var(--color-danger);
-  text-shadow: 0 0 18px rgba(255, 59, 82, 0.6);
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  background: var(--b-chrome-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 1vh rgba(30, 144, 255, 0.75)) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.6));
 }
 
 .time-label {
-  font-size: 1.2rem;
-  color: var(--color-secondary);
-  letter-spacing: 0.1em;
+  font-size: clamp(0.9rem, 2vh, 1.4rem);
+  color: var(--b-cyan);
+  letter-spacing: 0.14em;
   font-family: 'Bebas Neue', sans-serif;
 }
 
+/* Últimos 10 segundos: rojo anaranjado y un latido por segundo. */
+.circle-timer.is-critical {
+  animation: ring-beat 1s ease-in-out infinite;
+}
+.circle-timer.is-critical::before {
+  box-shadow: 0 0 5vh 0.5vh rgba(255, 90, 42, 0.6), inset 0 0 4vh rgba(255, 90, 42, 0.3);
+}
+.circle-timer.is-critical .progress-ring__circle,
+.circle-timer.is-critical .progress-ring__glow {
+  stroke: var(--b-hot);
+}
+.circle-timer.is-critical .timer-tip {
+  box-shadow: 0 0 1.2vh 0.4vh var(--b-hot), 0 0 3vh 0.8vh rgba(255, 90, 42, 0.6);
+}
+.circle-timer.is-critical .time-number {
+  background: linear-gradient(180deg, #ffe4d6 0%, #ff8a5c 40%, #ff5a2a 60%, #a12a0c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 1vh rgba(255, 90, 42, 0.8)) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.6));
+}
+.circle-timer.is-critical .time-label { color: #ffb399; }
+
+@keyframes ring-beat {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.06); }
+  30% { transform: scale(1); }
+}
+
+/* Al llegar a 0 el anillo se apaga. */
+.circle-timer.is-done .progress-ring,
+.circle-timer.is-done .timer-tip,
+.circle-timer.is-done::before {
+  opacity: 0;
+}
+
 .word-label {
-  font-size: 2.2rem;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(6px);
-  color: var(--color-text);
-  padding: 12px 34px;
+  font-size: clamp(1.4rem, 3.6vh, 2.4rem);
+  background: rgba(10, 31, 68, 0.75);
+  color: var(--b-white);
+  padding: 0.5em 1.4em;
   transform: skew(-8deg);
   z-index: 2;
   font-family: 'Anton', sans-serif;
-  text-shadow: var(--shadow-text);
-  border: 2px solid var(--color-accent);
-  box-shadow: var(--shadow-box);
+  text-shadow: 0 0 12px rgba(30, 144, 255, 0.8);
+  border: 2px solid var(--b-cyan);
+  box-shadow: 0 0 20px rgba(30, 144, 255, 0.45);
   display: none;
   border-radius: 6px;
 }
@@ -496,23 +916,24 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: clamp(6px, 1vh, 12px);
   z-index: 3;
 }
 
 .controls button,
 .winner-overlay button {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.05em;
-  color: var(--color-text);
-  background: rgba(0, 0, 0, 0.65);
-  padding: 10px 24px;
-  border: 2px solid var(--color-border);
-  border-radius: 10px;
+  font-size: clamp(0.95rem, 2.1vh, 1.35rem);
+  letter-spacing: 0.06em;
+  color: var(--b-white);
+  background: var(--b-plate);
+  padding: 0.55em 1.5em;
+  border: 1px solid var(--b-plate-border);
+  border-radius: 8px;
   cursor: pointer;
   text-transform: uppercase;
-  transition: all 0.2s ease;
+  box-shadow: var(--b-plate-shadow);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .controls button:hover,
@@ -520,13 +941,13 @@
 .winner-overlay button:hover,
 .winner-overlay button:focus-visible {
   transform: scale(1.05);
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-box);
+  border-color: var(--b-cyan);
+  box-shadow: 0 0 18px rgba(30, 144, 255, 0.7), inset 0 1px 0 rgba(234, 246, 255, 0.35);
 }
 
 .controls button:focus-visible,
 .winner-overlay button:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--b-cyan);
   outline-offset: 2px;
 }
 
@@ -535,41 +956,55 @@
   transform: scale(0.97);
 }
 
+.controls button:disabled {
+  opacity: 0.45;
+}
+
 .btn-start {
-  background: var(--gradient-primary);
-  color: var(--color-text-dark);
-  border-color: var(--color-primary);
+  background: linear-gradient(180deg, #7fd0ff, #1e90ff 60%, #0a4ea8);
+  color: var(--b-night);
+  border-color: var(--b-cyan);
   font-weight: bold;
+  text-shadow: none;
 }
 
 .btn-hit {
-  background: linear-gradient(45deg, var(--color-danger), #ff8a3d);
-  color: var(--color-text-dark);
-  border-color: var(--color-danger);
+  background: linear-gradient(180deg, #ff8a7a, #ff3b52 60%, #8f1424);
+  color: var(--b-night);
+  border-color: #ff8a7a;
   font-weight: bold;
 }
 
 .btn-hit:hover,
 .btn-hit:focus-visible {
-  box-shadow: 0 0 20px rgba(255, 59, 82, 0.5);
+  box-shadow: 0 0 20px rgba(255, 59, 82, 0.6);
 }
 
 .hint {
   text-align: center;
-  color: var(--color-secondary);
+  color: var(--b-cyan);
   opacity: 0.75;
-  font-size: 0.75rem;
+  font-size: clamp(0.7rem, 1.4vh, 0.9rem);
   letter-spacing: 0.02em;
-  max-width: 640px;
+  max-width: 760px;
+  transition: opacity 0.6s ease;
 }
 
 .hint kbd {
   font-family: 'Bebas Neue', sans-serif;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--color-border);
+  background: rgba(2, 6, 17, 0.7);
+  border: 1px solid rgba(30, 144, 255, 0.5);
   border-radius: 4px;
   padding: 1px 6px;
-  font-size: 0.72rem;
+  font-size: 0.95em;
+  color: var(--b-white);
+}
+
+/* Sin mover el ratón 5 s, la leyenda y los controles del encabezado se
+   esconden (vuelven al moverlo o al tocar una tecla). */
+#screenContador.is-idle .hint,
+#screenContador.is-idle .bracket-bar {
+  opacity: 0;
 }
 
 /* Media queries para responsividad */
@@ -577,15 +1012,17 @@
   .duel {
     grid-template-columns: 1fr;
     justify-items: center;
+    margin-bottom: 4vh;
   }
 
   .mc { order: 2; }
   .mc[data-side="a"] { order: 1; }
-  .circle-timer { order: 1; }
+  .circle-timer { order: 1; width: clamp(160px, 26vh, 300px); }
   .mc[data-side="b"] { order: 3; }
 
-  .mc-frame {
-    width: clamp(180px, 55vw, 280px);
+  .mc-card,
+  .hp-bar {
+    width: min(55vw, 36vh);
   }
 }
 
@@ -599,8 +1036,7 @@
   align-items: center;
   justify-content: center;
   gap: 1.4rem;
-  background: rgba(3, 5, 12, 0.94);
-  backdrop-filter: blur(4px);
+  background: rgba(2, 6, 17, 0.94);
   padding: 2rem;
 }
 
@@ -610,21 +1046,21 @@
 
 .winner-label {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-size: clamp(1.6rem, 5vh, 3rem);
   letter-spacing: 0.3em;
-  color: var(--color-accent);
-  text-shadow: var(--shadow-text);
+  color: var(--b-cyan);
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.8);
 }
 
 .winner-portrait {
   position: relative;
-  width: clamp(260px, 34vw, 460px);
+  width: clamp(260px, 42vh, 520px);
   aspect-ratio: 3 / 4;
   border-radius: 14px;
-  border: 4px solid var(--color-primary);
-  background: #0d1420;
+  border: 4px solid var(--b-electric);
+  background: var(--b-deep);
   overflow: hidden;
-  box-shadow: 0 0 0 3px rgba(63, 182, 255, 0.35), 0 0 60px rgba(63, 182, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.35), 0 0 60px rgba(30, 144, 255, 0.65);
 }
 
 .winner-portrait__photo,
@@ -635,7 +1071,7 @@
   height: 100%;
   object-fit: cover;
   object-position: top center;
-  background: #0d1420;
+  background: var(--b-deep);
 }
 
 .winner-portrait__photo {
@@ -649,8 +1085,8 @@
   justify-content: center;
   font-family: 'Anton', sans-serif;
   font-size: clamp(3.5rem, 10vw, 6rem);
-  color: var(--color-accent);
-  background: linear-gradient(160deg, #0d1420, #16233a);
+  color: var(--b-cyan);
+  background: linear-gradient(160deg, #0a1f44, #061430);
 }
 
 .winner-portrait__fallback.is-visible {
@@ -661,8 +1097,8 @@
   font-family: 'Anton', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  text-shadow: var(--shadow-text);
+  font-size: clamp(2rem, 6vh, 3.6rem);
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.8), 2px 2px 4px var(--b-night);
 }
 
 .winner-actions {
