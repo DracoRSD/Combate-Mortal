@@ -22,6 +22,26 @@
   --color-bracket-core: #e8f6ff;
   --color-bracket-final: #1e90ff;
 
+  /* Tokens del modo Torneo (pantalla de llaves), compartidos con la
+     selección de modo: mismos valores que usaba el torneo. */
+  --torneo-font-display: 'Anton', sans-serif;
+  --torneo-font-condensed: 'Bebas Neue', 'Anton', sans-serif;
+  --torneo-night: #060b1a;
+  --torneo-fill: #27375a;
+  --torneo-border: #ffffff;
+  --torneo-text: #ffffff;
+  --torneo-final: var(--color-bracket-final);
+  --torneo-glow: var(--color-bracket-glow);
+  --torneo-core: var(--color-bracket-core);
+  --torneo-pill-bg: rgba(6, 11, 26, 0.55);
+  --torneo-pill-bg-strong: rgba(6, 11, 26, 0.85);
+  --torneo-pill-border: rgba(255, 255, 255, 0.35);
+  --torneo-pill-text: rgba(255, 255, 255, 0.85);
+  --torneo-focus-ring: 0 0 0 2px rgba(79, 195, 247, 0.45), 0 0 12px rgba(79, 195, 247, 0.6);
+  --torneo-cta-bg: var(--gradient-primary);
+  --torneo-cta-text: var(--color-text-dark);
+  --torneo-cta-glow: rgba(79, 195, 247, 0.45);
+
   /* Estado crítico (temporizador) */
   --color-warn: #ffb545;
   --color-danger: #ff3b52;
