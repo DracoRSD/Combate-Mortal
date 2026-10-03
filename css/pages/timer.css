@@ -387,9 +387,36 @@ body:has(#screenContador.active) {
   display: flex;
 }
 
-/* El golpe (destello, vibración y chispas) lo pone el kit (cmfx-hit). */
+/* Efecto original de golpe (anterior al kit), recuperado tal cual; el kit
+   añade encima su vibración, destello y chispas (cmfx-hit). */
+/* ---------- Golpe: destello blanco, vibración de 150 ms ---------- */
 .mc-frame__hitflash {
-  display: none;
+  background: var(--b-white);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mc-frame.is-hit .mc-frame__hitflash {
+  animation: hit-flash 0.3s ease-out;
+}
+
+.mc-frame.is-hit {
+  animation: hit-shake 0.15s ease-out;
+}
+
+@keyframes hit-flash {
+  0% { opacity: 0; }
+  10% { opacity: 0.95; }
+  45% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+@keyframes hit-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-7px, 2px); }
+  40% { transform: translate(6px, -2px); }
+  60% { transform: translate(-4px, 1px); }
+  80% { transform: translate(3px, -1px); }
 }
 
 /* ---------- Derrota: se queda sin vida, como un K.O. ---------- */
@@ -543,6 +570,30 @@ body:has(#screenContador.active) {
     width: min(55vw, 36vh);
   }
 }
+
+/* ---------- Selección de modos: mismo ambiente del kit ----------
+   El motor se monta en #screenFormat (js/modules/BattleFX.js). La pantalla
+   ocupa todo el alto y se mete por debajo de la cabecera de la app, que
+   queda por encima; el fondo y los rayos globales anteriores se apagan. */
+body:has(#screenFormat.active) .bolt-canvas { display: none; }
+body:has(#screenFormat.active) { background: var(--b-night); }
+.app:has(#screenFormat.active) { padding-bottom: 0; }
+.app:has(#screenFormat.active) .cm-brand,
+.app:has(#screenFormat.active) .cm-tagline { position: relative; z-index: 2; }
+#screenFormat.active {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  margin-top: -9.5rem;
+  padding: 9.5rem clamp(8px, 2vw, 40px) 3rem;
+  justify-content: center;
+}
+#screenFormat .format-h2 {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.9), 0 2px 4px rgba(2, 6, 17, 0.9), 0 0 2px rgba(2, 6, 17, 1);
+}
+#screenFormat .mode-grid { position: relative; z-index: 1; }
 
 /* ---------- Pantalla de ganador ---------- */
 .winner-overlay {

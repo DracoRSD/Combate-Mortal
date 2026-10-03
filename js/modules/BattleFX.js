@@ -2,15 +2,15 @@ import { CMFX } from '../vendor/cmfx.js';
 import { CMFX_ASSETS } from '../vendor/cmfx-assets.js';
 
 /**
- * Puente entre la pantalla de batalla y el kit de efectos CMFX
- * (js/vendor/cmfx.js, copiado tal cual). No toca la lógica: todo lo deduce
- * observando el DOM que ya actualizan TimerController / BattleHUD /
- * DamageSystem (atributo `disabled` de Iniciar, texto del contador, clases
- * `is-active` / `is-hit`, ancho y clases de la barra de vida) y llama a la
- * API del kit (fx.start / turn / hit / zero / reset / toggle, core.set).
+ * Puente entre la app y el kit de efectos CMFX (js/vendor/cmfx.js, copiado
+ * tal cual). No toca la lógica: todo lo deduce observando el DOM que ya
+ * actualizan TimerController / BattleHUD / DamageSystem (atributo
+ * `disabled` de Iniciar, texto del contador, clases `is-active` / `is-hit`,
+ * ancho y clases de la barra de vida) y llama a la API del kit.
  *
- * El kit se inicializa al entrar a la pantalla de batalla y se destruye al
- * salir. Tecla F: fx.toggle() (efectos de ambiente).
+ * Hay un solo motor vivo a la vez: en la selección de modos se monta sin
+ * tarjetas ni contador (sólo ambiente) y en la batalla con tarjetas, núcleo
+ * y eventos. Al salir de cada pantalla se destruye. Tecla F: fx.toggle().
  */
 const IDLE_MS = 3000;
 const BOLTS = [
@@ -24,7 +24,64 @@ function sideOf(id) {
   return id.indexOf('A') !== -1 ? 'left' : 'right';
 }
 
-function init() {
+/* Un solo motor: `engine.mount(root, opts)` destruye el anterior (si lo
+   hubiera) antes de crear el nuevo, y `engine.unmount(root)` sólo destruye
+   si el vivo es el de esa pantalla. */
+function createEngine() {
+  let live = null;         // { root, api }
+  let pendingRoot = null;  // pantalla cuyo motor se está creando (init es asíncrono)
+  let token = 0;
+
+  async function mount(root, opts, onReady) {
+    unmount();
+    const my = ++token;
+    pendingRoot = root;
+    const api = await CMFX.init({ root, bolts: BOLTS, bg: CMFX_ASSETS.bg, ...opts });
+    if (my !== token || !root.classList.contains('active')) { api.destroy(); return null; }
+    pendingRoot = null;
+    live = { root, api };
+    if (onReady) onReady(api);
+    return api;
+  }
+
+  /* Sin `root` destruye lo que haya (vivo o en creación); con `root` sólo
+     lo de esa pantalla, para que el cierre de una pantalla no cancele el
+     motor que otra acaba de pedir en el mismo cambio. */
+  function unmount(root) {
+    if (!root || pendingRoot === root) { token++; pendingRoot = null; }
+    if (!live || (root && live.root !== root)) return;
+    live.api.reset();
+    live.api.destroy();
+    live.root.classList.remove('cmfx-off');
+    live = null;
+  }
+
+  return {
+    mount,
+    unmount,
+    get api() { return live ? live.api : null; },
+    isFor(root) { return !!live && live.root === root; }
+  };
+}
+
+function initMenu(engine) {
+  const screen = document.getElementById('screenFormat');
+  if (!screen) return;
+  let active = screen.classList.contains('active');
+  const sync = () => {
+    if (active) engine.mount(screen, { groundY: 0.8, els: {} });
+    else engine.unmount(screen);
+  };
+  new MutationObserver(() => {
+    const now = screen.classList.contains('active');
+    if (now === active) return;
+    active = now;
+    sync();
+  }).observe(screen, { attributes: true, attributeFilter: ['class'] });
+  if (active) sync();
+}
+
+function initBattle(engine) {
   const screen = document.getElementById('screenContador');
   if (!screen) return;
 
@@ -35,16 +92,14 @@ function init() {
   const timeLabel = document.getElementById('timeLabel');
   const mcA = document.getElementById('mcA');
 
-  let fx = null;
   let core = null;
-  let pending = null;
   let active = screen.classList.contains('active');
   let running = startButton.disabled;
   let total = 0;
-  let elapsed = 0;
   let zeroAt = -Infinity;
   let mountedAt = 0;
 
+  const fx = () => (engine.isFor(screen) ? engine.api : null);
   const turnSide = () => (mcA.classList.contains('is-active') ? 'left' : 'right');
 
   function readTime() {
@@ -64,8 +119,7 @@ function init() {
     const num = coreEl.querySelector('.cmfx-core__num');
     const lab = coreEl.querySelector('.cmfx-core__lab');
     if (t.stopwatch) {
-      elapsed = t.seconds;
-      core.set(elapsed, 0, running);
+      core.set(t.seconds, 0, running);
       if (num) num.textContent = countdown.textContent.trim();
       if (lab) lab.textContent = 'transcurrido';
       return;
@@ -83,29 +137,22 @@ function init() {
     return Math.min(0.95, Math.max(0.4, (r.bottom - b.top) / (b.height || 1)));
   }
 
-  async function mount() {
-    if (fx || pending) return;
-    pending = CMFX.init({
-      root: screen,
-      bg: CMFX_ASSETS.bg,
+  function mount() {
+    mountedAt = performance.now();
+    engine.mount(screen, {
       groundY: groundY(),
       els: { left: cards.left, right: cards.right, timer: coreEl },
-      bolts: BOLTS,
       turn: turnSide()
+    }, (api) => {
+      core = api.core(coreEl);
+      api.setTurn(turnSide());
+      mountedAt = performance.now();
+      pushTime();
     });
-    const api = await pending;
-    pending = null;
-    if (!screen.classList.contains('active')) { api.destroy(); return; }
-    fx = api;
-    core = fx.core(coreEl);
-    fx.setTurn(turnSide());
-    mountedAt = performance.now();
-    pushTime();
   }
 
   function unmount() {
-    if (fx) { fx.reset(); fx.destroy(); }
-    fx = null;
+    engine.unmount(screen);
     core = null;
     coreEl.classList.remove('cmfx-core');
     coreEl.innerHTML = '';
@@ -123,24 +170,26 @@ function init() {
     const disabled = startButton.disabled;
     if (disabled === running) return;
     running = disabled;
-    if (!fx) return;
+    const api = fx();
+    if (!api) return;
     if (running) {
-      fx.start();
-    } else {
+      api.start();
+    } else if (performance.now() - zeroAt > 400) {
       // Un reinicio justo después del 0 (paso automático de entrada) deja
       // que termine la descarga en vez de cortarla.
-      if (performance.now() - zeroAt > 400) fx.reset();
+      api.reset();
     }
     pushTime();
   }).observe(startButton, { attributes: true, attributeFilter: ['disabled'] });
 
   new MutationObserver(() => {
-    if (!core) return;
+    const api = fx();
+    if (!core || !api) return;
     const t = readTime();
     if (!t) return;
     if (running && !t.stopwatch && t.seconds <= 0) {
       core.set(0, total, false);
-      fx.zero();
+      api.zero();
       zeroAt = performance.now();
       return;
     }
@@ -153,22 +202,26 @@ function init() {
     const side = turnSide();
     if (side === lastTurn) return;
     lastTurn = side;
-    if (!fx) return;
+    const api = fx();
+    if (!api) return;
     // El turno inicial de una batalla nueva llega junto con la activación
     // de la pantalla: se fija sin rayo.
-    if (performance.now() - mountedAt < 150) fx.setTurn(side); else fx.turn(side);
+    if (performance.now() - mountedAt < 150) api.setTurn(side); else api.turn(side);
   }).observe(mcA, { attributes: true, attributeFilter: ['class'] });
 
   // ---- Golpe: la tarjeta que lo recibe ----
+  // DamageSystem quita y vuelve a poner `is-hit` en la misma pasada para
+  // reiniciar su animación, así que al llegar aquí la clase siempre está:
+  // hay golpe si alguna mutación partió de un estado sin la clase.
   ['mcAFrame', 'mcBFrame'].forEach((id) => {
     const frame = document.getElementById(id);
-    let wasHit = frame.classList.contains('is-hit');
-    new MutationObserver(() => {
-      const hit = frame.classList.contains('is-hit');
-      if (hit === wasHit) return;
-      wasHit = hit;
-      if (hit && fx) fx.hit(sideOf(id));
-    }).observe(frame, { attributes: true, attributeFilter: ['class'] });
+    new MutationObserver((records) => {
+      if (!frame.classList.contains('is-hit')) return;
+      const added = records.some((r) => !/\bis-hit\b/.test(r.oldValue || ''));
+      if (!added) return;
+      const api = fx();
+      if (api) api.hit(sideOf(id));
+    }).observe(frame, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
   });
 
   // ---- Barras de vida: espejo de la barra que gestiona DamageSystem ----
@@ -209,14 +262,24 @@ function init() {
   screen.classList.add('is-idle');
   document.addEventListener('mousemove', wake, { passive: true });
   document.addEventListener('keydown', (event) => {
-    const tag = document.activeElement && document.activeElement.tagName;
-    if (event.key.startsWith('Arrow')) { wake(); return; }
-    if (event.key !== 'f' && event.key !== 'F') return;
-    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-    if (fx) fx.toggle();
+    if (event.key.startsWith('Arrow')) wake();
   });
 
   if (active) { wake(); mount(); }
+}
+
+function init() {
+  const engine = createEngine();
+  initMenu(engine);
+  initBattle(engine);
+
+  // Tecla F: efectos de ambiente del motor vivo (selección de modos o batalla).
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'f' && event.key !== 'F') return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (engine.api) engine.api.toggle();
+  });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
