@@ -89,82 +89,24 @@ body, body * {
 .screen { display: none; width: 100%; flex-direction: column; align-items: center; gap: 1.5rem; }
 .screen.active { display: flex; }
 
-/* ============================================================
-   Selección de modo: misma tipografía y colores que el modo Torneo
-   (tokens --torneo-* en variables.css). Título como la pestaña blanca
-   "LLAVES" del póster; cada modo como una casilla de la llave (relleno
-   azul marino opaco, borde blanco, esquinas rectas, brillo cian al pasar
-   o enfocar); "Fatality" como la casilla de la Final (azul eléctrico) con
-   su botón en píldora igual al "Iniciar batalla" del torneo. El fondo lo
-   pone el kit CMFX (tormenta, niebla, rayos y partículas).
-   ============================================================ */
-body:has(#screenFormat.active) .bolt-canvas { display: none; }
-body:has(#screenFormat.active) { background: var(--torneo-night); }
-.app:has(#screenFormat.active) {
-  max-width: none;
-  padding: 0;
-}
-/* Igual que en el torneo: sin cabecera de la app; el logo va abajo al
-   centro, como en el póster de llaves. */
-.app:has(#screenFormat.active) .cm-brand,
-.app:has(#screenFormat.active) .cm-tagline {
-  display: none;
-}
-#screenFormat.active {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 100vh;
-  padding: 5vh clamp(8px, 2vw, 40px) 13vh;
-  justify-content: center;
-  gap: 3.5vh;
-}
-/* El título y la rejilla van por encima del lienzo del kit (z-index
-   negativo dentro de la pantalla). */
-#screenFormat .format-h2,
-#screenFormat .mode-grid {
-  position: relative;
-  z-index: 1;
-}
-
+/* ---------- Selección de formato ---------- */
 .format-h2 {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  margin: 0;
-  padding: 0.45em 1.6em;
-  background: #ffffff;
-  border: 3px solid var(--torneo-glow);
-  color: var(--torneo-final);
   font-family: var(--torneo-font-condensed);
   font-weight: 700;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  line-height: 1;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  color: var(--torneo-final);
+  text-shadow: var(--shadow-text);
   text-align: center;
-  text-shadow: none;
 }
-.torneo-title__sub {
-  font-size: 0.32em;
-  letter-spacing: 0.12em;
-}
-
-.format-logo {
-  position: absolute;
-  left: 50%;
-  bottom: 3vh;
-  z-index: 1;
-  width: clamp(48px, 5vw, 84px);
-  height: auto;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 0 8px rgba(63, 182, 255, 0.75));
-  pointer-events: none;
-}
-
-/* 4 columnas x 2 filas: "Fatality" ocupa las 2 filas de la última columna
-   (mode-card--hero); las otras 6 tarjetas caen por orden en las 3 columnas
-   restantes (auto-placement de Grid). */
+/* ============================================================
+   Rejilla de modos (estilo fighter-select / mode-select).
+   4 columnas x 2 filas: "Fatality" ocupa las 2 filas en la última
+   columna (mode-card--hero); las otras 6 tarjetas (Torneo + los 5
+   formatos) son del mismo tamaño y caen solas por orden en el HTML
+   (auto-placement de Grid) en las 3 columnas restantes.
+   ============================================================ */
 .mode-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -177,36 +119,38 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
 .mode-card {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
   overflow: hidden;
-  border-radius: 0;
-  border: 2px solid var(--torneo-border);
-  background: var(--torneo-fill);
+  border-radius: 14px;
+  border: 2px solid var(--color-border);
+  background: none;
   padding: 0;
-  color: var(--torneo-text);
-  font-family: var(--torneo-font-condensed);
-  text-align: center;
+  color: var(--color-text);
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .mode-card:hover,
 .mode-card:focus-visible {
-  outline: none;
-  border-color: var(--torneo-glow);
-  box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.5), 0 0 16px rgba(79, 195, 247, 0.8);
+  transform: scale(1.035);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 28px rgba(63, 182, 255, 0.55), 0 0 60px rgba(63, 182, 255, 0.25);
   z-index: 2;
 }
-.mode-card:active {
-  background: var(--torneo-final);
-}
+.mode-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-/* El arte y el degradado anteriores no existen en el torneo: la tarjeta es
-   una casilla plana. */
-.mode-card__art,
+.mode-card__art {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    radial-gradient(130% 150% at 30% 100%, #1c3a5e 0%, #0a1728 70%);
+}
 .mode-card__scrim {
-  display: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(4, 6, 12, 0.55) 70%, rgba(4, 6, 12, 0.92) 100%);
 }
 .mode-card__title {
   position: relative;
@@ -217,34 +161,35 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
   color: var(--torneo-text);
+  font-size: clamp(1rem, 2.2vw, 1.3rem);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 .mode-card__desc {
   position: relative;
   z-index: 1;
   margin: 0;
   padding: 0 16px 14px;
-  text-align: center;
   font-family: var(--torneo-font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--torneo-core);
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
 }
 
-/* "Fatality": casilla de la Final */
+/* Tarjeta grande "Fatality": ocupa las 2 filas de la última columna */
 .mode-card--hero {
   grid-column: 4;
   grid-row: 1 / span 2;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-end;
-  background: var(--torneo-final);
+  border-color: var(--color-primary);
 }
-.mode-card--hero:active {
-  background: var(--torneo-fill);
+.mode-card--hero .mode-card__art {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px),
+    radial-gradient(140% 90% at 50% 0%, #234a72 0%, #0a1a2e 65%);
 }
 .mode-card__body {
   position: relative;
@@ -256,35 +201,28 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   padding: 18px 16px 22px;
   text-align: center;
 }
-.mode-card--hero .mode-card__title { padding: 0; font-size: clamp(1.4rem, 3vw, 1.9rem); }
+.mode-card--hero .mode-card__title { padding: 0; font-size: clamp(1.2rem, 3vw, 1.6rem); }
 .mode-card__subtitle {
   margin: 0;
   font-family: var(--torneo-font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.1em;
   color: var(--torneo-core);
   text-transform: uppercase;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
 }
 .mode-card__play {
   margin-top: 0.3rem;
-  padding: 0.45em 1.1em;
-  border-radius: 999px;
-  background: var(--torneo-cta-bg);
+  padding: 0.55rem 2.2rem;
+  border-radius: 8px;
+  background: #ffd034;
   color: var(--torneo-cta-text);
   font-family: var(--torneo-font-display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 1rem;
-  line-height: 1;
-  box-shadow: 0 0 12px var(--torneo-cta-glow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.25s ease;
 }
-.mode-card--hero:hover .mode-card__play,
-.mode-card--hero:focus-visible .mode-card__play {
-  transform: scale(1.06);
-  box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.5), 0 0 12px rgba(79, 195, 247, 0.7);
-}
+.mode-card--hero:hover .mode-card__play { box-shadow: 0 0 22px rgba(255, 208, 52, 0.6); }
 
 @media (max-width: 720px) {
   .mode-grid { grid-template-columns: 1fr; grid-template-rows: none; }
@@ -525,7 +463,7 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   position: absolute;
   inset: -1.5rem -1rem;
   z-index: -1;
-  background: var(--torneo-night);
+  background: #060b1a;
 }
 /* En la pantalla de llaves la cabecera de la app se oculta para que el
    póster use todo el alto disponible al proyectarlo. */
@@ -539,7 +477,7 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   width: min(100%, 1500px);
   aspect-ratio: 4 / 5;
   margin: 0 auto;
-  background: var(--torneo-night) url('../../assets/images/llaves-poster.jpg') center / 100% 100% no-repeat;
+  background: #060b1a url('../../assets/images/llaves-poster.jpg') center / 100% 100% no-repeat;
   container-type: inline-size;
   user-select: none;
 }
@@ -555,16 +493,16 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   position: absolute;
   top: 1.6cqw;
   pointer-events: auto;
-  font-family: var(--torneo-font-display);
+  font-family: 'Anton', sans-serif;
   font-size: clamp(0.6rem, 1.1cqw, 0.95rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   padding: 0.35em 0.9em;
   border-radius: 999px;
-  border: 1px solid var(--torneo-pill-border);
-  background: var(--torneo-pill-bg);
-  color: var(--torneo-pill-text);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(6, 11, 26, 0.55);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -578,11 +516,11 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
 .llaves__corner--right { right: 1.6cqw; }
 .llaves__corner:hover,
 .llaves__corner:focus-visible {
-  background: var(--torneo-pill-bg-strong);
-  border-color: var(--torneo-glow);
-  color: var(--torneo-text);
+  background: rgba(6, 11, 26, 0.85);
+  border-color: var(--color-bracket-glow);
+  color: #ffffff;
   outline: none;
-  box-shadow: var(--torneo-focus-ring);
+  box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.45), 0 0 12px rgba(79, 195, 247, 0.6);
 }
 
 .bracket-stages {
@@ -602,11 +540,11 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   justify-content: center;
   margin: 0;
   padding: 0 0.5cqw;
-  background: var(--torneo-fill);
-  border: max(1.5px, 0.19cqw) solid var(--torneo-border);
+  background: #27375a;
+  border: max(1.5px, 0.19cqw) solid #ffffff;
   border-radius: 0;
-  color: var(--torneo-text);
-  font-family: var(--torneo-font-condensed);
+  color: #ffffff;
+  font-family: 'Bebas Neue', 'Anton', sans-serif;
   font-weight: 700;
   font-size: 1.5cqw;
   letter-spacing: 0.05em;
@@ -615,7 +553,7 @@ body:has(#screenFormat.active) { background: var(--torneo-night); }
   overflow: hidden;
 }
 .bracket-slot--final {
-  background: var(--torneo-final);
+  background: #1e90ff;
   font-size: 1.9cqw;
 }
 
@@ -629,7 +567,7 @@ button.bracket-slot { cursor: pointer; transition: border-color 0.2s ease, box-s
 button.bracket-slot:hover,
 button.bracket-slot:focus-visible {
   outline: none;
-  border-color: var(--torneo-glow);
+  border-color: var(--color-bracket-glow);
   box-shadow: 0 0 0 0.25cqw rgba(79, 195, 247, 0.5), 0 0 1.2cqw rgba(79, 195, 247, 0.8);
 }
 
@@ -653,7 +591,7 @@ button.bracket-slot:focus-visible {
 
 .bracket-match__start,
 .bracket-match__redo {
-  font-family: var(--torneo-font-display);
+  font-family: 'Anton', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 1cqw;
@@ -666,14 +604,14 @@ button.bracket-slot:focus-visible {
 }
 .bracket-match__start {
   border: none;
-  background: var(--torneo-cta-bg);
-  color: var(--torneo-cta-text);
-  box-shadow: 0 0 0.8cqw var(--torneo-cta-glow);
+  background: var(--gradient-primary);
+  color: var(--color-text-dark);
+  box-shadow: 0 0 0.8cqw rgba(79, 195, 247, 0.45);
 }
 .bracket-match__redo {
   background: rgba(6, 11, 26, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.45);
-  color: var(--torneo-pill-text);
+  color: rgba(255, 255, 255, 0.85);
 }
 .bracket-match__start:hover,
 .bracket-match__start:focus-visible,
@@ -689,13 +627,13 @@ button.bracket-slot:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--torneo-font-display);
+  font-family: 'Anton', sans-serif;
   font-size: 0.85cqw;
   line-height: 1;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--torneo-core);
+  color: var(--color-bracket-core);
   text-shadow: 0 0 0.6cqw rgba(0, 0, 0, 0.9);
   pointer-events: none;
 }
