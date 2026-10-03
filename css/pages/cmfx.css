@@ -1,0 +1,103 @@
+/* ============================================================================
+   KIT CMFX · ESTILOS  (copiar tal cual a la app; todo va con prefijo cmfx-)
+   ============================================================================ */
+:root{
+  --cm-ink:#020611; --cm-deep:#0a1f44; --cm-volt:#1e90ff; --cm-ice:#7fd0ff; --cm-white:#eaf6ff;
+  --cm-display:"Anton","Bebas Neue",Impact,"Haettenschweiler","Arial Narrow",sans-serif;
+  --cm-label:"Barlow Condensed","Roboto Condensed","Arial Narrow",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --cm-ink:#020611; } }
+:root[data-theme="dark"]{ --cm-ink:#020611; }
+
+/* Capa del mundo: un solo lienzo con fondo + efectos. Siempre detrás del contenido de la batalla. */
+.cmfx-world{position:absolute;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
+.cmfx-world canvas{position:absolute;inset:0;width:100%;height:100%;display:block;transform-origin:50% 50%;will-change:transform}
+.cmfx-vignette{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(115% 95% at 50% 46%,transparent 50%,rgba(2,6,17,.80) 100%)}
+.cmfx-top{position:absolute;inset:0;width:100%;height:100%;z-index:55;pointer-events:none}
+.cmfx-flash{position:absolute;inset:0;z-index:60;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(95% 80% at var(--cmfx-fx,50%) 12%,#d6eaff 0%,#5aa8ff 48%,#123a8a 100%)}
+
+/* Tarjeta de competidor: luz de borde cuando cae un rayo + estado de turno */
+.cmfx-card{position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1),filter .35s ease}
+.cmfx-card::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;
+  mix-blend-mode:screen;opacity:var(--cmfx-rim,0);
+  background:
+    linear-gradient(180deg,rgba(222,240,255,.78),rgba(120,190,255,.22) 14%,transparent 40%),
+    linear-gradient(90deg,rgba(190,225,255,.50),transparent 9%,transparent 91%,rgba(190,225,255,.50))}
+.cmfx-card:not(.is-turn){filter:brightness(.70) saturate(.78)}
+.cmfx-card.is-turn{transform:scale(1.03);
+  box-shadow:0 0 0 1px rgba(160,215,255,.9),0 0 26px rgba(30,144,255,.75),0 0 90px rgba(30,144,255,.38)}
+@property --cmfx-a{syntax:"<angle>";inherits:false;initial-value:0deg}
+.cmfx-card.is-turn::before{content:"";position:absolute;inset:-5px;z-index:4;padding:5px;border-radius:inherit;pointer-events:none;
+  background:conic-gradient(from var(--cmfx-a),transparent 0 56%,rgba(30,144,255,.15) 60%,#1e90ff 73%,#7fd0ff 83%,#fff 89%,transparent 91%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:cmfx-run 2.6s linear infinite}
+@keyframes cmfx-run{to{--cmfx-a:360deg}}
+.cmfx-hit{animation:cmfx-shake .30s linear}
+@keyframes cmfx-shake{0%{translate:0 0;filter:brightness(2.7) saturate(.45)}14%{translate:-10px 3px}28%{translate:9px -4px;filter:brightness(1.6) saturate(.8)}44%{translate:-6px 2px}60%{translate:5px -2px}80%{translate:-2px 1px}100%{translate:0 0}}
+
+/* Barra de vida: biselada, 10 segmentos, estela blanca al perder vida */
+.cmfx-hp{position:relative;height:18px;background:linear-gradient(#0c1934,#040a17);
+  clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);box-shadow:inset 0 0 0 1px rgba(170,210,255,.5)}
+.cmfx-hp i{position:absolute;inset:2px;transform-origin:0 50%;transform:scaleX(var(--hp,1))}
+.cmfx-hp i.ghost{background:#eaf6ff;transition:transform .7s .30s cubic-bezier(.5,0,.2,1)}
+.cmfx-hp i.fill{transition:transform .26s cubic-bezier(.2,.9,.2,1);
+  background:linear-gradient(180deg,rgba(255,255,255,.60),rgba(255,255,255,0) 48%),linear-gradient(90deg,var(--hp-a,#12b866),var(--hp-b,#86ffb8))}
+.cmfx-hp.is-warn{--hp-a:#d39a0a;--hp-b:#ffe37c}
+.cmfx-hp.is-crit{--hp-a:#c61c1c;--hp-b:#ff8b6b}
+.cmfx-hp::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(2,6,17,.92) calc(10% - 2px) 10%)}
+
+/* Placa metálica para selector de etapa, número de batalla y formato */
+.cmfx-plate{color:var(--cm-white);background:linear-gradient(180deg,#1a2f59 0%,#0b1936 52%,#060f23 100%);
+  border:1px solid rgba(150,198,255,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -10px 18px rgba(0,0,0,.5);
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+
+/* ---------- NÚCLEO DE ENERGÍA (contador) ---------- */
+.cmfx-core{position:relative;width:var(--d,min(44vh,30vw));aspect-ratio:1;--u:4.5px;--c-glow:30,144,255;--c-ice:127,208,255;flex:none}
+.cmfx-core>canvas{position:absolute;left:50%;top:50%;width:220%;height:220%;transform:translate(-50%,-50%);
+  pointer-events:none;mix-blend-mode:screen;z-index:4}
+.cmfx-core__ring{position:absolute;inset:-14%;width:128%;height:128%;animation:cmfx-spin 48s linear infinite;z-index:1;overflow:visible}
+.cmfx-core__ring circle{stroke:rgba(var(--c-ice),.62);stroke-width:1.15}
+.cmfx-core__ring--b{animation-duration:74s;animation-direction:reverse}
+.cmfx-core__ring--b circle{stroke:rgba(var(--c-ice),.34);stroke-width:.6}
+@keyframes cmfx-spin{to{transform:rotate(360deg)}}
+.cmfx-core__bezel{position:absolute;inset:0;border-radius:50%;z-index:2;
+  background:conic-gradient(from 205deg,#0b1830,#e2ecf8 7%,#536a8d 16%,#f9fcff 26%,#1a2944 37%,#bccbdf 49%,#0b1830 59%,#e8f0fa 70%,#3a4e6f 81%,#d2dfee 92%,#0b1830);
+  -webkit-mask:radial-gradient(closest-side,transparent calc(90% - 1px),#000 90%,#000 calc(100% - 1px),transparent 100%);
+          mask:radial-gradient(closest-side,transparent calc(90% - 1px),#000 90%,#000 calc(100% - 1px),transparent 100%)}
+.cmfx-core__edge{position:absolute;inset:0;border-radius:50%;z-index:2;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.6),inset 0 0 0 3px rgba(2,6,17,.75),
+             0 0 0 1.5px rgba(2,6,17,.9),0 0 0 3px rgba(var(--c-ice),.38),0 16px 46px rgba(0,0,0,.65)}
+.cmfx-core__glass{position:absolute;inset:5%;border-radius:50%;z-index:2;overflow:hidden;
+  background:radial-gradient(circle at 50% 26%,#143465 0%,#081b3d 36%,#030916 70%,#020611 100%);
+  box-shadow:inset 0 0 0 2px rgba(2,6,17,.95),inset 0 0 0 3.5px rgba(160,205,255,.38),
+             inset 0 0 70px rgba(var(--c-glow),.34),inset 0 -34px 56px rgba(0,0,0,.7)}
+.cmfx-core__glass::before{content:"";position:absolute;left:11%;right:11%;top:3.5%;height:43%;border-radius:50%/62% 62% 38% 38%;
+  background:linear-gradient(rgba(255,255,255,.14),rgba(255,255,255,0) 78%)}
+.cmfx-core__ticks{position:absolute;inset:0;width:100%;height:100%;z-index:3}
+.cmfx-core__ticks line{stroke:rgba(var(--c-ice),.85);stroke-width:.8;transition:opacity .25s}
+.cmfx-core__ticks line.maj{stroke:#fff;stroke-width:1.5}
+.cmfx-core__ticks line.off{opacity:.16}
+.cmfx-core__read{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*1.2)}
+.cmfx-core__num{display:block;font:400 calc(var(--u)*37)/.92 var(--cm-display);letter-spacing:.01em;padding:0 .06em;
+  background:
+    linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%) 160% 0/260% 100% no-repeat,
+    linear-gradient(180deg,#fff 0%,#e4effb 33%,#8ea6c4 50%,#f5faff 54%,#aebfd6 78%,#e0eaf6 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(4,12,30,.92)) drop-shadow(0 0 22px rgba(var(--c-glow),.6));
+  animation:cmfx-sheen 5.5s ease-in-out infinite}
+@keyframes cmfx-sheen{0%,60%{background-position:160% 0,0 0}100%{background-position:-60% 0,0 0}}
+.cmfx-core__lab{font:600 calc(var(--u)*4.6)/1 var(--cm-label);letter-spacing:.42em;text-indent:.42em;text-transform:uppercase;color:rgb(var(--c-ice))}
+.cmfx-core.is-danger{--c-glow:255,78,22;--c-ice:255,190,140}
+.cmfx-core.is-danger .cmfx-core__num{
+  background:
+    linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 50%,transparent 58%) 160% 0/260% 100% no-repeat,
+    linear-gradient(180deg,#fff 0%,#ffe2c9 33%,#ff7a3c 50%,#fff0e2 54%,#ff9a5c 78%,#ffd9bf 100%);
+  -webkit-background-clip:text;background-clip:text}
+.cmfx-core.is-dead .cmfx-core__ring{animation-play-state:paused;opacity:.35}
+.cmfx-core.is-dead .cmfx-core__bezel{filter:grayscale(.6) brightness(.62)}
+.cmfx-core.is-dead .cmfx-core__num{opacity:.55;animation:none}
+.cmfx-off .cmfx-core__ring,.cmfx-off .cmfx-core__num,.cmfx-off .cmfx-card.is-turn::before{animation:none}

@@ -2,7 +2,7 @@
  * Carga diferida de imágenes para mejor rendimiento
  * @param {HTMLImageElement} img - Elemento de imagen a cargar
  * @param {string} src - URL de la imagen
- * @returns {Promise} Promesa que se resuelve cuando la imagen se carga
+ * @returns {Promise<boolean>} Promesa que resuelve en true si la imagen cargó, false si falló
  */
 export function lazyLoadImage(img, src) {
   return new Promise((resolve) => {
@@ -10,12 +10,11 @@ export function lazyLoadImage(img, src) {
     tempImg.onload = () => {
       img.src = src;
       img.classList.add('loaded');
-      resolve();
+      resolve(true);
     };
     tempImg.onerror = () => {
-      img.src = '/api/placeholder/100/100';
       img.classList.add('loaded');
-      resolve();
+      resolve(false);
     };
     tempImg.src = src;
   });
