@@ -450,7 +450,7 @@ body, body * {
 }
 
 /* ============================================================
-   Torneo: la pantalla de llaves es el póster oficial (4:5) de fondo y,
+   Torneo: la pantalla de llaves es el póster horizontal (16:9) de fondo y,
    encima, una capa de casillas interactivas posicionadas en % para que
    tapen exactamente las casillas dibujadas y escalen con la imagen.
    Título, rayos, dragón, líneas, lema y logo ya vienen en el póster.
@@ -471,13 +471,18 @@ body, body * {
 .app:has(#screenTorneo.active) .cm-tagline {
   display: none;
 }
+/* El póster 16:9 ocupa todo el ancho que permita el alto de la ventana. */
+.app:has(#screenTorneo.active) {
+  max-width: none;
+  padding-bottom: 1.25rem;
+}
 
 .llaves {
   position: relative;
-  width: min(100%, 1500px);
-  aspect-ratio: 4 / 5;
+  width: min(100%, calc((100vh - 2.75rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
   margin: 0 auto;
-  background: #060b1a url('../../assets/images/llaves-poster.jpg') center / 100% 100% no-repeat;
+  background: #060b1a url('../../assets/images/llaves-poster-h.jpg') center / 100% 100% no-repeat;
   container-type: inline-size;
   user-select: none;
 }
@@ -491,10 +496,10 @@ body, body * {
 
 .llaves__corner {
   position: absolute;
-  top: 1.6cqw;
+  top: 1.2cqw;
   pointer-events: auto;
   font-family: 'Anton', sans-serif;
-  font-size: clamp(0.6rem, 1.1cqw, 0.95rem);
+  font-size: clamp(0.6rem, 0.9cqw, 0.95rem);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -512,8 +517,8 @@ body, body * {
   color: #ffffff;
   box-shadow: 0 0 0 2px rgba(255, 138, 122, 0.45), 0 0 12px rgba(255, 59, 82, 0.7);
 }
-.llaves__corner--left { left: 1.6cqw; }
-.llaves__corner--right { right: 1.6cqw; }
+.llaves__corner--left { left: 1.2cqw; }
+.llaves__corner--right { right: 1.2cqw; }
 .llaves__corner:hover,
 .llaves__corner:focus-visible {
   background: rgba(6, 11, 26, 0.85);
@@ -541,12 +546,12 @@ body, body * {
   margin: 0;
   padding: 0 0.5cqw;
   background: #27375a;
-  border: max(1.5px, 0.19cqw) solid #ffffff;
+  border: max(1.5px, 0.11cqw) solid #ffffff;
   border-radius: 0;
   color: #ffffff;
   font-family: 'Bebas Neue', 'Anton', sans-serif;
   font-weight: 700;
-  font-size: 1.5cqw;
+  font-size: 1.05cqw;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-align: center;
@@ -554,7 +559,7 @@ body, body * {
 }
 .bracket-slot--final {
   background: #1e90ff;
-  font-size: 1.9cqw;
+  font-size: 1.3cqw;
 }
 
 .bracket-slot__name {
@@ -594,7 +599,7 @@ button.bracket-slot:focus-visible {
   font-family: 'Anton', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 1cqw;
+  font-size: 0.72cqw;
   line-height: 1;
   padding: 0.45em 1.1em;
   border-radius: 999px;
@@ -628,7 +633,7 @@ button.bracket-slot:focus-visible {
   align-items: center;
   justify-content: center;
   font-family: 'Anton', sans-serif;
-  font-size: 0.85cqw;
+  font-size: 0.65cqw;
   line-height: 1;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -647,7 +652,7 @@ button.bracket-slot:focus-visible {
   justify-content: center;
   font-family: 'Bebas Neue', 'Anton', sans-serif;
   font-weight: 700;
-  font-size: 1.7cqw;
+  font-size: 1.15cqw;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #10091f;

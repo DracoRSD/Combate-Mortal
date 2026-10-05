@@ -3,23 +3,24 @@ import { STAGE_META } from './Bracket.js';
 import { enableGridKeyboardNav, focusFirstNavItem } from '../utils/keyboardGrid.js';
 
 /**
- * Geometría del póster (assets/images/llaves-poster.jpg), medida sobre la
- * imagen y expresada en % de su ancho/alto, borde blanco incluido. Cada
+ * Geometría del póster horizontal 16:9 (assets/images/llaves-poster-h.jpg,
+ * generado desde bracket-llaves-horizontal.svg), en % de su ancho/alto,
+ * borde incluido. Cada
  * casilla interactiva se coloca con estas medidas para tapar exactamente la
  * casilla dibujada y escalar junto con el fondo. Los cruces 0-3 de Octavos
  * van en la columna izquierda y los 4-7 en la derecha, de arriba abajo;
  * las rondas siguientes siguen el mismo reparto por mitades que usa
  * Bracket.recompute().
  */
-const SLOT = { w: 11.11, h: 3.7 };
+const SLOT = {w: 10.417, h: 4.444};
 const LAYOUT = {
-  octavos: { lefts: [5.49, 83.46], perSide: 4, tops: [[23.45, 28.65], [39.75, 44.95], [55.95, 61.15], [72.3, 77.5]] },
-  cuartos: { lefts: [17.92, 71.1], perSide: 2, tops: [[31.6, 36.8], [64.1, 69.3]] },
-  semifinal: { lefts: [30.34, 58.68], perSide: 1, tops: [[47.9, 53.1]] },
-  final: { lefts: [42.7], perSide: 1, tops: [[46.25, 53.35]], size: { w: 14.61, h: 5 } },
-  tercerPuesto: { lefts: [42.7], perSide: 1, tops: [[62.6, 67.6]], size: { w: 14.61, h: 3.7 } }
+  octavos: {lefts: [3.125, 86.458], perSide: 4, tops: [[17.593, 23.889], [37.037, 43.333], [56.481, 62.778], [75.926, 82.222]]},
+  cuartos: {lefts: [17.188, 72.396], perSide: 2, tops: [[27.315, 33.611], [66.204, 72.5]]},
+  semifinal: {lefts: [31.25, 58.333], perSide: 1, tops: [[46.759, 53.056]]},
+  final: {lefts: [44.271], perSide: 1, tops: [[45.093, 53.241]], size: {w: 11.458, h: 5.926}},
+  tercerPuesto: {lefts: [44.271], perSide: 1, tops: [[64.352, 70.37]], size: {w: 11.458, h: 4.444}}
 };
-const PODIO = { left: 31.59, w: 36.83, h: 3.35, tops: [77.35, 81.5, 85.65] };
+const PODIO = {left: 39.062, w: 21.875, h: 3.333, tops: [85.648, 90.278, 94.907]};
 const ACTIONS_GAP = 0.45;
 
 function slotBox(stageKey, index) {
@@ -95,14 +96,6 @@ export class BracketView {
     const slotA = this.buildSlot(stage, match, 'a', editable, decided);
     place(slotA, box.left, box.topA, box.w, box.h);
     card.appendChild(slotA);
-
-    if (stage.key === 'tercerPuesto') {
-      const label = document.createElement('div');
-      label.className = 'llaves__tercer-label';
-      label.textContent = '3er y 4to puesto';
-      place(label, box.left, box.topA + box.h, box.w, box.topB - (box.topA + box.h));
-      card.appendChild(label);
-    }
 
     const slotB = this.buildSlot(stage, match, 'b', editable, decided);
     place(slotB, box.left, box.topB, box.w, box.h);
