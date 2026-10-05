@@ -142,6 +142,13 @@ body:has(#screenContador.active) {
   display: none;
 }
 
+/* En batallas del torneo la etapa y el número vienen de las llaves. */
+.bracket-bar select:disabled,
+.step-btn:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .battle-counter__controls {
   display: flex;
   align-items: center;

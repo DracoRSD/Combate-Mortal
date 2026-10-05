@@ -1,6 +1,6 @@
 import { FormatPicker } from './modules/FormatPicker.js';
 import { FighterSelector } from './modules/FighterSelector.js';
-import { Bracket } from './modules/Bracket.js';
+import { Bracket, STAGE_META } from './modules/Bracket.js';
 import { BracketView } from './modules/BracketView.js';
 import { TimerController } from './modules/TimerController.js';
 import { BattleHUD } from './modules/BattleHUD.js';
@@ -350,6 +350,7 @@ function initializeApp() {
     torneoContext = torneo || null;
     baseFormat = format;
     battleHUD.startBattle(nameA, nameB, format);
+    syncTorneoPlates();
     damageSystem.reset();
     winnerScreen.hide();
     showScreen('Contador');
@@ -358,6 +359,30 @@ function initializeApp() {
     timerController.updateCircleSVG();
     timerController.applyFormat(format);
     focusFirstNavItem(controls);
+  }
+
+  /**
+   * Placas ETAPA / BATALLA. En una batalla del torneo se rellenan solas con
+   * la ronda y el número del cruce (posición en las llaves: 1-4 columna
+   * izquierda, 5-8 derecha; cuartos 1-2 / 3-4; semifinal 1 / 2) y quedan
+   * bloqueadas; en una batalla suelta siguen siendo manuales.
+   */
+  var stageSelect = document.getElementById('stageSelect');
+  var battleUpButton = document.getElementById('battleUp');
+  var battleDownButton = document.getElementById('battleDown');
+  function syncTorneoPlates() {
+    var locked = !!torneoContext;
+    if (locked) {
+      var stage = STAGE_META.find(function (s) { return s.key === torneoContext.stage; });
+      if (stage) {
+        var option = Array.prototype.find.call(stageSelect.options, function (o) { return o.text === stage.label; });
+        if (option) stageSelect.value = option.value;
+      }
+      battleHUD.setBattle(torneoContext.index + 1);
+    }
+    stageSelect.disabled = locked;
+    battleUpButton.disabled = locked;
+    battleDownButton.disabled = locked;
   }
 
   /** Volver del contador a donde corresponda: al torneo si la batalla venía
