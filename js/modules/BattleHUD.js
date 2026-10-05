@@ -44,6 +44,17 @@ export class BattleHUD {
   }
 
   /**
+   * Cambiar de formato a mitad de la batalla (segunda fase de un formato
+   * con `then`, o vuelta a la fase inicial al reiniciar), conservando a
+   * los MC, el turno y el número de batalla.
+   * @param {Object} format
+   */
+  setFormat(format) {
+    this.format = format;
+    this.setupEntradas();
+  }
+
+  /**
    * Mostrar/ocultar y preparar el contador de entrada para formatos
    * "ida y vuelta" (mode: 'turns').
    */

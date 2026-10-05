@@ -9,6 +9,9 @@
 //                 una, alternando el turno entre los dos MC.
 //   'stopwatch' — sin límite de tiempo: cuenta hacia arriba hasta que el
 //                 jurado decide terminar.
+//
+// then: clave de un segundo formato que arranca solo cuando termina el
+//       primero (p. ej. las 4 entradas del 12x12 siguen con un 4x4 libre).
 const Formats = [
   {
     key: 'minutoIdaVuelta',
@@ -38,7 +41,8 @@ const Formats = [
     time: 30,
     mode: 'turns',
     entradas: 4,
-    description: '30s × 4 entradas'
+    then: 'cuatroXcuatro',
+    description: '30s × 4 entradas + 4x4 de 120s'
   },
   {
     key: 'dosXdos',

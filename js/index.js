@@ -31,6 +31,7 @@ function showScreen(name) {
 function initializeApp() {
   var chosenFormat = Formats[0];
   var torneoContext = null; // { stage, index } de la batalla en curso, o null en batalla suelta
+  var baseFormat = null; // formato con el que arrancó la batalla en curso (primera fase)
 
   var formatGrid = document.getElementById('formatGrid');
   var fighterGrid = document.getElementById('fighterGrid');
@@ -176,11 +177,30 @@ function initializeApp() {
     // detenido, salvo que ya sea la última entrada.
     onTimeUp: function () {
       if (!battleHUD.format || battleHUD.format.mode !== 'turns') return;
-      if (battleHUD.entrada >= battleHUD.entradaTotal) return;
-      battleHUD.nextEntrada();
+      if (battleHUD.entrada < battleHUD.entradaTotal) {
+        battleHUD.nextEntrada();
+        timerController.startTimer();
+        return;
+      }
+      // Segunda fase (p. ej. 12x12 → 4x4 libre de 120s): arranca sola al
+      // terminar la última entrada.
+      var next = battleHUD.format.then && Formats.find(function (f) { return f.key === battleHUD.format.then; });
+      if (!next) return;
+      applyPhase(next);
       timerController.startTimer();
     }
   });
+
+  /** Cambiar el formato en curso sin tocar MC, turno ni número de batalla. */
+  function applyPhase(format) {
+    battleHUD.setFormat(format);
+    timerController.applyFormat(format);
+  }
+
+  /** Reiniciar o pasar de batalla vuelve siempre a la primera fase. */
+  function restoreBaseFormat() {
+    if (baseFormat && battleHUD.format !== baseFormat) applyPhase(baseFormat);
+  }
 
   var frameA = document.getElementById('mcAFrame');
   var frameB = document.getElementById('mcBFrame');
@@ -249,6 +269,7 @@ function initializeApp() {
     },
     mcData: McData,
     onNextBattle: function () {
+      restoreBaseFormat();
       timerController.resetTimer();
       damageSystem.reset();
       winnerScreen.hide();
@@ -270,9 +291,11 @@ function initializeApp() {
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
     if (!screenContador.classList.contains('active')) return;
     if (event.key === 'g' || event.key === 'G') applyGolpe();
+    if (event.key === 'Backspace') restoreBaseFormat();
   });
 
   document.getElementById('btnReiniciar').addEventListener('click', function () {
+    restoreBaseFormat();
     damageSystem.reset();
     winnerScreen.hide();
   });
@@ -325,6 +348,7 @@ function initializeApp() {
    */
   function startBattle(nameA, nameB, format, torneo) {
     torneoContext = torneo || null;
+    baseFormat = format;
     battleHUD.startBattle(nameA, nameB, format);
     damageSystem.reset();
     winnerScreen.hide();
