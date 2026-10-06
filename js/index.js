@@ -182,12 +182,14 @@ function initializeApp() {
         timerController.startTimer();
         return;
       }
-      // Segunda fase (p. ej. 12x12 → 4x4 libre de 120s): arranca sola al
-      // terminar la última entrada.
+      // Segunda fase (p. ej. 12x12 → 4x4 libre de 120s): se prepara el
+      // formato y el contador queda listo en 120s; se inicia a mano.
       var next = battleHUD.format.then && Formats.find(function (f) { return f.key === battleHUD.format.then; });
       if (!next) return;
       applyPhase(next);
-      timerController.startTimer();
+      // Durante la batalla el foco quedó en "Reiniciar"; se pasa a "Iniciar"
+      // para que Espacio / Enter arranquen la nueva fase en vez de reiniciar.
+      document.getElementById('btnIniciar').focus();
     }
   });
 
