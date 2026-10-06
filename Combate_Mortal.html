@@ -1,4 +1,22 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<!--
+  COMBATE MORTAL FREESTYLE — archivo único (HTML + CSS + JS + fuentes/imágenes embebidas, sin dependencias, funciona sin internet).
+
+  CÓMO ARRANCAR (en la carpeta de este archivo):
+      python3 -m http.server 8000
+  y abrir en Chrome o Edge, en el computador del operador:
+      Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
+      Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
+  Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
+  Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
+  salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
+
+  TECLAS (operador): Espacio iniciar · G golpe · Retroceso reiniciar · T turno · N siguiente batalla · V volver · R réplica ·
+  F efectos · flechas navegar · Escape cerrar selector · P abrir/enfocar salida · B cambiar fondo de la salida.
+  Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). La batalla en curso se guarda sola y se recupera (con el
+  cronómetro en pausa) si se recarga la página por accidente.
+-->
+<html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Combate Mortal</title>
 <style>
   @font-face {
@@ -1192,6 +1210,7 @@
   .torneo-header { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
   .llaves__corner { position: absolute; top: 23.04px; pointer-events: auto; font-family: 'CM Anton', sans-serif; font-size: 15.2px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; padding: 0.35em 0.9em; border-radius: 999px; border: 1px solid rgba(255,255,255,0.35); background: rgba(6,11,26,0.55); color: rgba(255,255,255,0.85); cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease; }
   .llaves__corner.is-armed { background: #8f1424; border-color: #ff8a7a; color: #ffffff; box-shadow: 0 0 0 2px rgba(255,138,122,0.45), 0 0 12px rgba(255,59,82,0.7); }
+  .llaves__corner--row2 { top: 69px; }
   .llaves__corner--left { left: 23.04px; }
   .llaves__corner--right { right: 23.04px; }
   .llaves__corner:hover, .llaves__corner:focus-visible { background: rgba(6,11,26,0.85); border-color: var(--color-bracket-glow); color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79,195,247,0.45), 0 0 12px rgba(79,195,247,0.6); }
@@ -1442,6 +1461,9 @@
     <div class="torneo-header">
       <button type="button" class="llaves__corner llaves__corner--left" id="btnVolverTorneo" data-nav-item>&lsaquo; Formato</button>
       <button type="button" class="llaves__corner llaves__corner--right" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
+      <button type="button" class="llaves__corner llaves__corner--left llaves__corner--row2" id="btnExportarTorneo" data-nav-item>Exportar llaves</button>
+      <button type="button" class="llaves__corner llaves__corner--right llaves__corner--row2" id="btnImportarTorneo" data-nav-item>Importar llaves</button>
+      <input type="file" id="fileImportarTorneo" accept="application/json,.json" hidden>
     </div>
     <div class="bracket-stages" id="bracketStages"></div>
   </div>
@@ -2782,11 +2804,117 @@
           running: state.isRunning, startDisabled: els.btnIniciar.disabled, mode: down ? 'down' : 'up'
         },
         winner: els.winnerOverlay.hidden ? null : { name: els.winnerName.textContent },
+        ctx: torneoContext,
+        baseFormat: state.baseFormat ? state.baseFormat.key : null,
         bracket: bracket
       };
     },
-    setBracket: function (b) { bracket = b; renderBracket(); }
+    setBracket: function (b) { bracket = b; renderBracket(); },
+    restore: restoreBattle
   };
+
+  // ---------- Exportar / importar llaves (JSON) ----------
+  function bracketValido(b) {
+    var sizes = { octavos: 8, cuartos: 4, semifinal: 2, tercerPuesto: 1, final: 1 };
+    if (!b || typeof b !== 'object') return false;
+    return Object.keys(sizes).every(function (k) {
+      return Array.isArray(b[k]) && b[k].length === sizes[k] && b[k].every(function (m) {
+        if (!m || typeof m !== 'object') return false;
+        var okName = function (n) { return n === null || (typeof n === 'string' && !!mcByName(n)); };
+        if (!okName(m.a) || !okName(m.b)) return false;
+        return m.winner === null || ((m.winner === 'a' || m.winner === 'b') && m[m.winner] !== null);
+      });
+    });
+  }
+  function avisoBoton(btn, texto) {
+    var base = btn.dataset.label || (btn.dataset.label = btn.textContent);
+    btn.textContent = texto;
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () { btn.textContent = base; }, 2500);
+  }
+  document.getElementById('btnExportarTorneo').addEventListener('click', function () {
+    try {
+      var blob = new Blob([JSON.stringify({ app: 'combate-mortal', tipo: 'llaves', version: 1, bracket: bracket }, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'llaves-combate-mortal.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      avisoBoton(this, 'Exportado \u2713');
+    } catch (e) { avisoBoton(this, 'No se pudo exportar'); }
+  });
+  var fileImportar = document.getElementById('fileImportarTorneo');
+  document.getElementById('btnImportarTorneo').addEventListener('click', function () { fileImportar.value = ''; fileImportar.click(); });
+  fileImportar.addEventListener('change', function () {
+    var btn = document.getElementById('btnImportarTorneo');
+    var f = fileImportar.files && fileImportar.files[0];
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var data = JSON.parse(rd.result);
+        var b = data && data.bracket ? data.bracket : data;
+        if (!bracketValido(b)) throw new Error('formato');
+        var limpio = {};
+        Object.keys(b).forEach(function (k) {
+          limpio[k] = b[k].map(function (m) { return { a: m.a, b: m.b, winner: m.winner }; });
+        });
+        bracket = limpio;
+        recomputeBracket();
+        saveBracket();
+        renderBracket();
+        avisoBoton(btn, 'Importado \u2713');
+      } catch (e) { avisoBoton(btn, 'Archivo no v\u00e1lido'); }
+    };
+    rd.onerror = function () { avisoBoton(btn, 'No se pudo leer'); };
+    rd.readAsText(f);
+  });
+
+  // ---------- Recuperar la batalla tras una recarga accidental ----------
+  // El script "Sincronización" guarda la foto en cada cambio (clave
+  // cmBatallaSnapshot_v1). Aquí se vuelve a poner; el cronómetro queda
+  // en pausa con el valor que tenía (Espacio lo reanuda).
+  function restoreBattle(snap) {
+    if (!snap || snap.screen === 'Format' || snap.screen === 'Select') return false;
+    if (snap.screen === 'Torneo') { showScreen('Torneo'); renderBracket(); return true; }
+    if (snap.screen !== 'Contador' || !snap.mcA || !snap.mcB || !snap.format) return false;
+    var fmt = formatByKey(snap.format.key) || CUATRO;
+    var a = mcByName(snap.mcA.name), b = mcByName(snap.mcB.name);
+    els.mcAName.textContent = snap.mcA.name;
+    if (a && a.photo) els.mcAPhoto.src = a.photo;
+    els.mcACountry.textContent = snap.mcA.country || '';
+    els.mcBName.textContent = snap.mcB.name;
+    if (b && b.photo) els.mcBPhoto.src = b.photo;
+    els.mcBCountry.textContent = snap.mcB.country || '';
+
+    state.battle = snap.battle;
+    els.battleNum.textContent = snap.battle;
+    torneoContext = snap.ctx || null;
+    var sel = document.getElementById('stageSelect');
+    for (var i = 0; i < sel.options.length; i++) if (sel.options[i].text === snap.stage) sel.selectedIndex = i;
+    syncTorneoPlates();
+    state.baseFormat = formatByKey(snap.baseFormat) || fmt;
+    applyFormat(fmt);
+    state.entrada = snap.entrada || 1;
+    state.timeLeft = snap.timer.value;
+    els.countdown.textContent = fmt.mode === 'stopwatch' ? formatElapsed(state.timeLeft) : state.timeLeft;
+    if (fmt.mode !== 'stopwatch') setProgress(state.timeLeft / fmt.time);
+    state.activeSide = snap.turn;
+    updateTurnUI();
+    state.hp.a = snap.life.a; state.hp.b = snap.life.b;
+    updateBar('a'); updateBar('b');
+    setDefeated('a', state.hp.a <= 0); setDefeated('b', state.hp.b <= 0);
+    if (snap.winner) {
+      var w = mcByName(snap.winner.name);
+      els.winnerName.textContent = snap.winner.name;
+      if (w && w.photo) els.winnerPhoto.src = w.photo;
+      els.winnerOverlay.hidden = false;
+    } else {
+      hideWinner();
+    }
+    showScreen('Contador');
+    return true;
+  }
 
   // Estado inicial: arranca directo en Selección de formato, para mostrar
   // el recorrido Formato → Selección de MC → Contador de punta a punta.
@@ -2794,6 +2922,15 @@
   showScreen('Format');
   resetSelection();
   focusFirstNavItem(els.formatGrid);
+
+  if (!window.CMF_SALIDA) {
+    try {
+      var raw = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
+      if (raw && raw.state && Date.now() - raw.savedAt < 12 * 3600 * 1000) {
+        if (restoreBattle(raw.state) && document.activeElement) document.activeElement.blur();
+      }
+    } catch (e) {}
+  }
 })();
 </script>
 
@@ -3648,6 +3785,10 @@ else init();
     var lastSig = '', lastSend = 0, queued = false;
     var salidaVista = 0, fondoVisto = 'tormenta', fondoSalida = null;   // null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
+    try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
+      var prev = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
+      if (prev && prev.state && prev.state.fondo) fondoSalida = fondoVisto = prev.state.fondo;
+    } catch (e) {}
 
     var tr = createTransport(function (m) {
       if (!m) return;
@@ -3680,6 +3821,7 @@ else init();
       var periodic = st.timer.running && now - lastSend >= 5000;
       if (!force && !periodic && sig === lastSig) return;
       lastSig = sig; lastSend = now;
+      try { localStorage.setItem('cmBatallaSnapshot_v1', JSON.stringify({ savedAt: now, state: st })); } catch (e) {}
       st.timer.at = now;
       st.timer.endsAt = st.timer.running && st.timer.mode === 'down' ? now + st.timer.value * 1000 : null;
       tr.send({ type: 'state', seq: ++seq, payload: st });
