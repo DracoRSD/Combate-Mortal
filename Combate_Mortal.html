@@ -1294,6 +1294,16 @@
   html.croma-verde .cmfx-hp:not(.is-warn):not(.is-crit) { --hp-a: #0fa3c9; --hp-b: #8ae8ff; }
   html.croma-verde .bracket-slot.is-winner { border-color: #2ec4d6; color: #2ec4d6; }
 
+  /* Indicador del operador: ¿hay una ventana de salida conectada? (no existe en la salida) */
+  #salidaIndicador {
+    position: absolute; top: 4px; left: 8px; z-index: 90; pointer-events: none;
+    display: flex; align-items: center; gap: 7px; padding: 1px 10px 1px 8px; border-radius: 10px;
+    font-family: var(--cm-label); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 18px;
+    color: #ff9a8a; background: rgba(2, 6, 17, 0.72); border: 1px solid rgba(255, 138, 122, 0.45);
+  }
+  #salidaIndicador::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  #salidaIndicador.is-ok { color: #3ddc84; border-color: rgba(61, 220, 132, 0.45); }
+  html.salida #salidaIndicador { display: none; }
 </style>
 
 <script>
@@ -2642,6 +2652,7 @@
   });
 
   function startReplica() {
+    if (window.cmfEmit) window.cmfEmit('replica');
     applyFormat(CUATRO);
     resetHP();
     state.activeSide = 'a';
@@ -2747,6 +2758,35 @@
   document.querySelectorAll('.mc-frame__bolts').forEach(function (canvas) {
     createBoltRenderer(canvas, { boltCount: 4, innerRatio: 0.3, intervalMs: 200, color: 'rgba(159,228,255,0.6)' }).start();
   });
+
+  // ---------- Sincronización con la ventana de salida ----------
+  // Solo lectura/aplicación de estado para el script "Sincronización"
+  // (más abajo); no cambia la lógica de la app.
+  window.cmfInternals = {
+    getState: function () {
+      var scr = document.querySelector('.screen.active');
+      var sel = document.getElementById('stageSelect');
+      var down = state.format.mode !== 'stopwatch';
+      return {
+        screen: scr ? scr.id.replace('screen', '') : 'Format',
+        stage: sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+        battle: state.battle,
+        format: { key: state.format.key, name: state.format.name, mode: state.format.mode, time: state.format.time || 0, entradas: state.format.entradas || 1 },
+        mcA: { name: els.mcAName.textContent, country: els.mcACountry.textContent },
+        mcB: { name: els.mcBName.textContent, country: els.mcBCountry.textContent },
+        life: { a: state.hp.a, b: state.hp.b },
+        turn: state.activeSide,
+        entrada: state.entrada,
+        timer: {
+          value: state.timeLeft, text: els.countdown.textContent, label: els.timeLabel.textContent,
+          running: state.isRunning, startDisabled: els.btnIniciar.disabled, mode: down ? 'down' : 'up'
+        },
+        winner: els.winnerOverlay.hidden ? null : { name: els.winnerName.textContent },
+        bracket: bracket
+      };
+    },
+    setBracket: function (b) { bracket = b; renderBracket(); }
+  };
 
   // Estado inicial: arranca directo en Selección de formato, para mostrar
   // el recorrido Formato → Selección de MC → Contador de punta a punta.
@@ -3555,6 +3595,273 @@ function init() {
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
+})();
+</script>
+<script>
+/* ============================================================================
+   SINCRONIZACIÓN OPERADOR <-> SALIDA
+   Dos ventanas del mismo archivo: el operador (sin parámetros) manda su estado
+   completo y los eventos; la salida (?salida=limpia) solo los aplica.
+   Mensajes:  {type:'state', seq, payload}   estado completo
+              {type:'event', name, side?}    golpe | rayo | ganador | replica
+              {type:'hello'}                 la salida pide una foto del estado
+              {type:'ping'|'bye', fondo?}    presencia de la salida
+   Las fotos no viajan (pesan cientos de KB): se mandan los nombres y cada
+   ventana usa su propio plantel.
+   Cronómetro: el operador manda el valor en cada cambio (la salida lo copia);
+   `endsAt` es solo respaldo si dejan de llegar avisos, y se re-ancla cada ~5 s.
+   El operador debe tener su ventana visible (los navegadores frenan las
+   pestañas ocultas).
+   ============================================================================ */
+(function () {
+  'use strict';
+  var I = window.cmfInternals;
+  if (!I) return;
+  var SALIDA = !!window.CMF_SALIDA;
+  var CANAL = 'cmf-salida';
+  var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
+
+  /* Transporte: lo único que habría que reescribir para usar WebSocket.
+     BroadcastChannel; si no existe, evento `storage` de localStorage. */
+  function createTransport(onMessage) {
+    var bc = null;
+    try { bc = new BroadcastChannel(CANAL); bc.onmessage = function (e) { onMessage(e.data); }; } catch (e) { bc = null; }
+    if (!bc) {
+      window.addEventListener('storage', function (e) {
+        if (e.key !== CANAL || !e.newValue) return;
+        try { onMessage(JSON.parse(e.newValue).m); } catch (err) {}
+      });
+    }
+    return {
+      send: function (m) {
+        if (bc) { bc.postMessage(m); return; }
+        try { localStorage.setItem(CANAL, JSON.stringify({ n: Math.random(), m: m })); } catch (err) {}
+      }
+    };
+  }
+
+  function byId(id) { return document.getElementById(id); }
+
+  /* ===================== OPERADOR ===================== */
+  function operador() {
+    var seq = Date.now();                 // sube siempre, también tras recargar el operador
+    var lastSig = '', lastSend = 0, queued = false;
+    var salidaVista = 0, fondoVisto = 'tormenta', fondoSalida = null;   // null: la salida usa el de su URL
+    var outWin = null, msgTimer = null, msg = '';
+
+    var tr = createTransport(function (m) {
+      if (!m) return;
+      if (m.type === 'hello') { presente(m); flush(true); }
+      else if (m.type === 'ping') presente(m);
+      else if (m.type === 'bye') { salidaVista = 0; pintar(); }
+    });
+
+    /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
+    var ind = document.createElement('div');
+    ind.id = 'salidaIndicador';
+    byId('stage').appendChild(ind);
+    function pintar() {
+      var ok = Date.now() - salidaVista < 5000;
+      ind.classList.toggle('is-ok', ok);
+      ind.textContent = msg || (ok ? 'Salida conectada · ' + fondoVisto : 'Sin salida');
+    }
+    function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
+    function presente(m) { salidaVista = Date.now(); if (m.fondo) fondoVisto = m.fondo; pintar(); }
+    setInterval(pintar, 1000);
+    pintar();
+
+    /* Estado completo; se envía solo si cambió (más el re-anclaje cada ~5 s con el reloj en marcha). */
+    function flush(force) {
+      queued = false;
+      var st = I.getState();
+      st.fondo = fondoSalida;
+      var sig = JSON.stringify(st);
+      var now = Date.now();
+      var periodic = st.timer.running && now - lastSend >= 5000;
+      if (!force && !periodic && sig === lastSig) return;
+      lastSig = sig; lastSend = now;
+      st.timer.at = now;
+      st.timer.endsAt = st.timer.running && st.timer.mode === 'down' ? now + st.timer.value * 1000 : null;
+      tr.send({ type: 'state', seq: ++seq, payload: st });
+    }
+    function schedule() { if (!queued) { queued = true; queueMicrotask(function () { flush(false); }); } }
+    setInterval(function () { if (!queued) flush(false); }, 1000);   // re-anclaje periódico
+
+    /* Qué observar: todo lo que cambia el estado que se envía. */
+    var CLASE = { attributes: true, attributeFilter: ['class'] };      // sin subtree: el motor de efectos toca el DOM de las pantallas en cada cuadro
+    var TEXTO = { childList: true, characterData: true, subtree: true };
+    [['screenFormat', CLASE], ['screenTorneo', CLASE], ['screenSelect', CLASE], ['screenContador', CLASE],
+      ['countdown', TEXTO], ['timeLabel', TEXTO], ['formatInfo', TEXTO], ['battleNum', TEXTO],
+      ['btnIniciar', { attributes: true, attributeFilter: ['disabled'] }],
+      ['mcA', CLASE], ['mcB', CLASE],
+      ['mcAName', TEXTO], ['mcBName', TEXTO], ['mcACountry', TEXTO], ['mcBCountry', TEXTO],
+      ['hpAFill', { attributes: true, attributeFilter: ['style', 'class'] }], ['hpBFill', { attributes: true, attributeFilter: ['style', 'class'] }],
+      ['winnerOverlay', { attributes: true, attributeFilter: ['hidden'] }], ['winnerName', TEXTO],
+      ['bracketStages', { childList: true, subtree: true }]
+    ].forEach(function (p) {
+      var el = byId(p[0]);
+      if (el) new MutationObserver(schedule).observe(el, p[1]);
+    });
+    byId('stageSelect').addEventListener('change', schedule);
+
+    /* Eventos (golpe / rayo / ganador), deducidos del DOM igual que el puente de efectos. */
+    function evento(name, side, extra) {
+      var m = { type: 'event', name: name };
+      if (side) m.side = side;
+      if (extra) for (var k in extra) m[k] = extra[k];
+      tr.send(m);
+    }
+    window.cmfEmit = function (name) { evento(name); };
+    [['mcAFrame', 'a'], ['mcBFrame', 'b']].forEach(function (p) {
+      var frame = byId(p[0]);
+      new MutationObserver(function (records) {
+        if (!frame.classList.contains('is-hit')) return;
+        if (records.some(function (r) { return !/\bis-hit\b/.test(r.oldValue || ''); })) evento('golpe', p[1]);
+      }).observe(frame, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+    });
+    var lastTurn = byId('mcA').classList.contains('is-active') ? 'a' : 'b';
+    new MutationObserver(function () {
+      var t = byId('mcA').classList.contains('is-active') ? 'a' : 'b';
+      if (t !== lastTurn) { lastTurn = t; evento('rayo', t); }
+    }).observe(byId('mcA'), { attributes: true, attributeFilter: ['class'] });
+    var winnerShown = !byId('winnerOverlay').hidden;
+    new MutationObserver(function () {
+      var shown = !byId('winnerOverlay').hidden;
+      if (shown && !winnerShown) evento('ganador', null, { name: byId('winnerName').textContent });
+      winnerShown = shown;
+    }).observe(byId('winnerOverlay'), { attributes: true, attributeFilter: ['hidden'] });
+
+    /* Teclas nuevas: P abre o enfoca la salida; B cambia su fondo sin recargar. */
+    function abrirSalida() {
+      var q = new URLSearchParams(location.search);
+      var url = location.href.split('?')[0].split('#')[0] + '?salida=limpia' + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
+      var w = window.open('', 'cmf-salida', 'popup=yes,width=1280,height=720');
+      if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
+      outWin = w;
+      var vacia = false;
+      try { vacia = w.location.href === 'about:blank'; } catch (e) {}
+      if (vacia) w.location.href = url; else w.focus();
+    }
+    function ciclarFondo() {
+      var base = fondoSalida || fondoVisto;
+      fondoSalida = FONDOS[(FONDOS.indexOf(base) + 1) % FONDOS.length];
+      fondoVisto = fondoSalida;
+      aviso('Fondo de salida: ' + fondoSalida);
+      flush(true);
+    }
+    document.addEventListener('keydown', function (e) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'p' || e.key === 'P') abrirSalida();
+      else if (e.key === 'b' || e.key === 'B') ciclarFondo();
+    });
+
+    flush(true);
+  }
+
+  /* ===================== SALIDA ===================== */
+  function salida() {
+    var S = window.CMF_SALIDA;
+    var lastSeq = 0, recibido = 0, ultimo = null, bracketSig = '', roster = {};
+    document.querySelectorAll('.fighter-card').forEach(function (c) {
+      var img = c.querySelector('img');
+      if (img) roster[c.dataset.name] = img.getAttribute('src');
+    });
+    /* Nodos tomados ahora: el motor de efectos reemplaza el contenido del núcleo
+       (el #countdown queda desprendido pero sigue siendo el que lee el puente). */
+    var N = {};
+    ['screenFormat', 'screenTorneo', 'screenSelect', 'screenContador', 'countdown', 'timeLabel', 'btnIniciar', 'formatInfo',
+      'mcA', 'mcB', 'tagA', 'tagB', 'mcAName', 'mcBName', 'mcACountry', 'mcBCountry', 'mcAPhoto', 'mcBPhoto', 'mcAFrame', 'mcBFrame',
+      'hpAFill', 'hpBFill', 'battleNum', 'stageSelect', 'winnerOverlay', 'winnerName', 'winnerPhoto'].forEach(function (id) { N[id] = byId(id); });
+
+    var tr = createTransport(function (m) {
+      if (!m) return;
+      if (m.type === 'state') {
+        if (m.seq <= lastSeq) return;      // llegó fuera de orden o repetido
+        lastSeq = m.seq; recibido = Date.now(); ultimo = m.payload;
+        aplicar(m.payload);
+      } else if (m.type === 'event') evento(m);
+    });
+
+    function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
+    function setPhoto(img, name) {
+      var src = roster[name];
+      if (src && img.getAttribute('src') !== src) img.setAttribute('src', src);
+    }
+    function fmtTime(v) { return Math.floor(v / 60) + ':' + (v % 60 < 10 ? '0' : '') + (v % 60); }
+    function vida(side, pct) {
+      var fill = side === 'a' ? N.hpAFill : N.hpBFill, mc = side === 'a' ? N.mcA : N.mcB;
+      var w = Math.max(0, Math.min(100, pct)) + '%';
+      if (fill.style.width !== w) fill.style.width = w;
+      fill.classList.toggle('is-warn', pct <= 50 && pct > 20);
+      fill.classList.toggle('is-critical', pct <= 20);
+      mc.classList.toggle('is-defeated', pct <= 0);
+    }
+
+    function aplicar(p) {
+      /* llaves */
+      var bs = JSON.stringify(p.bracket);
+      if (bs !== bracketSig) { bracketSig = bs; I.setBracket(JSON.parse(bs)); }
+      /* competidores */
+      setText(N.mcAName, p.mcA.name); setPhoto(N.mcAPhoto, p.mcA.name); setText(N.mcACountry, p.mcA.country);
+      setText(N.mcBName, p.mcB.name); setPhoto(N.mcBPhoto, p.mcB.name); setText(N.mcBCountry, p.mcB.country);
+      /* etapa y batalla */
+      for (var i = 0; i < N.stageSelect.options.length; i++) if (N.stageSelect.options[i].text === p.stage) N.stageSelect.selectedIndex = i;
+      setText(N.battleNum, String(p.battle));
+      if (S.refresh) S.refresh();
+      /* formato */
+      if (N.formatInfo.textContent !== p.format.name) {
+        N.formatInfo.textContent = p.format.name;
+        N.formatInfo.classList.remove('is-flash'); void N.formatInfo.offsetWidth; N.formatInfo.classList.add('is-flash');
+      }
+      setText(N.timeLabel, p.timer.label);
+      /* vida y turno */
+      vida('a', p.life.a); vida('b', p.life.b);
+      N.mcA.classList.toggle('is-active', p.turn === 'a');
+      N.mcB.classList.toggle('is-active', p.turn !== 'a');
+      setText(N.tagA, p.turn === 'a' ? 'TURNO' : ''); setText(N.tagB, p.turn !== 'a' ? 'TURNO' : '');
+      /* cronómetro: el valor del operador, tal cual */
+      setText(N.countdown, p.timer.text);
+      if (N.btnIniciar.disabled !== p.timer.startDisabled) N.btnIniciar.disabled = p.timer.startDisabled;
+      /* ganador */
+      if (p.winner) { setText(N.winnerName, p.winner.name); setPhoto(N.winnerPhoto, p.winner.name); }
+      N.winnerOverlay.hidden = !p.winner;
+      /* fondo (solo si el operador lo eligió con B) */
+      if (p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
+      /* pantalla al final: el motor de efectos se monta con todo ya puesto.
+         Formato y Selección (menús del operador) = fondo vacío. */
+      var scr = p.screen === 'Select' ? 'Format' : p.screen;
+      ['Format', 'Torneo', 'Contador'].forEach(function (n) { N['screen' + n].classList.toggle('active', n === scr); });
+      N.screenSelect.classList.remove('active');
+    }
+
+    function evento(m) {
+      if (m.name === 'golpe') {
+        var frame = m.side === 'a' ? N.mcAFrame : N.mcBFrame;
+        frame.classList.remove('is-hit'); void frame.offsetWidth; frame.classList.add('is-hit');
+      }
+      /* rayo, ganador y replica llegan también como estado: el puente de
+         efectos los reproduce al aplicar turno, ganador y formato. */
+    }
+
+    /* Respaldo del cronómetro: si dejan de llegar avisos, sigue la cuenta con endsAt. */
+    setInterval(function () {
+      if (!ultimo || !ultimo.timer.running || Date.now() - recibido < 1300) return;
+      var t = ultimo.timer, v;
+      if (t.mode === 'down') v = Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000));
+      else v = t.value + Math.floor((Date.now() - t.at) / 1000);
+      setText(N.countdown, t.mode === 'down' ? String(v) : fmtTime(v));
+    }, 250);
+
+    /* Presencia: hello hasta recibir el primer estado; ping cada 2 s. */
+    tr.send({ type: 'hello' });
+    var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello' }); }, 1000);
+    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo }); }, 2000);
+    window.addEventListener('pagehide', function () { tr.send({ type: 'bye' }); });
+  }
+
+  if (SALIDA) salida(); else operador();
 })();
 </script>
 </body></html>
