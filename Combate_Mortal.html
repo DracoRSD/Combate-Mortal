@@ -1471,7 +1471,7 @@
       <div class="mode-card__art"></div>
       <div class="mode-card__scrim"></div>
       <h3 class="mode-card__title">8x8 Tem&aacute;tica</h3>
-      <p class="mode-card__desc">120s &middot; palabra tem&aacute;tica</p>
+      <p class="mode-card__desc">120s &middot; palabra tem&aacute;tica + 4x4 de 120s</p>
     </button>
     <button type="button" data-nav-item class="mode-card" data-format="doceXdoce">
       <div class="mode-card__art"></div>
@@ -1937,7 +1937,7 @@
   var FORMATS = [
     { key: 'minutoIdaVuelta', name: 'MINUTO IDA Y VUELTA', time: 60, mode: 'turns', entradas: 2, description: '60s \u00d7 2 entradas' },
     { key: 'cuatroXcuatro', name: '4X4 LIBRE', time: 120, mode: 'single', description: '120 segundos' },
-    { key: 'ochoXocho', name: '8X8 TEM\u00c1TICA', time: 120, mode: 'tematica', description: '120s \u00b7 palabra tem\u00e1tica' },
+    { key: 'ochoXocho', name: '8X8 TEM\u00c1TICA', time: 120, mode: 'tematica', then: 'cuatroXcuatro', description: '120s \u00b7 palabra tem\u00e1tica + 4x4 de 120s' },
     { key: 'doceXdoce', name: '12X12 IDA Y VUELTA', time: 30, mode: 'turns', entradas: 4, then: 'cuatroXcuatro', description: '30s \u00d7 4 entradas + 4x4 de 120s' },
     { key: 'dosXdos', name: '2X2 IDA Y VUELTA', time: 30, mode: 'turns', entradas: 5, description: '30s \u00d7 5 entradas' },
     { key: 'fatality', name: 'FATALITY', time: null, mode: 'stopwatch', description: 'Sin l\u00edmite \u00b7 decide el jurado' }
