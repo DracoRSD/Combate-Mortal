@@ -1404,6 +1404,7 @@
 
   root.classList.add('salida');
   root.classList.toggle('salida-pres', S.modo === 'presentacion');
+  document.title = S.modo === 'presentacion' ? 'CMF Presentación' : 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
   S.setFondo(q.get('fondo'));
 
   /* Teclado: la salida no atiende ninguna tecla (salvo las del navegador: F11, F5, Ctrl/Alt/Meta). */
