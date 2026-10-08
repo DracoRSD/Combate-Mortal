@@ -7,12 +7,14 @@
   y abrir en Chrome o Edge, en el computador del operador:
       Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
+      Presentación (fotos del enfrentamiento) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
 
   TECLAS (operador): Espacio iniciar · G golpe · Retroceso reiniciar · T turno · N siguiente batalla · V volver · R réplica ·
-  F efectos · flechas navegar · Escape cerrar selector · P abrir/enfocar salida · B cambiar fondo de la salida.
+  F efectos · flechas navegar · Escape cerrar selector · P abrir/enfocar salida · L abrir/enfocar presentación ·
+  E mostrar/ocultar la presentación (con la batalla preparada; se quita sola al iniciar el reloj) · B cambiar fondo de las salidas.
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
 -->
@@ -1284,8 +1286,8 @@
   html.fondo-plano #screenContador, html.fondo-plano #screenFormat { background: transparent !important; }
   html.fondo-plano .mc-frame, html.fondo-plano .mc-card, html.fondo-plano .mc { -webkit-box-reflect: below 0 linear-gradient(transparent, transparent); }
   html.fondo-plano .bracket-field__icon { filter: none; }
-  html.fondo-plano .mc-name { filter: drop-shadow(0 3px 0 rgba(4, 12, 30, 0.9)); }
-  html.fondo-plano .cmfx-core__num { filter: drop-shadow(0 3px 0 rgba(4, 12, 30, 0.92)); }
+  html.fondo-plano .mc-name { filter: drop-shadow(0 3px 0 #040c1e); }
+  html.fondo-plano .cmfx-core__num { filter: drop-shadow(0 3px 0 #040c1e); }
   html.fondo-plano .cmfx-card.is-turn { box-shadow: 0 0 0 1px #a0d7ff; }
   /* Anillo de turno: base sólida (sin degradado a transparente) con el destello recorriéndolo. */
   html.fondo-plano .cmfx-card.is-turn::before {
@@ -1323,6 +1325,38 @@
   #salidaIndicador::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
   #salidaIndicador.is-ok { color: #3ddc84; border-color: rgba(61, 220, 132, 0.45); }
   html.salida #salidaIndicador { display: none; }
+  /* ----- Presentación del enfrentamiento (ventana ?salida=presentacion) -----
+     Banner con las dos fotos a los lados y el centro libre (cámaras). Va en una
+     salida aparte del contador: se muestra y se quita con la tecla E del
+     operador. Sin brillos difusos: se ve igual con tormenta o con croma. */
+  #presentacion { display: none; }
+  html.salida-pres #presentacion {
+    display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 40; pointer-events: none;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0s linear 0.35s !important;
+  }
+  html.salida-pres #presentacion.is-on { opacity: 1; visibility: visible; transition: opacity 0.35s ease, visibility 0s !important; }
+  html.salida-pres #presentacion > .bracket-bar { position: absolute; left: 50%; top: 54px; transform: translateX(-50%); max-width: 760px; }
+  html.salida-pres #presentacion > .format-info { position: absolute; left: 50%; top: 136px; transform: translateX(-50%); max-width: 760px; }
+  .pres-lado { position: absolute; top: 235px; width: 502.2px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pres-lado--a { left: 150px; }
+  .pres-lado--b { right: 150px; }
+  .pres-card { position: relative; width: 502.2px; aspect-ratio: 3 / 4; margin-bottom: 6px; }
+  .pres-lado .mc-name { max-width: 500px; margin-top: 0; }
+  .pres-lado .mc-country { display: none; }   /* la foto ya trae "Desde ..."; quitar esta línea para mostrarlo también */
+  .pres-vs {
+    position: absolute; left: 50%; top: 470px; transform: translateX(-50%);
+    font-family: var(--cm-display); font-size: 240px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 0 #040c1e);
+  }
+  /* Entrada: las tarjetas entran desde los lados. */
+  html.salida-pres .pres-lado { transition: transform 0.5s cubic-bezier(.2, .8, .2, 1) !important; }
+  html.salida-pres .pres-lado--a { transform: translateX(-70px); }
+  html.salida-pres .pres-lado--b { transform: translateX(70px); }
+  html.salida-pres #presentacion.is-on .pres-lado { transform: none; }
+  html.salida-pres .pres-vs { transition: transform 0.5s cubic-bezier(.2, .8, .2, 1), opacity 0.5s ease !important; transform: translateX(-50%) scale(0.8); }
+  html.salida-pres #presentacion.is-on .pres-vs { transform: translateX(-50%); }
 </style>
 
 <script>
@@ -1332,10 +1366,11 @@
    no atiende teclado ni foco; solo muestra lo que se le aplica. */
 (function () {
   var q = new URLSearchParams(location.search);
-  if (q.get('salida') !== 'limpia') return;
+  var modo = q.get('salida');
+  if (modo !== 'limpia' && modo !== 'presentacion') return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
   var root = document.documentElement;
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
-  var S = window.CMF_SALIDA = { on: true, fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
+  var S = window.CMF_SALIDA = { on: true, modo: modo === 'presentacion' ? 'presentacion' : 'contador', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
 
   var c = (q.get('croma') || '').trim();
   if (/^#?[0-9a-f]{6}$/i.test(c)) S.croma = '#' + c.replace('#', '').toUpperCase();
@@ -1364,6 +1399,7 @@
   };
 
   root.classList.add('salida');
+  root.classList.toggle('salida-pres', S.modo === 'presentacion');
   S.setFondo(q.get('fondo'));
 
   /* Teclado: la salida no atiende ninguna tecla (salvo las del navegador: F11, F5, Ctrl/Alt/Meta). */
@@ -1625,6 +1661,31 @@
       <button type="button" class="btn-back" id="bracketPickerClose" data-nav-item>Cerrar</button>
     </div>
     <div class="fighter-grid bracket-picker__grid" id="bracketPickerGrid"></div>
+  </div>
+</div>
+<!-- Presentación del enfrentamiento: solo se ve en la ventana ?salida=presentacion -->
+<div id="presentacion" aria-hidden="true">
+  <div class="bracket-bar cmfx-plate">
+    <div class="bracket-field">
+      <span class="bracket-field__icon" aria-hidden="true">&#127942;</span>
+      <div class="bracket-field__body"><label>Etapa</label><div class="salida-etapa" id="presEtapa"></div></div>
+    </div>
+    <div class="battle-counter">
+      <span class="bracket-field__icon" aria-hidden="true">&#129354;</span>
+      <div class="bracket-field__body"><label>Batalla</label><div class="battle-counter__controls"><div class="battle-num"><span id="presBatalla">1</span></div></div></div>
+    </div>
+  </div>
+  <div class="format-info cmfx-plate" id="presFormato"></div>
+  <div class="pres-lado pres-lado--a">
+    <div class="pres-card"><div class="mc-frame"><div class="mc-frame__inner"><img class="mc-frame__photo" id="presFotoA" alt=""></div></div></div>
+    <div class="mc-name" id="presNombreA"></div>
+    <div class="mc-country" id="presPaisA"></div>
+  </div>
+  <div class="pres-vs">VS</div>
+  <div class="pres-lado pres-lado--b">
+    <div class="pres-card"><div class="mc-frame"><div class="mc-frame__inner"><img class="mc-frame__photo" id="presFotoB" alt=""></div></div></div>
+    <div class="mc-name" id="presNombreB"></div>
+    <div class="mc-country" id="presPaisB"></div>
   </div>
 </div>
 </div><!-- /#stage -->
@@ -3783,7 +3844,7 @@ else init();
   function operador() {
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
-    var salidaVista = 0, fondoVisto = 'tormenta', fondoSalida = null;   // null: la salida usa el de su URL
+    var salidaVista = 0, presVista = 0, presentando = false, fondoVisto = 'tormenta', fondoSalida = null;   // null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
       var prev = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
@@ -3794,7 +3855,7 @@ else init();
       if (!m) return;
       if (m.type === 'hello') { presente(m); flush(true); }
       else if (m.type === 'ping') presente(m);
-      else if (m.type === 'bye') { salidaVista = 0; pintar(); }
+      else if (m.type === 'bye') { if (m.modo === 'presentacion') presVista = 0; else salidaVista = 0; pintar(); }
     });
 
     /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
@@ -3802,12 +3863,12 @@ else init();
     ind.id = 'salidaIndicador';
     byId('stage').appendChild(ind);
     function pintar() {
-      var ok = Date.now() - salidaVista < 5000;
+      var ok = Date.now() - salidaVista < 5000, pok = Date.now() - presVista < 5000;
       ind.classList.toggle('is-ok', ok);
-      ind.textContent = msg || (ok ? 'Salida conectada · ' + fondoVisto : 'Sin salida');
+      ind.textContent = msg || ((ok ? 'Salida conectada · ' + fondoVisto : 'Sin salida') + (pok ? ' · Presentación conectada' : presentando ? ' · Sin ventana de presentación' : ''));
     }
     function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
-    function presente(m) { salidaVista = Date.now(); if (m.fondo) fondoVisto = m.fondo; pintar(); }
+    function presente(m) { if (m.modo === 'presentacion') presVista = Date.now(); else { salidaVista = Date.now(); if (m.fondo) fondoVisto = m.fondo; } pintar(); }
     setInterval(pintar, 1000);
     pintar();
 
@@ -3816,6 +3877,9 @@ else init();
       queued = false;
       var st = I.getState();
       st.fondo = fondoSalida;
+      /* La presentación solo tiene sentido con la batalla preparada: se quita sola al iniciar el reloj, al haber ganador o al salir. */
+      if (presentando && (st.screen !== 'Contador' || st.timer.startDisabled || st.winner)) presentando = false;
+      st.presentacion = presentando;
       var sig = JSON.stringify(st);
       var now = Date.now();
       var periodic = st.timer.running && now - lastSend >= 5000;
@@ -3873,11 +3937,12 @@ else init();
       winnerShown = shown;
     }).observe(byId('winnerOverlay'), { attributes: true, attributeFilter: ['hidden'] });
 
-    /* Teclas nuevas: P abre o enfoca la salida; B cambia su fondo sin recargar. */
-    function abrirSalida() {
+    /* Teclas nuevas: P abre o enfoca la salida; L la ventana de presentación; E muestra/oculta la presentación; B cambia el fondo sin recargar. */
+    function abrirSalida(modo) {
+      var pres = modo === 'presentacion';
       var q = new URLSearchParams(location.search);
-      var url = location.href.split('?')[0].split('#')[0] + '?salida=limpia' + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
-      var w = window.open('', 'cmf-salida', 'popup=yes,width=1280,height=720');
+      var url = location.href.split('?')[0].split('#')[0] + '?salida=' + (pres ? 'presentacion' : 'limpia') + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
+      var w = window.open('', pres ? 'cmf-presentacion' : 'cmf-salida', 'popup=yes,width=1280,height=720');
       if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
       outWin = w;
       var vacia = false;
@@ -3896,6 +3961,13 @@ else init();
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'p' || e.key === 'P') abrirSalida();
+      else if (e.key === 'l' || e.key === 'L') abrirSalida('presentacion');
+      else if (e.key === 'e' || e.key === 'E') {
+        if (!document.getElementById('screenContador').classList.contains('active') || byId('btnIniciar').disabled) { aviso('Presentación: solo con la batalla preparada y sin iniciar'); return; }
+        presentando = !presentando;
+        aviso(presentando ? 'Presentación en pantalla' : 'Presentación oculta');
+        flush(true);
+      }
       else if (e.key === 'b' || e.key === 'B') ciclarFondo();
     });
 
@@ -3941,7 +4013,29 @@ else init();
       mc.classList.toggle('is-defeated', pct <= 0);
     }
 
+    /* Ventana de presentación: solo rellena el banner de fotos; no toca contador ni llaves. */
+    var P = {};
+    ['presentacion', 'presEtapa', 'presBatalla', 'presFormato', 'presFotoA', 'presFotoB', 'presNombreA', 'presNombreB', 'presPaisA', 'presPaisB'].forEach(function (id) { P[id] = byId(id); });
+    function ajustar(el) {   // mismo criterio que el contador: si el nombre no cabe, se reduce la fuente
+      el.style.fontSize = '';
+      var max = parseFloat(getComputedStyle(el).maxWidth) || el.clientWidth;
+      if (el.scrollWidth <= max) return;
+      var size = parseFloat(getComputedStyle(el).fontSize);
+      el.style.fontSize = Math.max(12, size * 0.4, size * max / el.scrollWidth).toFixed(2) + 'px';
+    }
+    function aplicarPres(p) {
+      setText(P.presEtapa, p.stage); setText(P.presBatalla, String(p.battle)); setText(P.presFormato, p.format.name);
+      setPhoto(P.presFotoA, p.mcA.name); setPhoto(P.presFotoB, p.mcB.name);
+      setText(P.presNombreA, p.mcA.name); setText(P.presNombreB, p.mcB.name);
+      setText(P.presPaisA, p.mcA.country); setText(P.presPaisB, p.mcB.country);
+      ajustar(P.presNombreA); ajustar(P.presNombreB); ajustar(P.presPaisA); ajustar(P.presPaisB);
+      if (p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
+      P.presentacion.classList.toggle('is-on', !!p.presentacion);
+    }
+    document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'presentacion') aplicarPres(ultimo); });
+
     function aplicar(p) {
+      if (S.modo === 'presentacion') { aplicarPres(p); return; }
       /* llaves */
       var bs = JSON.stringify(p.bracket);
       if (bs !== bracketSig) { bracketSig = bs; I.setBracket(JSON.parse(bs)); }
@@ -3997,10 +4091,10 @@ else init();
     }, 250);
 
     /* Presencia: hello hasta recibir el primer estado; ping cada 2 s. */
-    tr.send({ type: 'hello' });
-    var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello' }); }, 1000);
-    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo }); }, 2000);
-    window.addEventListener('pagehide', function () { tr.send({ type: 'bye' }); });
+    tr.send({ type: 'hello', modo: S.modo });
+    var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello', modo: S.modo }); }, 1000);
+    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo, modo: S.modo }); }, 2000);
+    window.addEventListener('pagehide', function () { tr.send({ type: 'bye', modo: S.modo }); });
   }
 
   if (SALIDA) salida(); else operador();
