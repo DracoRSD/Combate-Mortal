@@ -8,13 +8,16 @@
       Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
       Presentación (solo las 2 fotos, croma) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
+      Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
 
   TECLAS (operador): Espacio iniciar · G golpe · Retroceso reiniciar · T turno · N siguiente batalla · V volver · R réplica ·
-  F efectos · flechas navegar · Escape cerrar selector · P abrir/enfocar salida · L abrir/enfocar presentación ·
-  E mostrar/ocultar la presentación (con la batalla preparada; se quita sola al iniciar el reloj) · B cambiar fondo de las salidas.
+  F efectos · flechas navegar · Escape cerrar selector.
+  Modo transmisión: O abrir/cerrar su ventana · B mostrar/ocultar el bloque de la esquina · P presentación VS (7 s) ·
+  E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
+  3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas.
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
 -->
@@ -1380,6 +1383,99 @@
   }
   .bracket-theme__input:focus { border-color: #7fd0ff; box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.4); }
   html.salida .bracket-theme, html.salida .word-edit { display: none !important; }
+  /* ----- Revelado de la temática (W) ----- */
+  #wordReveal { display: none; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 70; pointer-events: none; align-items: center; justify-content: center; overflow: hidden; }
+  #wordReveal.is-on { display: flex; }
+  html.salida-pres #wordReveal { display: none !important; }
+  .wr-bar { position: absolute; left: 0; width: 100%; height: 120px; opacity: 0; }
+  .wr-bar--a { top: 36%; background: #1e90ff; }
+  .wr-bar--b { top: 52%; background: #7fd0ff; }
+  .wr-texto {
+    position: relative; font-family: var(--cm-display); font-size: 230px; line-height: 1.1; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 8px 0 #040c1e); opacity: 0;
+  }
+
+  /* ----- Modo transmisión: bloque de la esquina inferior izquierda ----- */
+  #transmision, #vs { display: none; }
+  html.salida-trans #transmision { display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 40; pointer-events: none; }
+  .tx-bloque {
+    position: absolute; left: 48px; bottom: 56px; display: flex; align-items: center; gap: 14px;
+    opacity: 0; transform: translateX(-130%);
+    transition: transform 0.5s cubic-bezier(.2, .8, .2, 1), opacity 0.4s ease;
+  }
+  .tx-bloque.is-on { opacity: 1; transform: none; }
+  .tx-reloj { --d: 200px; flex: none; }
+  .tx-col { display: flex; flex-direction: column; gap: 5px; width: 560px; }
+  .tx-tab {
+    display: flex; align-items: center; gap: 12px; padding: 6px 22px; white-space: nowrap;
+    font-family: var(--cm-display); font-size: 27px; letter-spacing: 0.06em; text-transform: uppercase; color: #fff;
+    border: 3px solid transparent;
+    background: linear-gradient(#1e90ff, #1e90ff) padding-box, var(--b-chrome) border-box;
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  }
+  .tx-tab i { font-style: normal; opacity: 0.8; }
+  .tx-barra { display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 4px 16px; box-sizing: border-box; }
+  .tx-barra.is-off { display: none; }
+  .tx-tema { justify-content: space-between; }
+  .tx-tema b { font-family: var(--cm-label); font-weight: 400; font-size: 20px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--b-cyan); }
+  .tx-tema span { font-family: var(--cm-display); font-size: 34px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--b-white); }
+  /* El participante sin turno se atenúa con una capa oscura (opacity), no bajando la opacidad de la barra: así sigue 100% opaca sobre el croma. */
+  .tx-mc { position: relative; }
+  .tx-mc::before { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #020611; opacity: 0.55; transition: opacity 0.3s ease; pointer-events: none; z-index: 3; }
+  .tx-mc.is-active::before { opacity: 0; }
+  .tx-mc.is-active { border-color: var(--b-cyan); background: linear-gradient(180deg, #24427a 0%, #0f2550 52%, #08183a 100%); }
+  .tx-mc.is-active::after { content: 'TURNO'; margin-left: 6px; font-family: var(--cm-label); font-size: 16px; letter-spacing: 0.25em; color: var(--b-night); background: var(--b-cyan); padding: 1px 8px; }
+  .tx-foto { position: relative; flex: none; width: 46px; height: 46px; overflow: hidden; background: var(--b-deep);
+    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px); }
+  .tx-foto img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; transform: scale(2.1); transform-origin: 50% 18%; }
+  .tx-nombre { flex: 1; min-width: 0; font-family: var(--cm-display); font-size: 32px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--b-white); }
+  .tx-pais { display: flex; align-items: center; gap: 8px; font-family: var(--cm-label); font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--b-cyan); }
+  .tx-pais em { font-style: normal; }
+  .tx-bandera, .vs-bandera { display: block; width: 30px; height: 20px; }
+  .tx-bandera[src=""], .vs-bandera[src=""], .tx-bandera:not([src]), .vs-bandera:not([src]) { display: none; }
+  .tx-entrada { justify-content: center; min-height: 38px; font-family: var(--cm-label); font-size: 22px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--b-cyan); }
+
+  /* ----- Presentación VS (P): dos mitades en diagonal ----- */
+  html.salida-trans #vs {
+    display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 60; pointer-events: none;
+    visibility: hidden; opacity: 0; transition: opacity 0.3s ease 0.3s, visibility 0s linear 0.6s;
+  }
+  html.salida-trans #vs.is-on { visibility: visible; opacity: 1; transition: opacity 0.1s ease, visibility 0s; }
+  .vs-mitad { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0b1936; transition: transform 0.45s cubic-bezier(.6, 0, .9, .4); }
+  .vs-mitad--a { clip-path: polygon(0 0, 55.5% 0, 39.5% 100%, 0 100%); transform: translateX(-100%); }
+  .vs-mitad--b { clip-path: polygon(60.5% 0, 100% 0, 100% 100%, 44.5% 100%); transform: translateX(100%); }
+  #vs.is-on .vs-mitad { transform: none; transition: transform 0.55s cubic-bezier(.2, .9, .2, 1); }
+  .vs-mitad img { position: absolute; top: 0; height: 100%; width: 1190px; object-fit: cover; object-position: top center; transform: scale(1.35) translateY(-14%); transform-origin: center top; }
+  .vs-mitad--a img { left: 0; }
+  .vs-mitad--b img { right: 0; }
+  .vs-mitad::after { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(rgba(2, 6, 17, 0) 55%, rgba(2, 6, 17, 0.88)); }
+  .vs-banda { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #1e90ff; clip-path: polygon(55.5% 0, 60.5% 0, 44.5% 100%, 39.5% 100%); opacity: 0; transition: opacity 0.2s ease; }
+  #vs.is-on .vs-banda { opacity: 1; transition: opacity 0.2s ease 0.35s; }
+  .vs-rayo { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; }
+  #vs.is-on .vs-rayo { opacity: 1; transition: opacity 0.1s ease 0.4s; }
+  .vs-vs {
+    position: absolute; left: 50%; top: 50%; font-family: var(--cm-display); font-size: 330px; line-height: 1; letter-spacing: 0.02em;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 8px 0 #040c1e); transform: translate(-50%, -50%) scale(0.4); opacity: 0;
+  }
+  #vs.is-on .vs-vs { transform: translate(-50%, -50%); opacity: 1; transition: transform 0.5s cubic-bezier(.2, 1.4, .3, 1) 0.45s, opacity 0.2s ease 0.45s; }
+  .vs-dato { position: absolute; bottom: 70px; display: flex; flex-direction: column; gap: 12px; max-width: 830px; opacity: 0; transform: translateY(40px); transition: opacity 0.3s ease, transform 0.3s ease; }
+  .vs-dato--a { left: 70px; align-items: flex-start; }
+  .vs-dato--b { right: 70px; align-items: flex-end; }
+  #vs.is-on .vs-dato { opacity: 1; transform: none; transition: opacity 0.4s ease 0.55s, transform 0.5s ease 0.55s; }
+  .vs-nombre {
+    font-family: var(--cm-display); font-size: 120px; line-height: 1.05; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; max-width: 830px;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 0 #040c1e);
+  }
+  .vs-pais { display: flex; align-items: center; gap: 16px; padding: 6px 20px; background: #061430; font-family: var(--cm-label); font-size: 38px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--b-white);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+  .vs-pais.is-off { display: none; }
+  .vs-bandera { width: 48px; height: 32px; }
+  .vs-flash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #eaf6ff; opacity: 0; }
+  #vs.is-on .vs-flash { animation: vs-flash 0.6s ease-out 0.45s both; }
+  @keyframes vs-flash { 0% { opacity: 0; } 12% { opacity: 0.85; } 100% { opacity: 0; } }
 </style>
 
 <script>
@@ -1390,10 +1486,10 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var modo = q.get('salida');
-  if (modo !== 'limpia' && modo !== 'presentacion') return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
+  if (modo !== 'limpia' && modo !== 'presentacion' && modo !== 'transmision') return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
   var root = document.documentElement;
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
-  var S = window.CMF_SALIDA = { on: true, modo: modo === 'presentacion' ? 'presentacion' : 'contador', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
+  var S = window.CMF_SALIDA = { on: true, modo: modo === 'presentacion' || modo === 'transmision' ? modo : 'contador', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
 
   var c = (q.get('croma') || '').trim();
   if (/^#?[0-9a-f]{6}$/i.test(c)) S.croma = '#' + c.replace('#', '').toUpperCase();
@@ -1410,8 +1506,8 @@
 
   /* Fondo: se puede cambiar en caliente (tecla B del operador, vía sincronización). */
   S.setFondo = function (name) {
-    if (FONDOS.indexOf(name) < 0) name = S.modo === 'presentacion' ? 'croma' : 'tormenta';
-    if (S.modo === 'presentacion' && name === 'tormenta') name = 'croma';   // la presentación nunca muestra la tormenta
+    if (FONDOS.indexOf(name) < 0) name = S.modo !== 'contador' ? 'croma' : 'tormenta';
+    if (S.modo !== 'contador' && name === 'tormenta') name = 'croma';   // presentación y transmisión nunca muestran la tormenta
     var before = S.flat;
     S.fondo = name;
     S.flat = name !== 'tormenta';
@@ -1424,7 +1520,8 @@
 
   root.classList.add('salida');
   root.classList.toggle('salida-pres', S.modo === 'presentacion');
-  document.title = S.modo === 'presentacion' ? 'CMF Presentación' : 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
+  root.classList.toggle('salida-trans', S.modo === 'transmision');
+  document.title = S.modo === 'presentacion' ? 'CMF Presentación' : S.modo === 'transmision' ? 'CMF Transmisión' : 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
   S.setFondo(q.get('fondo'));
 
   /* Teclado: la salida no atiende ninguna tecla (salvo las del navegador: F11, F5, Ctrl/Alt/Meta). */
@@ -1714,6 +1811,37 @@
     <div class="mc-name" id="presNombreB"></div>
     <div class="mc-country" id="presPaisB"></div>
   </div>
+</div>
+<!-- Revelado de la temática (W): palabra grande al centro que viaja a su sitio -->
+<div id="wordReveal" aria-hidden="true">
+  <div class="wr-bar wr-bar--a"></div><div class="wr-bar wr-bar--b"></div>
+  <div class="wr-texto" id="wordRevealText"></div>
+</div>
+
+<!-- Modo transmisión (ventana ?salida=transmision): bloque de la esquina inferior izquierda -->
+<div id="transmision" aria-hidden="true">
+  <div class="tx-bloque" id="txBloque">
+    <div class="tx-reloj" id="txReloj"></div>
+    <div class="tx-col">
+      <div class="tx-tab"><span id="txEtapa"></span><i>&middot;</i><span id="txFormato"></span></div>
+      <div class="tx-barra cmfx-plate tx-tema" id="txTema"><b>Tem&aacute;tica</b><span id="txTemaValor">??????</span></div>
+      <div class="tx-barra cmfx-plate tx-mc" id="txMcA"><div class="tx-foto"><img id="txFotoA" alt=""></div><span class="tx-nombre" id="txNombreA"></span><span class="tx-pais"><img class="tx-bandera" id="txBanderaA" alt=""><em id="txPaisA"></em></span></div>
+      <div class="tx-barra cmfx-plate tx-mc" id="txMcB"><div class="tx-foto"><img id="txFotoB" alt=""></div><span class="tx-nombre" id="txNombreB"></span><span class="tx-pais"><img class="tx-bandera" id="txBanderaB" alt=""><em id="txPaisB"></em></span></div>
+      <div class="tx-barra cmfx-plate tx-entrada" id="txEntrada"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Presentación VS (P): pantalla dividida en diagonal, solo en la ventana de transmisión -->
+<div id="vs" aria-hidden="true">
+  <div class="vs-mitad vs-mitad--a"><img id="vsFotoA" alt=""></div>
+  <div class="vs-mitad vs-mitad--b"><img id="vsFotoB" alt=""></div>
+  <div class="vs-banda"></div>
+  <svg class="vs-rayo" viewBox="0 0 1920 1080" aria-hidden="true"><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="#eaf6ff"/><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="none" stroke="#7fd0ff" stroke-width="10" stroke-linejoin="round"/></svg>
+  <div class="vs-vs">VS</div>
+  <div class="vs-dato vs-dato--a"><div class="vs-nombre" id="vsNombreA"></div><div class="vs-pais" id="vsPaisWA"><img class="vs-bandera" id="vsBanderaA" alt=""><span id="vsPaisA"></span></div></div>
+  <div class="vs-dato vs-dato--b"><div class="vs-nombre" id="vsNombreB"></div><div class="vs-pais" id="vsPaisWB"><img class="vs-bandera" id="vsBanderaB" alt=""><span id="vsPaisB"></span></div></div>
+  <div class="vs-flash"></div>
 </div>
 </div><!-- /#stage -->
 
@@ -3990,11 +4118,58 @@ else init();
 
   function byId(id) { return document.getElementById(id); }
 
+  /* Revelado de la temática (W): la palabra aparece grande al centro con un
+     destello azul unos 3 s y viaja al elemento de destino (la placa del
+     contador o la barra de TEMÁTICA del bloque). Solo transform y opacity.
+     Mientras dura, window.cmfRevealing = true y la palabra sigue oculta ("??????"). */
+  function playReveal(word, getTarget, done) {
+    var ov = byId('wordReveal'), tx = byId('wordRevealText');
+    if (!ov || window.cmfRevealing) return;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.cmfRevealing = true;
+    function fin() { ov.classList.remove('is-on'); window.cmfRevealing = false; if (done) done(); }
+    if (reduce) { fin(); return; }
+    tx.textContent = word;
+    tx.style.fontSize = '';
+    ov.classList.add('is-on');
+    var w0 = tx.scrollWidth;
+    if (w0 > 1700) tx.style.fontSize = (230 * 1700 / w0).toFixed(1) + 'px';
+    var sc = parseFloat(byId('stage').style.getPropertyValue('--stage-scale')) || 1;
+    var r0 = tx.getBoundingClientRect();
+    var dx = -700, dy = 380, k = 0.2;     // sin destino visible: hacia la esquina inferior izquierda
+    var tg = getTarget && getTarget();
+    if (tg) {
+      var r = tg.getBoundingClientRect();
+      if (r.width > 0) {
+        dx = ((r.left + r.width / 2) - (r0.left + r0.width / 2)) / sc;
+        dy = ((r.top + r.height / 2) - (r0.top + r0.height / 2)) / sc;
+        k = Math.max(0.1, Math.min(0.5, (r.height * 0.7) / r0.height));
+      }
+    }
+    var dest = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + k.toFixed(3) + ')';
+    var anim = tx.animate([
+      { opacity: 0, transform: 'scale(0.55)', offset: 0, easing: 'cubic-bezier(.2,.9,.2,1)' },
+      { opacity: 1, transform: 'scale(1.06)', offset: 0.1 },
+      { opacity: 1, transform: 'scale(1)', offset: 0.14 },
+      { opacity: 1, transform: 'scale(1)', offset: 0.76, easing: 'cubic-bezier(.6,0,.3,1)' },
+      { opacity: 1, transform: dest, offset: 0.96 },
+      { opacity: 0, transform: dest, offset: 1 }
+    ], { duration: 4600, fill: 'forwards' });
+    Array.prototype.forEach.call(ov.querySelectorAll('.wr-bar'), function (b, i) {
+      b.animate([
+        { transform: 'translateX(-110%) skewX(-20deg)', opacity: 0.95 },
+        { transform: 'translateX(110%) skewX(-20deg)', opacity: 0 }
+      ], { duration: 650, delay: 80 + i * 140, easing: 'ease-out', fill: 'both' });
+    });
+    anim.onfinish = fin;
+  }
+
   /* ===================== OPERADOR ===================== */
   function operador() {
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
-    var salidaVista = 0, presVista = 0, presentando = false, fondoVisto = 'tormenta', fondoSalida = null;   // null: la salida usa el de su URL
+    var vistas = { contador: 0, presentacion: 0, transmision: 0 };     // última señal de cada ventana de salida
+    var presentando = false, vs = false, vsTimer = null, bloque = true, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
       var prev = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
@@ -4005,7 +4180,7 @@ else init();
       if (!m) return;
       if (m.type === 'hello') { presente(m); flush(true); }
       else if (m.type === 'ping') presente(m);
-      else if (m.type === 'bye') { if (m.modo === 'presentacion') presVista = 0; else salidaVista = 0; pintar(); }
+      else if (m.type === 'bye') { vistas[m.modo || 'contador'] = 0; pintar(); }
     });
 
     /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
@@ -4013,12 +4188,16 @@ else init();
     ind.id = 'salidaIndicador';
     byId('stage').appendChild(ind);
     function pintar() {
-      var ok = Date.now() - salidaVista < 5000, pok = Date.now() - presVista < 5000;
+      var now = Date.now(), ok = now - vistas.contador < 5000;
+      var partes = [ok ? 'Salida conectada · ' + fondoVisto : 'Sin salida'];
+      if (now - vistas.presentacion < 5000) partes.push('Presentación conectada');
+      else if (presentando) partes.push('Sin ventana de presentación');
+      if (now - vistas.transmision < 5000) partes.push('Transmisión conectada');
       ind.classList.toggle('is-ok', ok);
-      ind.textContent = msg || ((ok ? 'Salida conectada · ' + fondoVisto : 'Sin salida') + (pok ? ' · Presentación conectada' : presentando ? ' · Sin ventana de presentación' : ''));
+      ind.textContent = msg || partes.join(' · ');
     }
     function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
-    function presente(m) { if (m.modo === 'presentacion') presVista = Date.now(); else { salidaVista = Date.now(); if (m.fondo) fondoVisto = m.fondo; } pintar(); }
+    function presente(m) { var k = m.modo || 'contador'; vistas[k] = Date.now(); if (k === 'contador' && m.fondo) fondoVisto = m.fondo; pintar(); }
     setInterval(pintar, 1000);
     pintar();
 
@@ -4030,6 +4209,9 @@ else init();
       /* La presentación solo tiene sentido con la batalla preparada: se quita sola al iniciar el reloj, al haber ganador o al salir. */
       if (presentando && (st.screen !== 'Contador' || st.timer.startDisabled || st.winner)) presentando = false;
       st.presentacion = presentando;
+      if (vs && st.screen !== 'Contador') vs = false;   // la presentación VS se cierra sola (7 s) o al salir de la batalla
+      st.vs = vs;
+      st.bloque = bloque;                               // bloque de la esquina visible (tecla B)
       var sig = JSON.stringify(st);
       var now = Date.now();
       var periodic = st.timer.running && now - lastSend >= 5000;
@@ -4053,6 +4235,7 @@ else init();
       ['mcAName', TEXTO], ['mcBName', TEXTO], ['mcACountry', TEXTO], ['mcBCountry', TEXTO],
       ['hpAFill', { attributes: true, attributeFilter: ['style', 'class'] }], ['hpBFill', { attributes: true, attributeFilter: ['style', 'class'] }],
       ['winnerOverlay', { attributes: true, attributeFilter: ['hidden'] }], ['winnerName', TEXTO],
+      ['wordLabel', CLASE], ['wordLabelValue', TEXTO],
       ['bracketStages', { childList: true, subtree: true }]
     ].forEach(function (p) {
       var el = byId(p[0]);
@@ -4087,12 +4270,17 @@ else init();
       winnerShown = shown;
     }).observe(byId('winnerOverlay'), { attributes: true, attributeFilter: ['hidden'] });
 
-    /* Teclas nuevas: P abre o enfoca la salida; L la ventana de presentación; E muestra/oculta la presentación; B cambia el fondo sin recargar. */
+    /* Teclas nuevas del operador:
+         O  entrar/salir del modo transmisión (abre o cierra su ventana)    B  mostrar/ocultar el bloque de la esquina
+         P  presentación VS (5-8 s)    E  editar la temática    W  revelar la temática
+         1  abrir/enfocar la salida del contador    2  abrir/enfocar la ventana de presentación de fotos
+         3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas */
+    var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision' };
+    var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision' };
     function abrirSalida(modo) {
-      var pres = modo === 'presentacion';
       var q = new URLSearchParams(location.search);
-      var url = location.href.split('?')[0].split('#')[0] + '?salida=' + (pres ? 'presentacion' : 'limpia') + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
-      var w = window.open('', pres ? 'cmf-presentacion' : 'cmf-salida', 'popup=yes,width=1280,height=720');
+      var url = location.href.split('?')[0].split('#')[0] + '?salida=' + PARAMS[modo] + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
+      var w = window.open('', NOMBRES[modo], 'popup=yes,width=1280,height=720');
       if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
       outWin = w;
       var vacia = false;
@@ -4106,19 +4294,52 @@ else init();
       aviso('Fondo de salida: ' + fondoSalida);
       flush(true);
     }
+    function enContador() { return byId('screenContador').classList.contains('active'); }
+    function alternarTransmision() {
+      if (Date.now() - vistas.transmision < 5000) { tr.send({ type: 'cmd', name: 'cerrar', modo: 'transmision' }); aviso('Modo transmisión: cerrado'); }
+      else { abrirSalida('transmision'); aviso('Modo transmisión: abierto'); }
+    }
+    function alternarBloque() {
+      bloque = !bloque;
+      aviso(bloque ? 'Bloque de la esquina: visible' : 'Bloque de la esquina: oculto');
+      flush(true);
+    }
+    function alternarVs() {
+      if (!enContador()) { aviso('Presentación VS: abre primero una batalla'); return; }
+      clearTimeout(vsTimer);
+      vs = !vs;
+      if (vs) vsTimer = setTimeout(function () { vs = false; flush(true); }, 7000);
+      aviso(vs ? 'Presentación VS' : 'Presentación VS: cerrada');
+      flush(true);
+    }
+    function revelar() {
+      if (!enContador() || !I.isTematica()) { aviso('La temática se revela en la fase temática de una batalla'); return; }
+      if (window.cmfRevealing) return;
+      var word = I.theme();
+      evento('revelar', null, { word: word });          // las salidas hacen su propia animación
+      playReveal(word, function () { return byId('wordLabel'); }, function () { I.updateWordLabel(); });
+      I.setRevealed(true);                              // la palabra queda en la placa al terminar la animación
+    }
+    function alternarPresentacionFotos() {
+      if (!enContador() || byId('btnIniciar').disabled) { aviso('Presentación: solo con la batalla preparada y sin iniciar'); return; }
+      presentando = !presentando;
+      aviso(presentando ? 'Presentación de fotos en pantalla' : 'Presentación de fotos oculta');
+      flush(true);
+    }
     document.addEventListener('keydown', function (e) {
       var tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === 'p' || e.key === 'P') abrirSalida();
-      else if (e.key === 'l' || e.key === 'L') abrirSalida('presentacion');
-      else if (e.key === 'e' || e.key === 'E') {
-        if (!document.getElementById('screenContador').classList.contains('active') || byId('btnIniciar').disabled) { aviso('Presentación: solo con la batalla preparada y sin iniciar'); return; }
-        presentando = !presentando;
-        aviso(presentando ? 'Presentación en pantalla' : 'Presentación oculta');
-        flush(true);
-      }
-      else if (e.key === 'b' || e.key === 'B') ciclarFondo();
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      var k = e.key.toLowerCase();
+      if (k === 'o') alternarTransmision();
+      else if (k === 'b') alternarBloque();
+      else if (k === 'p') alternarVs();
+      else if (k === 'e') { if (enContador()) { e.preventDefault(); I.openWordEdit(); } }
+      else if (k === 'w') revelar();
+      else if (k === '1') abrirSalida('contador');
+      else if (k === '2') abrirSalida('presentacion');
+      else if (k === '3') alternarPresentacionFotos();
+      else if (k === 'c') ciclarFondo();
     });
 
     flush(true);
@@ -4127,17 +4348,18 @@ else init();
   /* ===================== SALIDA ===================== */
   function salida() {
     var S = window.CMF_SALIDA;
-    var lastSeq = 0, recibido = 0, ultimo = null, bracketSig = '', roster = {};
+    var lastSeq = 0, recibido = 0, ultimo = null, bracketSig = '', roster = {}, info = {};
     document.querySelectorAll('.fighter-card').forEach(function (c) {
       var img = c.querySelector('img');
       if (img) roster[c.dataset.name] = img.getAttribute('src');
+      info[c.dataset.name] = { flag: c.dataset.flag || '', country: c.dataset.country || '' };
     });
     /* Nodos tomados ahora: el motor de efectos reemplaza el contenido del núcleo
        (el #countdown queda desprendido pero sigue siendo el que lee el puente). */
     var N = {};
     ['screenFormat', 'screenTorneo', 'screenSelect', 'screenContador', 'countdown', 'timeLabel', 'btnIniciar', 'formatInfo',
       'mcA', 'mcB', 'tagA', 'tagB', 'mcAName', 'mcBName', 'mcACountry', 'mcBCountry', 'mcAPhoto', 'mcBPhoto', 'mcAFrame', 'mcBFrame',
-      'hpAFill', 'hpBFill', 'battleNum', 'stageSelect', 'winnerOverlay', 'winnerName', 'winnerPhoto'].forEach(function (id) { N[id] = byId(id); });
+      'hpAFill', 'hpBFill', 'battleNum', 'stageSelect', 'winnerOverlay', 'winnerName', 'winnerPhoto', 'wordLabel', 'wordLabelValue'].forEach(function (id) { N[id] = byId(id); });
 
     var tr = createTransport(function (m) {
       if (!m) return;
@@ -4146,6 +4368,7 @@ else init();
         lastSeq = m.seq; recibido = Date.now(); ultimo = m.payload;
         aplicar(m.payload);
       } else if (m.type === 'event') evento(m);
+      else if (m.type === 'cmd' && m.name === 'cerrar' && m.modo === S.modo) window.close();   // el operador cierra esta ventana (tecla O)
     });
 
     function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
@@ -4184,8 +4407,100 @@ else init();
     }
     document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'presentacion') aplicarPres(ultimo); });
 
+    /* ---- Banderas: los emoji de bandera no se ven en Windows (salen como letras), así que se dibujan ---- */
+    var SVG = {
+      AR: "<rect width='30' height='20' fill='#74acdf'/><rect y='6.67' width='30' height='6.67' fill='#fff'/><circle cx='15' cy='10' r='2' fill='#f6b40e'/>",
+      CL: "<rect width='30' height='20' fill='#fff'/><rect y='10' width='30' height='10' fill='#d52b1e'/><rect width='10' height='10' fill='#0039a6'/><polygon points='5,1.6 5.9,4.2 8.6,4.2 6.4,5.8 7.2,8.4 5,6.8 2.8,8.4 3.6,5.8 1.4,4.2 4.1,4.2' fill='#fff'/>",
+      DO: "<rect width='30' height='20' fill='#fff'/><rect width='12' height='8' fill='#002d62'/><rect x='18' width='12' height='8' fill='#ce1126'/><rect y='12' width='12' height='8' fill='#ce1126'/><rect x='18' y='12' width='12' height='8' fill='#002d62'/>"
+    };
+    function bandera(flag) {   // emoji de bandera -> data URI SVG ('' si no hay dibujo)
+      var cps = Array.from(flag || '').map(function (c) { return c.codePointAt(0) - 0x1F1E6 + 65; });
+      if (cps.length !== 2 || cps.some(function (v) { return v < 65 || v > 90; })) return '';
+      var iso = String.fromCharCode(cps[0], cps[1]);
+      return SVG[iso] ? 'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'>" + SVG[iso] + '</svg>') : '';
+    }
+    function setBandera(img, flag) {
+      var src = bandera(flag);
+      if (src) { if (img.getAttribute('src') !== src) img.setAttribute('src', src); } else img.removeAttribute('src');
+    }
+
+    /* ---- Modo transmisión: bloque de la esquina + presentación VS ---- */
+    var TX = {}, V = {}, core = null, coreMuerto = false;
+    if (S.modo === 'transmision') {
+      ['txBloque', 'txReloj', 'txEtapa', 'txFormato', 'txTema', 'txTemaValor', 'txMcA', 'txMcB', 'txFotoA', 'txFotoB', 'txNombreA', 'txNombreB',
+        'txPaisA', 'txPaisB', 'txBanderaA', 'txBanderaB', 'txEntrada'].forEach(function (id) { TX[id] = byId(id); });
+      ['vs', 'vsFotoA', 'vsFotoB', 'vsNombreA', 'vsNombreB', 'vsPaisA', 'vsPaisB', 'vsPaisWA', 'vsPaisWB', 'vsBanderaA', 'vsBanderaB'].forEach(function (id) { V[id] = byId(id); });
+      /* Reloj: el mismo núcleo de energía del kit, reducido (--d: 200px) y en modo plano. */
+      CMFX.init({ root: byId('transmision'), flat: true, els: {} }).then(function (api) {
+        core = api.core(TX.txReloj);
+        if (ultimo) aplicarTrans(ultimo);
+      });
+    }
+    function ajustarVs(el) {   // si el nombre no cabe en su mitad, se reduce la fuente
+      el.style.fontSize = '';
+      var max = parseFloat(getComputedStyle(el).maxWidth) || 830;
+      if (el.scrollWidth <= max) return;
+      el.style.fontSize = Math.max(30, parseFloat(getComputedStyle(el).fontSize) * max / el.scrollWidth).toFixed(1) + 'px';
+    }
+    function actualizarReloj(p, valor) {
+      if (!core) return;
+      var t = p.timer, up = t.mode === 'up';
+      var num = TX.txReloj.querySelector('.cmfx-core__num'), lab = TX.txReloj.querySelector('.cmfx-core__lab');
+      if (up) {
+        core.set(valor, 0, t.running);
+        if (num) num.textContent = valor >= 0 ? fmtTime(valor) : '';
+        if (lab) lab.textContent = 'transcurrido';
+        return;
+      }
+      var total = Math.max(p.format.time || 1, 1);
+      if (valor <= 0 && t.startDisabled) {
+        core.set(0, total, false);
+        if (!coreMuerto) { core.zero(); coreMuerto = true; }
+      } else {
+        coreMuerto = false;
+        core.set(valor, total, t.running);
+      }
+      if (lab) lab.textContent = (t.label || 'segundos').toLowerCase();
+    }
+    function filaMc(lado, mc, activo) {
+      TX['txMc' + lado].classList.toggle('is-active', activo);
+      setText(TX['txNombre' + lado], mc.name.toUpperCase());
+      setPhoto(TX['txFoto' + lado], mc.name);
+      var inf = info[mc.name] || { flag: '', country: '' };
+      setText(TX['txPais' + lado], inf.country.toUpperCase());
+      setBandera(TX['txBandera' + lado], inf.flag);
+    }
+    function aplicarTrans(p) {
+      /* bloque visible si el operador lo quiere (B), hay batalla en curso, no hay ganador ni presentación VS */
+      TX.txBloque.classList.toggle('is-on', !!p.bloque && p.screen === 'Contador' && !p.winner && !p.vs);
+      setText(TX.txEtapa, (p.stage || '').toUpperCase());
+      setText(TX.txFormato, p.format.name);
+      TX.txTema.classList.toggle('is-off', !p.tematica);
+      setText(TX.txTemaValor, p.wordRevealed && !window.cmfRevealing ? p.word : '??????');
+      var turns = p.format.mode === 'turns';
+      TX.txEntrada.classList.toggle('is-off', !turns);
+      if (turns) setText(TX.txEntrada, 'Entrada ' + p.entrada + ' / ' + p.format.entradas);
+      filaMc('A', p.mcA, p.turn === 'a');
+      filaMc('B', p.mcB, p.turn === 'b');
+      actualizarReloj(p, p.timer.value);
+      /* presentación VS */
+      setPhoto(V.vsFotoA, p.mcA.name); setPhoto(V.vsFotoB, p.mcB.name);
+      setText(V.vsNombreA, p.mcA.name); setText(V.vsNombreB, p.mcB.name);
+      ['A', 'B'].forEach(function (L) {
+        var inf = info[(L === 'A' ? p.mcA : p.mcB).name] || { flag: '', country: '' };
+        setText(V['vsPais' + L], inf.country);
+        setBandera(V['vsBandera' + L], inf.flag);
+        V['vsPaisW' + L].classList.toggle('is-off', !inf.country);
+        ajustarVs(V['vsNombre' + L]);
+      });
+      V.vs.classList.toggle('is-on', !!p.vs && p.screen === 'Contador');
+      if (p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
+    }
+    document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'transmision') aplicarTrans(ultimo); });
+
     function aplicar(p) {
       if (S.modo === 'presentacion') { aplicarPres(p); return; }
+      if (S.modo === 'transmision') { aplicarTrans(p); return; }
       /* llaves */
       var bs = JSON.stringify(p.bracket);
       if (bs !== bracketSig) { bracketSig = bs; I.setBracket(JSON.parse(bs)); }
@@ -4202,6 +4517,9 @@ else init();
         N.formatInfo.classList.remove('is-flash'); void N.formatInfo.offsetWidth; N.formatInfo.classList.add('is-flash');
       }
       setText(N.timeLabel, p.timer.label);
+      /* temática (placa central del contador) */
+      N.wordLabel.classList.toggle('is-on', !!p.tematica);
+      setText(N.wordLabelValue, p.wordRevealed && !window.cmfRevealing ? p.word : '??????');
       /* vida y turno */
       vida('a', p.life.a); vida('b', p.life.b);
       N.mcA.classList.toggle('is-active', p.turn === 'a');
@@ -4223,6 +4541,9 @@ else init();
     }
 
     function evento(m) {
+      if (m.name === 'revelar' && S.modo !== 'presentacion') {
+        playReveal(m.word, function () { return S.modo === 'transmision' ? TX.txTema : N.wordLabel; }, function () { if (ultimo) aplicar(ultimo); });
+      }
       if (m.name === 'golpe') {
         var frame = m.side === 'a' ? N.mcAFrame : N.mcBFrame;
         frame.classList.remove('is-hit'); void frame.offsetWidth; frame.classList.add('is-hit');
@@ -4238,6 +4559,7 @@ else init();
       if (t.mode === 'down') v = Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000));
       else v = t.value + Math.floor((Date.now() - t.at) / 1000);
       setText(N.countdown, t.mode === 'down' ? String(v) : fmtTime(v));
+      if (S.modo === 'transmision') actualizarReloj(ultimo, v);
     }, 250);
 
     /* Presencia: hello hasta recibir el primer estado; ping cada 2 s. */
