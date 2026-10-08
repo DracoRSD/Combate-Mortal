@@ -1,376 +1,462 @@
-/* Estilos para la página del temporizador */
-body {
-  margin: 0;
+/* Pantalla de batalla (Etapa/Batalla, formato, duelo, barra de vida,
+   núcleo del tiempo, controles y pantalla de ganador).
+
+   Los efectos (fondo de tormenta, niebla, rayos, partículas, chispas,
+   núcleo de energía, placas, barras de vida y estado de turno de las
+   tarjetas) los pone el kit CMFX: css/pages/cmfx.css + js/vendor/cmfx.js,
+   conectado desde js/modules/BattleFX.js. Aquí sólo queda la composición
+   (16:9, centrado, ancho máximo 1800px, tarjetas de 62vh), el marco cromado
+   de las tarjetas, nombres, controles y la pantalla de ganador.
+
+   Paleta: #020611 / #0a1f44 / #1e90ff / #7fd0ff / #eaf6ff. */
+:root {
+  --b-night: #020611;
+  --b-deep: #0a1f44;
+  --b-electric: #1e90ff;
+  --b-cyan: #7fd0ff;
+  --b-white: #eaf6ff;
+  --b-chrome: linear-gradient(160deg, #f4f7fa 0%, #9aa7b6 18%, #ffffff 32%, #5c6b7c 50%, #e8eef4 68%, #7d8b9b 84%, #f4f7fa 100%);
+  --b-chrome-text: linear-gradient(180deg, #ffffff 0%, #d9e4f0 35%, #8ea0b6 52%, #e6eef7 70%, #ffffff 100%);
+  /* Tipografía del kit apuntando a las fuentes de la app. */
+  --cm-display: 'Anton', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --cm-label: 'Bebas Neue', 'Arial Narrow', sans-serif;
+}
+
+/* ---------- Composición a pantalla completa (16:9) ---------- */
+.app:has(#screenContador.active) {
+  max-width: none;
+  padding: 0;
+  gap: 0;
+}
+.app:has(#screenContador.active) .cm-brand,
+.app:has(#screenContador.active) .cm-tagline,
+body:has(#screenContador.active) .bolt-canvas {
+  display: none;
+}
+body:has(#screenContador.active) {
+  overflow: hidden;
+}
+
+#screenContador {
+  position: relative;
+  width: 100%;
   min-height: 100vh;
-  background-color: var(--color-background);
-  background:
-    radial-gradient(ellipse 70% 45% at 50% -10%, #132540 0%, transparent 60%),
-    radial-gradient(ellipse 55% 40% at 90% 100%, #0d1d33 0%, transparent 55%),
-    radial-gradient(ellipse 55% 40% at 5% 95%, #0d1d33 0%, transparent 55%),
-    var(--color-background);
-  font-family: 'Bebas Neue', sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  padding: 18px 16px 26px;
-  color: var(--color-text);
-  overflow-x: hidden;
-  overflow-y: auto;
+  gap: 0;
+  background: var(--b-night);
+  overflow: hidden;
 }
 
-.chrome-text {
-  background: var(--gradient-chrome);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 18px rgba(63, 182, 255, 0.45);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+/* Placas de etapa/batalla y formato, núcleo y controles en la columna
+   central; las tarjetas a los lados. */
+@media (min-width: 901px) {
+  #screenContador > .bracket-bar,
+  #screenContador > .format-info,
+  #screenContador > .controls,
+  #screenContador > .word-label {
+    position: absolute;
+    left: 50%;
+    max-width: min(46vw, 760px);
+    z-index: 5;
+  }
+  #screenContador > .bracket-bar { top: 1vh; transform: translateX(-50%); }
+  #screenContador > .format-info { top: 8.6vh; transform: translateX(-50%); }
+  #screenContador > .word-label { top: 66vh; transform: translateX(-50%) skew(-8deg); }
+  #screenContador > .controls { bottom: 4.5vh; transform: translateX(-50%); width: max-content; }
+  #screenContador > .hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1vh;
+    max-width: none;
+    z-index: 5;
   }
 }
 
-/* ---------- Fondo de rayos ---------- */
-.bolt-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-/* ---------- Marca ---------- */
-.cm-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.cm-badge {
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 8px rgba(63, 182, 255, 0.75));
-}
-
-.cm-badge svg {
-  width: 100%;
-  height: 100%;
-}
-
-.cm-badge__ring {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 5;
-}
-
-.cm-badge__dragon {
-  fill: none;
-  stroke: #dfeeff;
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.cm-brand__text {
-  font-family: 'Anton', 'Bebas Neue', sans-serif;
-  font-size: 1.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* ---------- Barra de etapa / batalla ---------- */
+/* ---------- Encabezado: placas (cmfx-plate) ---------- */
 .bracket-bar {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 1.5rem;
   flex-wrap: wrap;
-  background: rgba(0, 0, 0, 0.65);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 0.55rem 1rem;
+  padding: clamp(4px, 0.8vh, 10px) clamp(10px, 1.6vw, 26px);
 }
 
-.bracket-field {
+.bracket-field,
+.battle-counter {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.8vw, 12px);
+  padding: 0.15rem clamp(10px, 1.4vw, 24px);
+}
+
+.bracket-bar > * + * {
+  border-left: 1px solid rgba(150, 198, 255, 0.3);
+}
+
+.bracket-field__icon {
+  font-size: clamp(1.1rem, 2.4vh, 1.6rem);
+  filter: drop-shadow(0 0 6px rgba(30, 144, 255, 0.6));
+}
+
+.bracket-field__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bracket-field label,
+.battle-counter label {
+  font-family: var(--cm-label);
+  font-size: clamp(0.6rem, 1.2vh, 0.8rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--b-cyan);
+}
+
+.bracket-bar select {
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237fd0ff'/%3E%3C/svg%3E") no-repeat right 0.6rem center,
+    linear-gradient(180deg, #0f2a55, #061430);
+  background-size: 10px 6px, auto;
+  color: var(--b-white);
+  border: 1px solid rgba(150, 198, 255, 0.5);
+  border-radius: 4px;
+  padding: 0.3rem 1.6rem 0.3rem 0.55rem;
+  font-family: var(--cm-display);
+  font-size: clamp(0.95rem, 2vh, 1.3rem);
+  letter-spacing: 0.04em;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.bracket-bar select:hover,
+.bracket-bar select:focus {
+  border-color: var(--b-cyan);
+  box-shadow: 0 0 12px rgba(30, 144, 255, 0.6);
+  outline: none;
+}
+
+.battle-counter[hidden] {
+  display: none;
+}
+
+/* En batallas del torneo la etapa y el número vienen de las llaves. */
+.bracket-bar select:disabled,
+.step-btn:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.battle-counter__controls {
   display: flex;
   align-items: center;
   gap: 0.55rem;
 }
 
-.bracket-field label {
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-secondary);
-  opacity: 0.85;
-}
-
-.bracket-bar select {
-  background: #0d1420;
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.35rem 0.55rem;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
-  letter-spacing: 0.03em;
-}
-
-.battle-counter {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: 'Anton', sans-serif;
+.battle-num {
+  font-family: var(--cm-display);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 1rem;
+  font-size: clamp(1.1rem, 2.6vh, 1.7rem);
+  min-width: 1.6em;
+  text-align: center;
 }
 
 .battle-num span {
-  color: var(--color-accent);
+  color: var(--b-white);
   font-variant-numeric: tabular-nums;
 }
 
 .step-btn {
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background: #0d1420;
-  color: var(--color-text);
+  width: clamp(1.7rem, 3.4vh, 2.3rem);
+  height: clamp(1.7rem, 3.4vh, 2.3rem);
+  border-radius: 50%;
+  border: 1px solid rgba(150, 198, 255, 0.5);
+  background: linear-gradient(180deg, #1b2d4d, #061430);
+  color: var(--b-white);
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast),
+    box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .step-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-accent);
+  border-color: var(--b-cyan);
+  color: var(--b-night);
+  background: linear-gradient(180deg, var(--b-white), var(--b-cyan));
+  box-shadow: 0 0 10px rgba(30, 144, 255, 0.7);
 }
 
-/* ---------- Formato ---------- */
+.step-btn:active {
+  transform: scale(0.92);
+}
+
 .format-info {
-  font-family: 'Anton', sans-serif;
-  font-size: 1.5rem;
-  color: var(--color-text-dark);
-  background: var(--gradient-primary);
-  padding: 8px 22px;
-  border-radius: 10px;
-  z-index: 2;
+  font-family: var(--cm-display);
+  font-size: clamp(1.1rem, 3vh, 1.9rem);
+  padding: clamp(5px, 0.9vh, 10px) clamp(16px, 2.4vw, 34px);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: var(--shadow-box);
+  letter-spacing: 0.07em;
 }
 
-/* ---------- Duelo (MC / timer / MC) ---------- */
+/* ---------- Duelo (MC / núcleo / MC) ---------- */
 .duel {
   display: grid;
-  grid-template-columns: minmax(140px, 220px) auto minmax(140px, 220px);
+  grid-template-columns: auto auto auto;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.75rem, 3vw, 2.5rem);
+  justify-items: center;
+  gap: clamp(1rem, 3vw, 4rem);
   width: 100%;
-  max-width: 1100px;
+  max-width: 1800px;
+  margin: 4vh auto 0;
+  padding: 0 clamp(8px, 2vw, 40px);
+  box-sizing: border-box;
+}
+
+.battle-core {
+  --d: min(44vh, 26vw);
+  width: var(--d);
+  aspect-ratio: 1;
+  flex: none;
+}
+
+/* El anillo SVG anterior sigue en el DOM para la lógica del cronómetro,
+   pero ya no se ve: el núcleo del kit lo reemplaza. */
+.circle-timer,
+.hp-bar {
+  display: none;
 }
 
 .mc {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  gap: clamp(4px, 0.9vh, 12px);
 }
 
-.mc.is-active {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(63, 182, 255, 0.3), 0 0 26px rgba(63, 182, 255, 0.35);
-  background: rgba(63, 182, 255, 0.06);
-}
+/* Orden de arriba abajo: TURNO, nombre, barra de vida, tarjeta (el reflejo
+   de la tarjeta necesita el suelo libre debajo). */
+.mc-turn-tag { order: 1; }
+.mc-name { order: 2; }
+.mc-country { order: 3; }
+.cmfx-hp { order: 4; }
+.mc-card { order: 5; }
 
 .mc-turn-tag {
-  font-family: 'Anton', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.24em;
-  color: var(--color-border);
-  height: 1em;
+  font-family: var(--cm-label);
+  font-weight: 700;
+  font-size: clamp(0.7rem, 1.6vh, 1rem);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  color: transparent;
+  height: 1.7em;
+  line-height: 1.7em;
+  padding: 0 1.1em;
+  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  transition: opacity 0.25s ease;
+  opacity: 0;
 }
 
 .mc.is-active .mc-turn-tag {
-  color: var(--color-accent);
-}
-
-.mc-frame {
-  position: relative;
-  width: clamp(96px, 14vw, 160px);
-  aspect-ratio: 1 / 1;
-}
-
-.mc-frame__bolts {
-  position: absolute;
-  inset: -30%;
-  width: 160%;
-  height: 160%;
-  pointer-events: none;
-}
-
-.mc-frame__photo,
-.mc-frame__fallback {
-  position: absolute;
-  inset: 6%;
-  width: 88%;
-  height: 88%;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #0d1420;
-  border: 3px solid #cfe3f2;
-  box-shadow: 0 0 0 3px rgba(5, 7, 15, 0.9), 0 0 22px rgba(63, 182, 255, 0.65);
-}
-
-.mc-frame__fallback {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Anton', sans-serif;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-  color: var(--color-accent);
-  letter-spacing: 0.05em;
-}
-
-.mc-frame__fallback.is-visible {
-  display: flex;
+  opacity: 1;
+  color: #06122b;
+  background: linear-gradient(180deg, #fff, #b9cbe0 55%, #8ea3c0);
 }
 
 .mc-name {
-  font-family: 'Anton', sans-serif;
+  font-family: var(--cm-display);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-size: clamp(0.95rem, 2vw, 1.3rem);
+  letter-spacing: 0.02em;
+  font-size: clamp(1.5rem, 5.4vh, 4rem);
+  line-height: 1.1;
+  margin-top: 0.4vh;
   text-align: center;
+  background: var(--b-chrome-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 3px 0 rgba(4, 12, 30, 0.9)) drop-shadow(0 0 18px rgba(30, 144, 255, 0.55));
 }
 
 .mc-country {
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
+  font-family: var(--cm-label);
+  font-size: clamp(0.75rem, 1.6vh, 1.05rem);
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--color-secondary);
-  opacity: 0.9;
+  color: var(--b-cyan);
 }
 
 .mc-country:empty {
   display: none;
 }
 
-/* ---------- Círculo del tiempo ---------- */
-.circle-timer {
+.cmfx-hp {
+  width: min(46.5vh, 42vw);
+  height: clamp(14px, 2vh, 20px);
+}
+
+/* ---------- Tarjeta: marco cromado, esquinas cortadas, reflejo ---------- */
+.mc-card {
   position: relative;
-  width: clamp(190px, 24vw, 300px);
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  animation: ring-glow 1.6s infinite ease-in-out;
-  overflow: hidden;
+  width: min(46.5vh, 42vw);
+  aspect-ratio: 3 / 4;
+  margin-top: 1vh;
+  border-radius: 4px;
+  -webkit-box-reflect: below 0.6vh linear-gradient(rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.25) 100%);
 }
 
-@keyframes ring-glow {
-  0% { box-shadow: 0 0 15px rgba(63, 182, 255, 0.5); }
-  50% { box-shadow: 0 0 30px rgba(63, 182, 255, 0.85); }
-  100% { box-shadow: 0 0 15px rgba(63, 182, 255, 0.5); }
-}
-
-.progress-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: rotate(-90deg);
+.mc-frame {
+  --cut: clamp(10px, 2.2vh, 24px);
+  --bw: clamp(3px, 0.55vh, 6px);
+  position: relative;
+  display: block;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+  background: var(--b-chrome);
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
-.progress-ring__circle {
-  stroke: var(--color-primary);
-  stroke-width: 12;
-  fill: transparent;
-  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-  filter: drop-shadow(0 0 8px var(--color-primary));
+.mc-frame:focus-visible {
+  outline: none;
+}
+.mc-frame:focus-visible::after {
+  box-shadow: inset 0 0 0 3px var(--b-cyan), inset 0 0 6vh rgba(30, 144, 255, 0.55);
 }
 
-.circle-timer.warn .progress-ring__circle {
-  stroke: var(--color-warn);
-  filter: drop-shadow(0 0 8px var(--color-warn));
+/* El recorte en chaflán va en un contenedor interno: la foto lleva un
+   transform de zoom y, si el clip-path estuviera en ella misma, se movería
+   con ella y taparía el marco. */
+.mc-frame__inner,
+.mc-frame::after {
+  position: absolute;
+  inset: var(--bw);
+  clip-path: polygon(calc(var(--cut) - var(--bw)) 0, calc(100% - var(--cut) + var(--bw)) 0, 100% calc(var(--cut) - var(--bw)), 100% calc(100% - var(--cut) + var(--bw)), calc(100% - var(--cut) + var(--bw)) 100%, calc(var(--cut) - var(--bw)) 100%, 0 calc(100% - var(--cut) + var(--bw)), 0 calc(var(--cut) - var(--bw)));
+}
+.mc-frame__inner {
+  overflow: hidden;
+  background: var(--b-deep);
 }
 
-.circle-timer.critical .progress-ring__circle {
-  stroke: var(--color-danger);
-  filter: drop-shadow(0 0 10px var(--color-danger));
+.mc-frame__photo,
+.mc-frame__fallback,
+.mc-frame__hitflash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.time-wrapper {
-  position: relative;
-  z-index: 2;
-  text-align: center;
+.mc-frame__photo,
+.mc-frame__fallback {
+  object-fit: cover;
+  object-position: top center;
+  background: var(--b-deep);
 }
 
-.time-number {
-  font-size: clamp(3rem, 9vw, 5.5rem);
-  line-height: 1;
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 16px rgba(63, 182, 255, 0.55);
-  font-family: 'Anton', sans-serif;
+/* Las fotos traen un banner "Participante confirmado" quemado en la parte
+   superior; se recorta agrandando la imagen y desplazándola hacia arriba. */
+.mc-frame__photo {
+  transform: scale(1.35) translateY(-14%);
+  transform-origin: center top;
 }
 
-.circle-timer.warn .time-number {
-  color: var(--color-warn);
-  text-shadow: 0 0 16px rgba(255, 181, 69, 0.55);
+/* Brillo interior azul (y oscurecimiento al quedar sin vida). */
+.mc-frame::after {
+  content: '';
+  box-shadow: inset 0 0 6vh rgba(30, 144, 255, 0.5), inset 0 0 1.2vh rgba(127, 208, 255, 0.5);
+  pointer-events: none;
+  transition: background 0.8s ease;
 }
 
-.circle-timer.critical .time-number {
-  color: var(--color-danger);
-  text-shadow: 0 0 18px rgba(255, 59, 82, 0.6);
-  animation: pulse 1s ease-in-out infinite;
+.mc-frame__fallback {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--cm-display);
+  font-size: clamp(3.2rem, 16vh, 8rem);
+  color: var(--b-cyan);
+  letter-spacing: 0.05em;
+  background: linear-gradient(160deg, #0a1f44, #061430);
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+.mc-frame__fallback.is-visible {
+  display: flex;
 }
 
-.time-label {
-  font-size: 1.2rem;
-  color: var(--color-secondary);
-  letter-spacing: 0.1em;
-  font-family: 'Bebas Neue', sans-serif;
+/* Efecto original de golpe (anterior al kit), recuperado tal cual; el kit
+   añade encima su vibración, destello y chispas (cmfx-hit). */
+/* ---------- Golpe: destello blanco, vibración de 150 ms ---------- */
+.mc-frame__hitflash {
+  background: var(--b-white);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mc-frame.is-hit .mc-frame__hitflash {
+  animation: hit-flash 0.3s ease-out;
+}
+
+.mc-frame.is-hit {
+  animation: hit-shake 0.15s ease-out;
+}
+
+@keyframes hit-flash {
+  0% { opacity: 0; }
+  10% { opacity: 0.95; }
+  45% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+@keyframes hit-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-7px, 2px); }
+  40% { transform: translate(6px, -2px); }
+  60% { transform: translate(-4px, 1px); }
+  80% { transform: translate(3px, -1px); }
+}
+
+/* ---------- Derrota: se queda sin vida, como un K.O. ---------- */
+.mc.is-defeated .mc-frame__photo,
+.mc.is-defeated .mc-frame__fallback {
+  filter: brightness(0.28) saturate(0.35) grayscale(0.5);
+  transition: filter 0.8s ease;
+}
+
+.mc.is-defeated .mc-frame::after {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.mc.is-defeated .mc-turn-tag {
+  opacity: 0.35;
+}
+
+.mc.is-defeated .mc-name,
+.mc.is-defeated .mc-country {
+  opacity: 0.5;
 }
 
 .word-label {
-  font-size: 2.2rem;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(6px);
-  color: var(--color-text);
-  padding: 12px 34px;
+  font-size: clamp(1.4rem, 3.6vh, 2.4rem);
+  background: rgba(10, 31, 68, 0.75);
+  color: var(--b-white);
+  padding: 0.5em 1.4em;
   transform: skew(-8deg);
   z-index: 2;
-  font-family: 'Anton', sans-serif;
-  text-shadow: var(--shadow-text);
-  border: 2px solid var(--color-accent);
-  box-shadow: var(--shadow-box);
+  font-family: var(--cm-display);
+  text-shadow: 0 0 12px rgba(30, 144, 255, 0.8);
+  border: 2px solid var(--b-cyan);
+  box-shadow: 0 0 20px rgba(30, 144, 255, 0.45);
   display: none;
   border-radius: 6px;
 }
@@ -380,76 +466,229 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: clamp(6px, 1vh, 12px);
   z-index: 3;
+  transition: opacity 0.4s ease;
 }
 
-.controls button {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.05em;
-  color: var(--color-text);
-  background: rgba(0, 0, 0, 0.65);
-  padding: 10px 24px;
-  border: 2px solid var(--color-border);
-  border-radius: 10px;
+.controls button,
+.winner-overlay button {
+  font-family: var(--cm-label);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 2.1vh, 1.35rem);
+  letter-spacing: 0.08em;
+  color: var(--b-white);
+  background: rgba(8, 22, 50, 0.82);
+  padding: 0.55em 1.3em;
+  border: 1px solid rgba(150, 198, 255, 0.5);
+  border-radius: 0;
   cursor: pointer;
   text-transform: uppercase;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.controls button:hover {
-  transform: scale(1.05);
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-box);
+.controls button:hover,
+.controls button:focus-visible,
+.winner-overlay button:hover,
+.winner-overlay button:focus-visible {
+  background: rgba(20, 48, 100, 0.9);
+  border-color: var(--b-cyan);
+  box-shadow: 0 0 18px rgba(30, 144, 255, 0.6);
 }
 
-.controls button:active {
+.controls button:focus-visible,
+.winner-overlay button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.controls button:active,
+.winner-overlay button:active {
   transform: scale(0.97);
 }
 
+.controls button:disabled {
+  opacity: 0.45;
+}
+
 .btn-start {
-  background: var(--gradient-primary);
-  color: var(--color-text-dark);
-  border-color: var(--color-primary);
-  font-weight: bold;
+  background: linear-gradient(180deg, #7fd0ff, #1e90ff 60%, #0a4ea8);
+  color: var(--b-night);
+  border-color: var(--b-cyan);
+  font-weight: 700;
+}
+
+.btn-hit {
+  background: linear-gradient(180deg, #ff8a7a, #ff3b52 60%, #8f1424);
+  color: var(--b-night);
+  border-color: #ff8a7a;
+  font-weight: 700;
 }
 
 .hint {
   text-align: center;
-  color: var(--color-secondary);
+  color: var(--b-cyan);
   opacity: 0.75;
-  font-size: 0.75rem;
+  font-size: clamp(0.7rem, 1.4vh, 0.9rem);
   letter-spacing: 0.02em;
-  max-width: 640px;
+  max-width: 760px;
+  transition: opacity 0.4s ease;
 }
 
 .hint kbd {
-  font-family: 'Bebas Neue', sans-serif;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--color-border);
+  font-family: var(--cm-label);
+  background: rgba(2, 6, 17, 0.7);
+  border: 1px solid rgba(30, 144, 255, 0.5);
   border-radius: 4px;
   padding: 1px 6px;
-  font-size: 0.72rem;
+  font-size: 0.95em;
+  color: var(--b-white);
+}
+
+/* Los controles y la leyenda sólo aparecen al mover el ratón, y se esconden
+   a los 3 s (js/modules/BattleFX.js). */
+#screenContador.is-idle .hint,
+#screenContador.is-idle .controls {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Media queries para responsividad */
 @media (max-width: 900px) {
+  #screenContador {
+    min-height: 0;
+    overflow: visible;
+    padding-bottom: 2vh;
+  }
+
   .duel {
     grid-template-columns: 1fr;
     justify-items: center;
+    margin-bottom: 4vh;
   }
 
   .mc { order: 2; }
   .mc[data-side="a"] { order: 1; }
-  .circle-timer { order: 1; }
+  .battle-core { order: 1; --d: min(26vh, 60vw); }
   .mc[data-side="b"] { order: 3; }
+
+  .mc-card,
+  .cmfx-hp {
+    width: min(55vw, 36vh);
+  }
+}
+
+/* ---------- Selección de modos: mismo ambiente del kit ----------
+   El motor se monta en #screenFormat (js/modules/BattleFX.js). La pantalla
+   ocupa todo el alto y se mete por debajo de la cabecera de la app, que
+   queda por encima; el fondo y los rayos globales anteriores se apagan. */
+body:has(#screenFormat.active) .bolt-canvas { display: none; }
+body:has(#screenFormat.active) { background: var(--b-night); }
+.app:has(#screenFormat.active) { padding-bottom: 0; }
+.app:has(#screenFormat.active) .cm-brand,
+.app:has(#screenFormat.active) .cm-tagline { position: relative; z-index: 2; }
+#screenFormat.active {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  margin-top: -9.5rem;
+  padding: 9.5rem clamp(8px, 2vw, 40px) 3rem;
+  justify-content: center;
+}
+#screenFormat .format-h2 {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.9), 0 2px 4px rgba(2, 6, 17, 0.9), 0 0 2px rgba(2, 6, 17, 1);
+}
+#screenFormat .mode-grid { position: relative; z-index: 1; }
+
+/* ---------- Pantalla de ganador ---------- */
+.winner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  background: rgba(2, 6, 17, 0.94);
+  padding: 2rem;
+}
+
+.winner-overlay[hidden] {
+  display: none;
+}
+
+.winner-label {
+  font-family: var(--cm-display);
+  font-size: clamp(1.6rem, 5vh, 3rem);
+  letter-spacing: 0.3em;
+  color: var(--b-cyan);
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.8);
+}
+
+.winner-portrait {
+  position: relative;
+  width: clamp(260px, 42vh, 520px);
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  border: 4px solid var(--b-electric);
+  background: var(--b-deep);
+  overflow: hidden;
+  box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.35), 0 0 60px rgba(30, 144, 255, 0.65);
+}
+
+.winner-portrait__photo,
+.winner-portrait__fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  background: var(--b-deep);
+}
+
+.winner-portrait__photo {
+  transform: scale(1.35) translateY(-14%);
+  transform-origin: center top;
+}
+
+.winner-portrait__fallback {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--cm-display);
+  font-size: clamp(3.5rem, 10vw, 6rem);
+  color: var(--b-cyan);
+  background: linear-gradient(160deg, #0a1f44, #061430);
+}
+
+.winner-portrait__fallback.is-visible {
+  display: flex;
+}
+
+.winner-name {
+  font-family: var(--cm-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(2rem, 6vh, 3.6rem);
+  text-shadow: 0 0 14px rgba(30, 144, 255, 0.8), 2px 2px 4px var(--b-night);
+}
+
+.winner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
 }
 
 @media (max-width: 480px) {
-  .cm-brand__text { font-size: 1.3rem; }
   .format-info { font-size: 1.2rem; padding: 6px 16px; }
-  .bracket-bar { gap: 0.75rem; padding: 0.5rem 0.75rem; }
+  .bracket-bar { padding: 0.5rem 0.5rem; }
+  .bracket-field, .battle-counter { padding: 0.15rem 0.7rem; }
+  .bracket-field__icon { font-size: 1.1rem; }
   .controls button { font-size: 0.9rem; padding: 8px 16px; }
   .word-label { font-size: 1.6rem; padding: 10px 24px; }
 }

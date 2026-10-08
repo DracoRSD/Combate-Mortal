@@ -5,49 +5,64 @@ export class TimerController {
   /**
    * @param {Object} config - Configuración del temporizador
    * @param {Object} config.elements - Elementos del DOM
-   * @param {number} config.initialTime - Tiempo inicial en segundos
-   * @param {string} config.formatName - Nombre del formato
-   * @param {string[]} config.themeWords - Lista de palabras para formato temático (opcional)
+   * @param {string[]} [config.themeWords] - Lista de palabras para formato temático
+   * @param {Function} [config.onBack] - Se invoca al pedir "Volver" (Esc / botón)
+   * @param {Function} [config.onTimeUp] - Se invoca al llegar a 0 (además de
+   *   detener el cronómetro y sonar la alarma), para que el llamador decida
+   *   si corresponde pasar de entrada automáticamente (formatos "ida y
+   *   vuelta") o dejarlo detenido como en el resto de los formatos.
    */
-  constructor({ elements, initialTime, formatName, themeWords = [] }) {
+  constructor({ elements, themeWords = [], onBack, onTimeUp }) {
     this.elements = elements;
-    this.initialTime = initialTime;
-    this.timeLeft = initialTime;
-    this.formatName = formatName;
     this.themeWords = [...themeWords]; // Copia para no modificar el original
-    
-    // Solo inicializar palabras para formato temático
-    if (formatName === 'TEMÁTICA') {
-      // Cargar palabras usadas de localStorage o inicializar como array vacío
-      this.usedWords = this.loadUsedWords();
-      
-      // Inicializar palabras disponibles (quitando las ya usadas)
-      this.availableWords = this.initializeAvailableWords(themeWords);
-      
-      console.log('Palabras disponibles:', this.availableWords);
-      console.log('Palabras usadas:', this.usedWords);
-    }
-    
+    this.onBack = onBack;
+    this.onTimeUp = onTimeUp;
+
     this.interval = null;
     this.isRunning = false;
     this.currentThemeWord = null;
-    
-    // Configurar elementos iniciales
-    this.elements.formatInfo.textContent = formatName;
-    this.elements.timeNumber.textContent = initialTime;
-    
+    this.mode = 'single';
+    this.initialTime = null;
+    this.timeLeft = 0;
+    this.formatName = '';
+
     // Actualizar círculo SVG
     this.updateCircleSVG();
-    
-    // Si es formato temático, mostrar palabra temática
-    if (formatName === 'TEMÁTICA') {
-      this.showRandomThemeWord();
-    } else {
-      this.elements.wordLabel.style.display = 'none';
-    }
-    
+
     // Vincular eventos
     this.bindEvents();
+  }
+
+  /**
+   * Configurar el cronómetro para una batalla nueva (nombre, modo y tiempo
+   * del formato elegido), y reiniciarlo listo para arrancar. Se llama cada
+   * vez que se entra al contador, no solo una vez al cargar la página.
+   * @param {Object} format - Formato elegido (data/formats.js)
+   */
+  applyFormat(format) {
+    this.mode = format.mode || 'single';
+    this.initialTime = this.mode === 'stopwatch' ? null : format.time;
+    this.formatName = format.name;
+
+    if (this.mode === 'tematica' && !this.usedWords) {
+      this.usedWords = this.loadUsedWords();
+    }
+    if (this.mode === 'tematica') {
+      this.availableWords = this.initializeAvailableWords(this.themeWords);
+    }
+
+    this.elements.formatInfo.textContent = this.formatName;
+    if (this.elements.timeLabel) {
+      this.elements.timeLabel.textContent = this.mode === 'stopwatch' ? 'TRANSCURRIDO' : 'SEGUNDOS';
+    }
+
+    // resetTimer() ya elige una palabra nueva cuando el modo es 'tematica';
+    // para el resto de los modos hay que ocultar la etiqueta explícitamente.
+    if (this.mode !== 'tematica' && this.elements.wordLabel) {
+      this.elements.wordLabel.style.display = 'none';
+    }
+
+    this.resetTimer();
   }
   
   /**
@@ -69,7 +84,7 @@ export class TimerController {
    */
   saveUsedWords() {
     // Solo guardar si estamos en formato temático
-    if (this.formatName !== 'TEMÁTICA') return;
+    if (this.mode !== 'tematica') return;
     
     try {
       localStorage.setItem('combateMortal_usedThemeWords', JSON.stringify(this.usedWords));
@@ -126,8 +141,11 @@ export class TimerController {
    */
   updateCircleSVG() {
     const circleTimerWidth = this.elements.circleTimer.offsetWidth;
+    // Sin ancho real (p. ej. la pantalla del contador está oculta) no hay
+    // nada que medir todavía; se recalcula en cuanto vuelva a ser visible.
+    if (!circleTimerWidth) return;
     const svg = this.elements.progressRing;
-    
+
     // Actualizar dimensiones del SVG
     svg.setAttribute('width', circleTimerWidth);
     svg.setAttribute('height', circleTimerWidth);
@@ -143,11 +161,12 @@ export class TimerController {
     // Recalcular circunferencia para stroke-dasharray
     this.radius = newRadius;
     this.circumference = 2 * Math.PI * this.radius;
-    
+
     this.elements.progressCircle.style.strokeDasharray = `${this.circumference} ${this.circumference}`;
-    
-    // Actualizar progreso con el valor actual
-    this.setProgress(this.timeLeft / this.initialTime);
+
+    // Actualizar progreso con el valor actual (en modo 'stopwatch' el anillo
+    // se mantiene siempre completo, ya que no hay un total contra el cual medir)
+    this.setProgress(this.mode === 'stopwatch' ? 1 : this.timeLeft / this.initialTime);
   }
   
   /**
@@ -165,13 +184,27 @@ export class TimerController {
   startTimer() {
     // Evitar múltiples intervalos
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
+    const startHadFocus = document.activeElement === this.elements.startButton;
     this.elements.startButton.disabled = true;
-    
+    // El navegador quita el foco de un botón que se deshabilita; lo movemos
+    // a Reiniciar para no perder la navegación por flechas mientras corre.
+    if (startHadFocus) this.elements.resetButton.focus();
+
     // Detener el intervalo anterior si existe
     if (this.interval) {
       clearInterval(this.interval);
+    }
+
+    // Modo 'stopwatch' (Fatality): cuenta hacia arriba sin fin automático,
+    // hasta que el jurado decida y el staff presione Reiniciar.
+    if (this.mode === 'stopwatch') {
+      this.interval = setInterval(() => {
+        this.timeLeft++;
+        this.elements.timeNumber.textContent = this.formatElapsed(this.timeLeft);
+      }, 1000);
+      return;
     }
 
     this.interval = setInterval(() => {
@@ -182,8 +215,20 @@ export class TimerController {
       if (this.timeLeft <= 0) {
         this.stopTimer();
         this.playFinishSound();
+        if (typeof this.onTimeUp === 'function') this.onTimeUp();
       }
     }, 1000);
+  }
+
+  /**
+   * Formatear segundos transcurridos como m:ss (modo 'stopwatch')
+   * @param {number} totalSeconds
+   * @returns {string}
+   */
+  formatElapsed(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
   
   /**
@@ -202,25 +247,29 @@ export class TimerController {
    */
   resetTimer() {
     this.stopTimer();
-    
-    this.timeLeft = this.initialTime;
-    this.elements.timeNumber.textContent = this.timeLeft;
+
+    this.timeLeft = this.mode === 'stopwatch' ? 0 : this.initialTime;
+    this.elements.timeNumber.textContent = this.mode === 'stopwatch'
+      ? this.formatElapsed(0)
+      : this.timeLeft;
     this.setProgress(1);
     this.elements.startButton.disabled = false;
-    
+
     // Si es formato temático, mostrar nueva palabra al reiniciar
-    if (this.formatName === 'TEMÁTICA') {
+    if (this.mode === 'tematica') {
       this.showRandomThemeWord();
     }
   }
   
   /**
-   * Volver a la pantalla de selección
+   * Volver a la pantalla de selección (torneo o formato/MC, según de dónde
+   * se haya entrado al contador).
    */
   goBack() {
-    // Guardar palabras usadas antes de navegar
+    this.stopTimer();
+    // Guardar palabras usadas antes de salir del contador
     this.saveUsedWords();
-    window.location.href = 'index.html';
+    if (typeof this.onBack === 'function') this.onBack();
   }
   
   /**
@@ -239,7 +288,7 @@ export class TimerController {
    * Mostrar una palabra temática aleatoria sin repetición
    */
   showRandomThemeWord() {
-    if (this.themeWords.length === 0 || this.formatName !== 'TEMÁTICA') return;
+    if (this.themeWords.length === 0 || this.mode !== 'tematica') return;
     
     // Si no quedan palabras disponibles, reiniciar todas las palabras
     if (this.availableWords.length === 0) {
@@ -280,7 +329,12 @@ export class TimerController {
    * @param {KeyboardEvent} event - Evento de teclado
    */
   handleKeyDown(event) {
+    if (!this.elements.circleTimer.closest('.screen.active')) return;
+
     if (event.key === ' ' || event.key === 'Space') {
+      // Si el foco está en un botón, Espacio ya lo activa de forma nativa
+      // (dispara su propio listener de click); evita duplicar la acción.
+      if (event.target && event.target.tagName === 'BUTTON') return;
       if (!this.elements.startButton.disabled) {
         this.startTimer();
       }
