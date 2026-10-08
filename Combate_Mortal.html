@@ -7,7 +7,7 @@
   y abrir en Chrome o Edge, en el computador del operador:
       Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
-      Presentación (fotos del enfrentamiento) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
+      Presentación (solo las 2 fotos, croma) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
@@ -1338,7 +1338,10 @@
   html.salida-pres #presentacion.is-on { opacity: 1; visibility: visible; transition: opacity 0.35s ease, visibility 0s !important; }
   html.salida-pres #presentacion > .bracket-bar { position: absolute; left: 50%; top: 54px; transform: translateX(-50%); max-width: 760px; }
   html.salida-pres #presentacion > .format-info { position: absolute; left: 50%; top: 136px; transform: translateX(-50%); max-width: 760px; }
-  .pres-lado { position: absolute; top: 235px; width: 502.2px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  /* Solo las dos fotos (la foto ya trae nombre y país): placas, nombres y VS quedan ocultos.
+     Para mostrarlos de nuevo, borrar esta regla. */
+  #presentacion > .bracket-bar, #presentacion > .format-info, .pres-vs, .pres-lado .mc-name, .pres-lado .mc-country { display: none !important; }
+  .pres-lado { position: absolute; top: 205px; width: 502.2px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .pres-lado--a { left: 150px; }
   .pres-lado--b { right: 150px; }
   .pres-card { position: relative; width: 502.2px; aspect-ratio: 3 / 4; margin-bottom: 6px; }
@@ -1387,7 +1390,8 @@
 
   /* Fondo: se puede cambiar en caliente (tecla B del operador, vía sincronización). */
   S.setFondo = function (name) {
-    if (FONDOS.indexOf(name) < 0) name = 'tormenta';
+    if (FONDOS.indexOf(name) < 0) name = S.modo === 'presentacion' ? 'croma' : 'tormenta';
+    if (S.modo === 'presentacion' && name === 'tormenta') name = 'croma';   // la presentación nunca muestra la tormenta
     var before = S.flat;
     S.fondo = name;
     S.flat = name !== 'tormenta';
@@ -2750,7 +2754,8 @@
     if (!document.getElementById('screenContador').classList.contains('active')) return;
 
     if (event.key === ' ' || event.key === 'Spacebar') {
-      if (tag === 'BUTTON') return;
+      // Espacio siempre inicia el reloj, aunque el foco esté en un botón
+      // (antes, con el foco en "Golpe" o en una foto, pulsaba ese botón).
       event.preventDefault();
       if (!els.btnIniciar.disabled) startTimer();
     } else if (event.key === 'Backspace') {
@@ -2767,6 +2772,14 @@
       goBackToFormat();
     } else if (event.key === 'r' || event.key === 'R') {
       startReplica();
+    }
+  });
+
+  // El botón con foco se activa al soltar Espacio: en la pantalla del contador se anula.
+  document.addEventListener('keyup', function (event) {
+    if ((event.key === ' ' || event.key === 'Spacebar') && document.getElementById('screenContador').classList.contains('active')) {
+      var tag = document.activeElement && document.activeElement.tagName;
+      if (tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') event.preventDefault();
     }
   });
 
