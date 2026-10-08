@@ -1360,6 +1360,26 @@
   html.salida-pres #presentacion.is-on .pres-lado { transform: none; }
   html.salida-pres .pres-vs { transition: transform 0.5s cubic-bezier(.2, .8, .2, 1), opacity 0.5s ease !important; transform: translateX(-50%) scale(0.8); }
   html.salida-pres #presentacion.is-on .pres-vs { transform: translateX(-50%); }
+  /* ----- Temática por batalla ----- */
+  .word-label.is-on { display: block; }
+  .word-label__k { font-family: var(--cm-label); font-size: 0.42em; letter-spacing: 0.3em; text-transform: uppercase; color: var(--b-cyan); margin-right: 0.7em; vertical-align: middle; }
+  .word-label__v { letter-spacing: 0.06em; text-transform: uppercase; }
+  .word-edit {
+    position: absolute; left: 24px; bottom: 56px; z-index: 6; width: 250px; padding: 6px 12px;
+    font-family: var(--cm-display); font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--b-white); background: #061430; border: 1px solid rgba(150, 198, 255, 0.6); border-radius: 4px; outline: none;
+    opacity: 0; pointer-events: none;
+  }
+  .word-edit.is-open { opacity: 1; pointer-events: auto; }
+  .bracket-theme { position: absolute; display: flex; flex-direction: column; gap: 2px; z-index: 1; }
+  .bracket-theme span { font-family: var(--cm-label); font-size: 12.5px; letter-spacing: 0.3em; text-transform: uppercase; color: #7fd0ff; text-align: center; }
+  .bracket-theme__input {
+    width: 100%; box-sizing: border-box; padding: 4px 6px; text-align: center;
+    font-family: 'CM Anton', sans-serif; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #fff; background: #0b1936; border: 1px solid rgba(150, 198, 255, 0.55); border-radius: 3px; outline: none;
+  }
+  .bracket-theme__input:focus { border-color: #7fd0ff; box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.4); }
+  html.salida .bracket-theme, html.salida .word-edit { display: none !important; }
 </style>
 
 <script>
@@ -1582,6 +1602,8 @@
 </div>
 
 <div class="format-info cmfx-plate" id="formatInfo">FATALITY</div>
+<div class="word-label" id="wordLabel"><span class="word-label__k">Tem&aacute;tica</span><span class="word-label__v" id="wordLabelValue">??????</span></div>
+<input type="text" id="wordInput" class="word-edit" maxlength="24" autocomplete="off" spellcheck="false" aria-label="Tem&aacute;tica de la batalla" placeholder="Tem&aacute;tica">
 
 <div class="duel">
   <div class="mc is-active" data-side="a" id="mcA">
@@ -1821,7 +1843,9 @@
     timeLeft: 167,
     isRunning: false,
     interval: null,
-    entrada: 1
+    entrada: 1,
+    word: 'TORMENTA',        // temática de un 8x8 suelto (fuera del torneo); en el torneo vive en bracket.semifinal[i].theme
+    wordRevealed: false      // la temática se muestra solo después de revelarla (tecla W)
   };
 
   function findSpatialNeighbor(items, current, key) {
@@ -1993,13 +2017,26 @@
 
   function emptyMatch() { return { a: null, b: null, winner: null }; }
 
+  // Temática de cada batalla de semifinal: se guarda en su objeto del bracket
+  // (propiedad `theme`), con estos valores por defecto. recomputeBracket solo
+  // toca a, b y winner, así que no la borra. Un bracket guardado antes de que
+  // existiera el campo la recibe aquí al cargarse.
+  var DEFAULT_THEMES = ['TORMENTA', 'CORONA'];
+  function ensureThemes(b) {
+    if (!b || !Array.isArray(b.semifinal)) return b;
+    b.semifinal.forEach(function (m, i) {
+      if (m && (typeof m.theme !== 'string' || !m.theme.trim())) m.theme = DEFAULT_THEMES[i] || '';
+    });
+    return b;
+  }
+
   function buildDefaultBracket() {
     var b = {};
     STAGE_META.forEach(function (stage) {
       b[stage.key] = [];
       for (var i = 0; i < stage.size; i++) b[stage.key].push(emptyMatch());
     });
-    return b;
+    return ensureThemes(b);
   }
 
   function loadBracket() {
@@ -2008,7 +2045,7 @@
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.octavos) return null;
-      return parsed;
+      return ensureThemes(parsed);
     } catch (e) { return null; }
   }
 
@@ -2127,6 +2164,25 @@
     var slotB = buildBracketSlotEl(stage, match, 'b', editable, decided);
     llavesPlace(slotB, box.left, box.topB, box.w, box.h);
     card.appendChild(slotB);
+
+    if (stage.key === 'semifinal') {
+      var tema = document.createElement('label');
+      tema.className = 'bracket-theme';
+      llavesPlace(tema, box.left, box.topA - 5.6, box.w);
+      var tk = document.createElement('span');
+      tk.textContent = 'Tem\u00e1tica';
+      var ti = document.createElement('input');
+      ti.type = 'text';
+      ti.className = 'bracket-theme__input';
+      ti.dataset.index = String(index);
+      ti.maxLength = 24;
+      ti.value = match.theme || '';
+      ti.setAttribute('autocomplete', 'off');
+      ti.setAttribute('spellcheck', 'false');
+      tema.appendChild(tk);
+      tema.appendChild(ti);
+      card.appendChild(tema);
+    }
 
     if (decided || (match.a && match.b)) {
       var actions = document.createElement('div');
@@ -2252,6 +2308,19 @@
       renderBracket();
       focusBracketMatch(redoStage, redoIndex);
     }
+  });
+
+  // Campos de temática de la semifinal: se guardan al escribir (sin redibujar, para no perder el foco).
+  els.bracketStages.addEventListener('input', function (event) {
+    var inp = event.target.closest && event.target.closest('.bracket-theme__input');
+    if (!inp) return;
+    var m = bracket.semifinal[parseInt(inp.dataset.index, 10)];
+    if (!m) return;
+    m.theme = inp.value.toUpperCase().slice(0, 24);
+    saveBracket();
+  });
+  els.bracketStages.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && event.target.classList && event.target.classList.contains('bracket-theme__input')) event.target.blur();
   });
 
   els.bracketPickerGrid.addEventListener('click', function (event) {
@@ -2589,8 +2658,56 @@
     els.winnerOverlay.hidden = true;
   }
 
+  // ---------- Temática de la batalla en curso ----------
+  function currentTheme() {
+    if (torneoContext && torneoContext.stage === 'semifinal') {
+      var m = bracket.semifinal[torneoContext.index];
+      return (m && m.theme) || DEFAULT_THEMES[torneoContext.index] || '';
+    }
+    return state.word;
+  }
+  function setCurrentTheme(v) {
+    v = (v || '').trim().toUpperCase().slice(0, 24);
+    if (!v) return;
+    if (torneoContext && torneoContext.stage === 'semifinal') {
+      bracket.semifinal[torneoContext.index].theme = v;
+      saveBracket();
+    } else {
+      state.word = v;
+    }
+    updateWordLabel();
+  }
+  function isTematica() { return state.format.mode === 'tematica'; }
+  // #wordLabel (columna central): solo en la fase temática; la palabra se ve
+  // cuando ya se reveló (W) y la animación terminó (window.cmfRevealing).
+  function updateWordLabel() {
+    var el = document.getElementById('wordLabel');
+    if (!el) return;
+    el.classList.toggle('is-on', isTematica());
+    var shown = state.wordRevealed && !window.cmfRevealing;
+    document.getElementById('wordLabelValue').textContent = shown ? currentTheme() : '??????';
+  }
+  var wordInput = document.getElementById('wordInput');
+  function openWordEdit() {
+    wordInput.value = currentTheme();
+    wordInput.classList.add('is-open');
+    wordInput.focus();
+    wordInput.select();
+  }
+  function closeWordEdit(commit) {
+    if (commit) setCurrentTheme(wordInput.value);
+    wordInput.classList.remove('is-open');
+    wordInput.blur();
+  }
+  wordInput.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') { event.preventDefault(); closeWordEdit(true); }
+    else if (event.key === 'Escape') { event.preventDefault(); closeWordEdit(false); }
+  });
+  wordInput.addEventListener('blur', function () { wordInput.classList.remove('is-open'); });
+
   function applyFormat(fmt) {
     state.format = fmt;
+    if (fmt.mode === 'tematica') state.wordRevealed = false;   // cada vez que arranca la fase temática, la palabra vuelve a ser secreta
     els.formatInfo.textContent = fmt.name;
     els.formatInfo.classList.remove('is-flash');
     void els.formatInfo.offsetWidth;
@@ -2602,6 +2719,7 @@
     }
     state.entrada = 1;
     resetTimer();
+    updateWordLabel();
   }
 
   function stopTimer() {
@@ -2693,8 +2811,10 @@
     els.battleNum.textContent = state.battle;
     state.activeSide = 'a';
     state.entrada = 1;
+    state.wordRevealed = false;
     updateTurnUI();
     resetBattle();
+    updateWordLabel();
   });
 
   els.battleUp.addEventListener('click', function () {
@@ -2881,11 +3001,20 @@
         winner: els.winnerOverlay.hidden ? null : { name: els.winnerName.textContent },
         ctx: torneoContext,
         baseFormat: state.baseFormat ? state.baseFormat.key : null,
+        tematica: isTematica(),
+        word: currentTheme(),
+        wordRevealed: state.wordRevealed,
         bracket: bracket
       };
     },
     setBracket: function (b) { bracket = b; renderBracket(); },
-    restore: restoreBattle
+    restore: restoreBattle,
+    theme: currentTheme,
+    setTheme: setCurrentTheme,
+    isTematica: isTematica,
+    setRevealed: function (v) { state.wordRevealed = !!v; updateWordLabel(); },
+    updateWordLabel: updateWordLabel,
+    openWordEdit: openWordEdit
   };
 
   // ---------- Exportar / importar llaves (JSON) ----------
@@ -2932,9 +3061,13 @@
         if (!bracketValido(b)) throw new Error('formato');
         var limpio = {};
         Object.keys(b).forEach(function (k) {
-          limpio[k] = b[k].map(function (m) { return { a: m.a, b: m.b, winner: m.winner }; });
+          limpio[k] = b[k].map(function (m) {
+            var o = { a: m.a, b: m.b, winner: m.winner };
+            if (typeof m.theme === 'string') o.theme = m.theme.slice(0, 24);
+            return o;
+          });
         });
-        bracket = limpio;
+        bracket = ensureThemes(limpio);
         recomputeBracket();
         saveBracket();
         renderBracket();
@@ -2987,6 +3120,9 @@
     } else {
       hideWinner();
     }
+    if (!torneoContext && snap.word) state.word = snap.word;
+    state.wordRevealed = !!snap.wordRevealed;
+    updateWordLabel();
     showScreen('Contador');
     return true;
   }
