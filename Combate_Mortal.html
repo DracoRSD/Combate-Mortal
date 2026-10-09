@@ -9,6 +9,8 @@
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
       Presentación (solo las 2 fotos, croma) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
       Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
+      Pantallas del evento (tormenta, una por monitor, a pantalla completa con clic o F11):
+        izquierda ?salida=lateral&lado=a (tecla 4) · derecha ?salida=lateral&lado=b (tecla 5) · reloj del centro ?salida=reloj (tecla 6)
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
@@ -18,7 +20,7 @@
   Modo transmisión: O abrir/cerrar su ventana · B mostrar/ocultar el bloque de la esquina · P presentación VS (7 s) ·
   E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
   3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas ·
-  + y - agrandar/achicar el bloque de la esquina de la transmisión.
+  + y - agrandar/achicar el bloque de la esquina de la transmisión · 4 / 5 / 6 pantallas izquierda / derecha / reloj del evento.
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). El botón "Rehacer" de una batalla decidida NO se muestra el día
   del evento; para ensayos o corregir un error, abrir el operador con  ...Combate_Mortal.html?ensayo=1  (y cerrar esa pestaña después). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
@@ -1480,6 +1482,51 @@
   .vs-flash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #eaf6ff; opacity: 0; }
   #vs.is-on .vs-flash { animation: vs-flash 0.6s ease-out 0.45s both; }
   @keyframes vs-flash { 0% { opacity: 0; } 12% { opacity: 0.85; } 100% { opacity: 0; } }
+  /* ----- Pantallas del evento: laterales verticales (1080x1920) y reloj central ----- */
+  #lateral { display: none; }
+  html.salida-lateral #stage { width: 1080px; height: 1920px; }
+  html.salida-lateral #lateral {
+    display: block; position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; z-index: 10; pointer-events: none;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+  html.salida-lateral #lateral.is-on { opacity: 1; }
+  .lat-turno {
+    position: absolute; left: 50%; top: 58px; transform: translateX(-50%); white-space: nowrap;
+    font-family: var(--cm-label); font-weight: 700; font-size: 34px; letter-spacing: 0.34em; text-indent: 0.34em;
+    height: 1.7em; line-height: 1.7em; padding: 0 1.4em; color: #06122b;
+    background: linear-gradient(180deg, #fff, #b9cbe0 55%, #8ea3c0);
+    clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+    opacity: 0; transition: opacity 0.25s ease;
+  }
+  .lat-turno.is-on { opacity: 1; }
+  .lat-nombre {
+    position: absolute; left: 50%; top: 124px; transform: translateX(-50%); max-width: 980px;
+    font-family: var(--cm-display); font-size: 150px; line-height: 1.1; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(4, 12, 30, 0.9)) drop-shadow(0 0 22px rgba(30, 144, 255, 0.55));
+  }
+  .lat-pais { position: absolute; left: 50%; top: 306px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; white-space: nowrap;
+    font-family: var(--cm-label); font-size: 44px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--b-cyan); }
+  .lat-pais.is-off { display: none; }
+  .lat-bandera { display: block; width: 66px; height: 44px; }
+  .lat-bandera:not([src]) { display: none; }
+  .lat-hp { position: absolute; left: 80px; top: 386px; width: 920px; height: 38px; }
+  .lat-card { position: absolute; left: 60px; top: 478px; width: 960px; aspect-ratio: 3 / 4; }
+  .lat-card.is-defeated .mc-frame__photo { filter: brightness(0.28) saturate(0.35) grayscale(0.5); transition: filter 0.8s ease; }
+  .lat-ganador {
+    position: absolute; left: 50%; top: 1782px; transform: translateX(-50%) scale(0.85); white-space: nowrap; opacity: 0;
+    font-family: var(--cm-display); font-size: 104px; line-height: 1.1; letter-spacing: 0.3em; text-indent: 0.3em;
+    background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(4, 12, 30, 0.9)) drop-shadow(0 0 22px rgba(30, 144, 255, 0.7));
+    transition: transform 0.5s cubic-bezier(.2, 1.3, .3, 1), opacity 0.3s ease;
+  }
+  .lat-ganador.is-on { opacity: 1; transform: translateX(-50%); }
+
+  /* Reloj central (mesa del DJ): solo el reloj grande con etapa, formato y temática. */
+  html.salida-reloj .mc { display: none; }
+  html.salida-reloj #screenContador .duel { margin-top: 232px; grid-template-columns: auto; }   /* una sola columna: el reloj queda centrado */
+  html.salida-reloj #battleCore { --d: 650px; }
+  html.salida-reloj #screenContador > .word-label { top: 905px; }
 </style>
 
 <script>
@@ -1490,10 +1537,10 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var modo = q.get('salida');
-  if (modo !== 'limpia' && modo !== 'presentacion' && modo !== 'transmision') return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
+  if (['limpia', 'presentacion', 'transmision', 'lateral', 'reloj'].indexOf(modo) < 0) return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
   var root = document.documentElement;
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
-  var S = window.CMF_SALIDA = { on: true, modo: modo === 'presentacion' || modo === 'transmision' ? modo : 'contador', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
+  var S = window.CMF_SALIDA = { on: true, modo: modo === 'limpia' ? 'contador' : modo, local: modo === 'lateral' || modo === 'reloj', lado: q.get('lado') === 'b' ? 'b' : 'a', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
 
   var c = (q.get('croma') || '').trim();
   if (/^#?[0-9a-f]{6}$/i.test(c)) S.croma = '#' + c.replace('#', '').toUpperCase();
@@ -1510,8 +1557,9 @@
 
   /* Fondo: se puede cambiar en caliente (tecla B del operador, vía sincronización). */
   S.setFondo = function (name) {
-    if (FONDOS.indexOf(name) < 0) name = S.modo !== 'contador' ? 'croma' : 'tormenta';
-    if (S.modo !== 'contador' && name === 'tormenta') name = 'croma';   // presentación y transmisión nunca muestran la tormenta
+    if (S.local) name = 'tormenta';   // pantallas del evento (laterales y reloj): siempre la tormenta, no siguen el fondo de las salidas de OBS
+    else if (FONDOS.indexOf(name) < 0) name = S.modo !== 'contador' ? 'croma' : 'tormenta';
+    if (S.modo !== 'contador' && !S.local && name === 'tormenta') name = 'croma';   // presentación y transmisión nunca muestran la tormenta
     var before = S.flat;
     S.fondo = name;
     S.flat = name !== 'tormenta';
@@ -1525,7 +1573,10 @@
   root.classList.add('salida');
   root.classList.toggle('salida-pres', S.modo === 'presentacion');
   root.classList.toggle('salida-trans', S.modo === 'transmision');
-  document.title = S.modo === 'presentacion' ? 'CMF Presentación' : S.modo === 'transmision' ? 'CMF Transmisión' : 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
+  root.classList.toggle('salida-lateral', S.modo === 'lateral');
+  root.classList.toggle('salida-reloj', S.modo === 'reloj');
+  root.classList.toggle('salida-local', S.local);
+  document.title = { presentacion: 'CMF Presentación', transmision: 'CMF Transmisión', reloj: 'CMF Reloj', lateral: S.lado === 'b' ? 'CMF Derecha' : 'CMF Izquierda' }[S.modo] || 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
   S.setFondo(q.get('fondo'));
 
   /* Teclado: la salida no atiende ninguna tecla (salvo las del navegador: F11, F5, Ctrl/Alt/Meta). */
@@ -1816,6 +1867,16 @@
     <div class="mc-country" id="presPaisB"></div>
   </div>
 </div>
+<!-- Pantalla lateral vertical (ventana ?salida=lateral&lado=a|b): un MC grande con su vida y su turno -->
+<div id="lateral" aria-hidden="true">
+  <div class="lat-turno" id="latTurno">TURNO</div>
+  <div class="lat-nombre" id="latNombre"></div>
+  <div class="lat-pais" id="latPaisW"><img class="lat-bandera" id="latBandera" alt=""><span id="latPais"></span></div>
+  <div class="cmfx-hp lat-hp" id="latHp"><i class="ghost"></i><i class="fill"></i></div>
+  <div class="lat-card" id="latCard"><div class="mc-frame"><div class="mc-frame__inner"><img class="mc-frame__photo" id="latFoto" alt=""></div></div></div>
+  <div class="lat-ganador" id="latGanador">GANADOR</div>
+</div>
+
 <!-- Revelado de la temática (W): palabra grande al centro que viaja a su sitio -->
 <div id="wordReveal" aria-hidden="true">
   <div class="wr-bar wr-bar--a"></div><div class="wr-bar wr-bar--b"></div>
@@ -1857,7 +1918,8 @@
 (function () {
   var stage = document.getElementById('stage');
   function fit() {
-    stage.style.setProperty('--stage-scale', Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    var W = stage.offsetWidth || 1920, H = stage.offsetHeight || 1080;   // 1920x1080; en las pantallas laterales 1080x1920
+    stage.style.setProperty('--stage-scale', Math.min(window.innerWidth / W, window.innerHeight / H));
   }
   fit();
   window.addEventListener('resize', fit);
@@ -4175,7 +4237,7 @@ else init();
   function operador() {
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
-    var vistas = { contador: 0, presentacion: 0, transmision: 0 };     // última señal de cada ventana de salida
+    var vistas = { contador: 0, presentacion: 0, transmision: 0, lateralA: 0, lateralB: 0, reloj: 0 };     // última señal de cada ventana de salida
     var presentando = false, vs = false, vsTimer = null, bloque = true, escala = 1, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
@@ -4188,7 +4250,7 @@ else init();
       if (!m) return;
       if (m.type === 'hello') { presente(m); flush(true); }
       else if (m.type === 'ping') presente(m);
-      else if (m.type === 'bye') { vistas[m.modo || 'contador'] = 0; pintar(); }
+      else if (m.type === 'bye') { vistas[clave(m)] = 0; pintar(); }
     });
 
     /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
@@ -4201,11 +4263,17 @@ else init();
       if (now - vistas.presentacion < 5000) partes.push('Presentación conectada');
       else if (presentando) partes.push('Sin ventana de presentación');
       if (now - vistas.transmision < 5000) partes.push('Transmisión conectada');
+      var pant = [];
+      if (now - vistas.lateralA < 5000) pant.push('izq');
+      if (now - vistas.reloj < 5000) pant.push('centro');
+      if (now - vistas.lateralB < 5000) pant.push('der');
+      if (pant.length) partes.push('Pantallas: ' + pant.join(' + '));
       ind.classList.toggle('is-ok', ok);
       ind.textContent = msg || partes.join(' · ');
     }
     function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
-    function presente(m) { var k = m.modo || 'contador'; vistas[k] = Date.now(); if (k === 'contador' && m.fondo) fondoVisto = m.fondo; pintar(); }
+    function clave(m) { var k = m.modo || 'contador'; return k === 'lateral' ? 'lateral' + (m.lado === 'b' ? 'B' : 'A') : k; }
+    function presente(m) { var k = clave(m); vistas[k] = Date.now(); if (k === 'contador' && m.fondo) fondoVisto = m.fondo; pintar(); }
     setInterval(pintar, 1000);
     pintar();
 
@@ -4284,13 +4352,14 @@ else init();
          P  presentación VS (5-8 s)    E  editar la temática    W  revelar la temática
          1  abrir/enfocar la salida del contador    2  abrir/enfocar la ventana de presentación de fotos
          3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas
-         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%) */
-    var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision' };
-    var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision' };
+         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%)
+         4  pantalla lateral izquierda (MC A)    5  pantalla lateral derecha (MC B)    6  pantalla del reloj (centro) */
+    var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision', lateralA: 'cmf-lateral-a', lateralB: 'cmf-lateral-b', reloj: 'cmf-reloj' };
+    var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision', lateralA: 'lateral&lado=a', lateralB: 'lateral&lado=b', reloj: 'reloj' };
     function abrirSalida(modo) {
       var q = new URLSearchParams(location.search);
       var url = location.href.split('?')[0].split('#')[0] + '?salida=' + PARAMS[modo] + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
-      var w = window.open('', NOMBRES[modo], 'popup=yes,width=1280,height=720');
+      var w = window.open('', NOMBRES[modo], /^lateral/.test(modo) ? 'popup=yes,width=540,height=960' : 'popup=yes,width=1280,height=720');
       if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
       outWin = w;
       var vacia = false;
@@ -4355,6 +4424,9 @@ else init();
       else if (k === '2') abrirSalida('presentacion');
       else if (k === '3') alternarPresentacionFotos();
       else if (k === 'c') ciclarFondo();
+      else if (k === '4') abrirSalida('lateralA');
+      else if (k === '5') abrirSalida('lateralB');
+      else if (k === '6') abrirSalida('reloj');
       else if (k === '+' || k === '=') cambiarTamano(0.1);
       else if (k === '-' || k === '_') cambiarTamano(-0.1);
     });
@@ -4516,7 +4588,48 @@ else init();
     }
     document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'transmision') aplicarTrans(ultimo); });
 
+    /* ---- Pantalla lateral vertical: un MC grande, con su vida, su turno y los efectos del kit ---- */
+    var LAT = {}, latApi = null, latActivo = null;
+    if (S.modo === 'lateral') {
+      ['lateral', 'latTurno', 'latNombre', 'latPais', 'latPaisW', 'latBandera', 'latHp', 'latCard', 'latFoto', 'latGanador'].forEach(function (id) { LAT[id] = byId(id); });
+      /* Sin pantalla activa: el puente de efectos no monta el ambiente del menú (aquí el kit se monta sobre #lateral). */
+      ['Format', 'Torneo', 'Contador'].forEach(function (n) { N['screen' + n].classList.remove('active'); });
+      var BOLTS_LAT = [
+        { src: CMFX_ASSETS.fino, kind: 'near', top: [0.34, 0.05], tip: [0.551, 0.975] },
+        { src: CMFX_ASSETS.ramificado, kind: 'sky', top: [0.717, 0], tip: [0.40, 0.916] },
+        { src: CMFX_ASSETS.nube, kind: 'far', top: [0.577, 0.03], tip: [0.397, 0.88] }
+      ];
+      CMFX.init({ root: LAT.lateral, bolts: BOLTS_LAT, bg: CMFX_ASSETS.bg, els: { left: LAT.latCard }, groundY: 0.8, turn: 'left' }).then(function (api) {
+        latApi = api; latActivo = null;
+        if (ultimo) aplicarLateral(ultimo);
+      });
+    }
+    function aplicarLateral(p) {
+      var A = S.lado === 'a';
+      var mc = A ? p.mcA : p.mcB, hp = A ? p.life.a : p.life.b, activo = p.turn === S.lado;
+      LAT.lateral.classList.toggle('is-on', p.screen === 'Contador');
+      setText(LAT.latNombre, mc.name.toUpperCase()); ajustar(LAT.latNombre);
+      setPhoto(LAT.latFoto, mc.name);
+      var inf = info[mc.name] || { flag: '', country: '' };
+      setText(LAT.latPais, inf.country.toUpperCase());
+      setBandera(LAT.latBandera, inf.flag);
+      LAT.latPaisW.classList.toggle('is-off', !inf.country);
+      LAT.latHp.style.setProperty('--hp', (Math.max(0, hp) / 100).toFixed(3));
+      LAT.latHp.classList.toggle('is-warn', hp <= 50 && hp > 25);
+      LAT.latHp.classList.toggle('is-crit', hp <= 25);
+      LAT.latTurno.classList.toggle('is-on', activo && !p.winner);
+      LAT.latCard.classList.toggle('is-defeated', hp <= 0);
+      LAT.latGanador.classList.toggle('is-on', !!p.winner && p.winner.name === mc.name);
+      if (latApi && activo !== latActivo) {          // el turno pasa a este MC: luz de borde y, si no es el arranque, rayo
+        latApi.setTurn(activo ? 'left' : 'right');
+        if (activo && latActivo !== null) latApi.turn('left');
+        latActivo = activo;
+      }
+    }
+    document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'lateral') aplicarLateral(ultimo); });
+
     function aplicar(p) {
+      if (S.modo === 'lateral') { aplicarLateral(p); return; }
       if (S.modo === 'presentacion') { aplicarPres(p); return; }
       if (S.modo === 'transmision') { aplicarTrans(p); return; }
       /* llaves */
@@ -4549,17 +4662,21 @@ else init();
       /* ganador */
       if (p.winner) { setText(N.winnerName, p.winner.name); setPhoto(N.winnerPhoto, p.winner.name); }
       N.winnerOverlay.hidden = !p.winner;
-      /* fondo (solo si el operador lo eligió con B) */
-      if (p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
+      /* fondo (solo si el operador lo eligió con C; las pantallas del evento lo ignoran) */
+      if (!S.local && p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
       /* pantalla al final: el motor de efectos se monta con todo ya puesto.
          Formato y Selección (menús del operador) = fondo vacío. */
-      var scr = p.screen === 'Select' ? 'Format' : p.screen;
+      var scr = p.screen === 'Select' || (S.modo === 'reloj' && p.screen === 'Torneo') ? 'Format' : p.screen;   // el reloj del centro nunca muestra las llaves
       ['Format', 'Torneo', 'Contador'].forEach(function (n) { N['screen' + n].classList.toggle('active', n === scr); });
       N.screenSelect.classList.remove('active');
     }
 
     function evento(m) {
-      if (m.name === 'revelar' && S.modo !== 'presentacion') {
+      if (m.name === 'golpe' && S.modo === 'lateral') {      // golpe: chispas y sacudida solo en la pantalla del MC golpeado
+        if (m.side === S.lado && latApi) latApi.hit('left');
+        return;
+      }
+      if (m.name === 'revelar' && S.modo !== 'presentacion' && S.modo !== 'lateral') {
         playReveal(m.word, function () { return S.modo === 'transmision' ? TX.txTema : N.wordLabel; }, function () { if (ultimo) aplicar(ultimo); });
       }
       if (m.name === 'golpe') {
@@ -4581,10 +4698,10 @@ else init();
     }, 250);
 
     /* Presencia: hello hasta recibir el primer estado; ping cada 2 s. */
-    tr.send({ type: 'hello', modo: S.modo });
-    var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello', modo: S.modo }); }, 1000);
-    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo, modo: S.modo }); }, 2000);
-    window.addEventListener('pagehide', function () { tr.send({ type: 'bye', modo: S.modo }); });
+    tr.send({ type: 'hello', modo: S.modo, lado: S.lado });
+    var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello', modo: S.modo, lado: S.lado }); }, 1000);
+    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo, modo: S.modo, lado: S.lado }); }, 2000);
+    window.addEventListener('pagehide', function () { tr.send({ type: 'bye', modo: S.modo, lado: S.lado }); });
   }
 
   if (SALIDA) salida(); else operador();
