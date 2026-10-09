@@ -19,7 +19,8 @@
   E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
   3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas ·
   + y - agrandar/achicar el bloque de la esquina de la transmisión.
-  Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). La batalla en curso se guarda sola y se recupera (con el
+  Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). El botón "Rehacer" de una batalla decidida NO se muestra el día
+  del evento; para ensayos o corregir un error, abrir el operador con  ...Combate_Mortal.html?ensayo=1  (y cerrar esa pestaña después). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
 -->
 <html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
@@ -2152,6 +2153,7 @@
   // (propiedad `theme`), con estos valores por defecto. recomputeBracket solo
   // toca a, b y winner, así que no la borra. Un bracket guardado antes de que
   // existiera el campo la recibe aquí al cargarse.
+  var ENSAYO = /[?&]ensayo=1(&|$)/.test(location.search);   // modo ensayo: muestra "Rehacer" en las llaves
   var DEFAULT_THEMES = ['TORMENTA', 'CORONA'];
   function ensureThemes(b) {
     if (!b || !Array.isArray(b.semifinal)) return b;
@@ -2315,7 +2317,9 @@
       card.appendChild(tema);
     }
 
-    if (decided || (match.a && match.b)) {
+    // "Rehacer" (borra el resultado de una batalla) solo existe en modo ensayo (?ensayo=1):
+    // el día del evento no se dibuja, para que nadie lo pulse por error.
+    if ((decided && ENSAYO) || (!decided && match.a && match.b)) {
       var actions = document.createElement('div');
       actions.className = 'bracket-match__actions';
       llavesPlace(actions, box.left, box.topB + box.h + LLAVES_ACTIONS_GAP, box.w);
