@@ -17,7 +17,8 @@
   F efectos · flechas navegar · Escape cerrar selector.
   Modo transmisión: O abrir/cerrar su ventana · B mostrar/ocultar el bloque de la esquina · P presentación VS (7 s) ·
   E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
-  3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas.
+  3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas ·
+  + y - agrandar/achicar el bloque de la esquina de la transmisión.
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
 -->
@@ -1401,6 +1402,8 @@
   html.salida-trans #transmision { display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 40; pointer-events: none; }
   .tx-bloque {
     position: absolute; left: 48px; bottom: 56px; display: flex; align-items: center; gap: 14px;
+    transform-origin: 0 100%;   /* el tamaño (--txe, teclas + y - del operador) crece desde la esquina inferior izquierda */
+    scale: var(--txe, 1);       /* propiedad independiente: el cambio de tamaño es inmediato (la transición es solo de transform) */
     opacity: 0; transform: translateX(-130%);
     transition: transform 0.5s cubic-bezier(.2, .8, .2, 1), opacity 0.4s ease;
   }
@@ -4169,11 +4172,12 @@ else init();
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
     var vistas = { contador: 0, presentacion: 0, transmision: 0 };     // última señal de cada ventana de salida
-    var presentando = false, vs = false, vsTimer = null, bloque = true, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
+    var presentando = false, vs = false, vsTimer = null, bloque = true, escala = 1, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
       var prev = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
       if (prev && prev.state && prev.state.fondo) fondoSalida = fondoVisto = prev.state.fondo;
+      if (prev && prev.state && prev.state.escala) escala = prev.state.escala;
     } catch (e) {}
 
     var tr = createTransport(function (m) {
@@ -4212,6 +4216,7 @@ else init();
       if (vs && st.screen !== 'Contador') vs = false;   // la presentación VS se cierra sola (7 s) o al salir de la batalla
       st.vs = vs;
       st.bloque = bloque;                               // bloque de la esquina visible (tecla B)
+      st.escala = escala;                               // tamaño del bloque (teclas + y -)
       var sig = JSON.stringify(st);
       var now = Date.now();
       var periodic = st.timer.running && now - lastSend >= 5000;
@@ -4274,7 +4279,8 @@ else init();
          O  entrar/salir del modo transmisión (abre o cierra su ventana)    B  mostrar/ocultar el bloque de la esquina
          P  presentación VS (5-8 s)    E  editar la temática    W  revelar la temática
          1  abrir/enfocar la salida del contador    2  abrir/enfocar la ventana de presentación de fotos
-         3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas */
+         3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas
+         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%) */
     var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision' };
     var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision' };
     function abrirSalida(modo) {
@@ -4302,6 +4308,11 @@ else init();
     function alternarBloque() {
       bloque = !bloque;
       aviso(bloque ? 'Bloque de la esquina: visible' : 'Bloque de la esquina: oculto');
+      flush(true);
+    }
+    function cambiarTamano(d) {
+      escala = Math.max(0.6, Math.min(1.8, Math.round((escala + d) * 10) / 10));
+      aviso('Tamaño del bloque: ' + Math.round(escala * 100) + '%');
       flush(true);
     }
     function alternarVs() {
@@ -4340,6 +4351,8 @@ else init();
       else if (k === '2') abrirSalida('presentacion');
       else if (k === '3') alternarPresentacionFotos();
       else if (k === 'c') ciclarFondo();
+      else if (k === '+' || k === '=') cambiarTamano(0.1);
+      else if (k === '-' || k === '_') cambiarTamano(-0.1);
     });
 
     flush(true);
@@ -4472,6 +4485,7 @@ else init();
     }
     function aplicarTrans(p) {
       /* bloque visible si el operador lo quiere (B), hay batalla en curso, no hay ganador ni presentación VS */
+      TX.txBloque.style.setProperty('--txe', p.escala || 1);
       TX.txBloque.classList.toggle('is-on', !!p.bloque && p.screen === 'Contador' && !p.winner && !p.vs);
       setText(TX.txEtapa, (p.stage || '').toUpperCase());
       setText(TX.txFormato, p.format.name);
