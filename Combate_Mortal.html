@@ -1405,10 +1405,9 @@
   #transmision, #vs { display: none; }
   html.salida-trans #transmision { display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 40; pointer-events: none; }
   .tx-bloque {
-    position: absolute; left: 28px; bottom: 28px; display: flex; align-items: center; gap: 14px;
+    position: absolute; left: var(--txl, 0px); bottom: var(--txb, 16px); display: flex; align-items: center; gap: 14px;   /* margen de fábrica: 0 px a la izquierda, 16 px abajo (teclas I J K L) */
     transform-origin: 0 100%;   /* el tamaño (--txe, teclas + y - del operador) crece desde la esquina inferior izquierda */
     scale: var(--txe, 1);       /* propiedad independiente: el cambio de tamaño es inmediato (la transición es solo de transform) */
-    translate: var(--txx, 0px) var(--txy, 0px);   /* posición del bloque (Shift + flechas del operador) */
     opacity: 0; transform: translateX(-130%);
     transition: transform 0.5s cubic-bezier(.2, .8, .2, 1), opacity 0.4s ease;
   }
@@ -4168,7 +4167,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '9';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '10';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4243,13 +4242,13 @@ else init();
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
     var vistas = { contador: 0, presentacion: 0, transmision: 0, lateralA: 0, lateralB: 0, reloj: 0 };     // última señal de cada ventana de salida
-    var presentando = false, vs = false, vsTimer = null, bloque = true, escala = 1, bx = 0, by = 0, autoVs = true, pantallaPrev = null, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
+    var presentando = false, vs = false, vsTimer = null, bloque = true, escala = 1, mx = 0, my = 16, autoVs = true, pantallaPrev = null, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
       var prev = JSON.parse(localStorage.getItem('cmBatallaSnapshot_v1') || 'null');
       if (prev && prev.state && prev.state.fondo) fondoSalida = fondoVisto = prev.state.fondo;
       if (prev && prev.state && prev.state.escala) escala = prev.state.escala;
-      if (prev && prev.state && typeof prev.state.bloqueX === 'number') { bx = prev.state.bloqueX; by = prev.state.bloqueY || 0; }
+      if (prev && prev.state && typeof prev.state.margenX === 'number' && typeof prev.state.margenY === 'number') { mx = prev.state.margenX; my = prev.state.margenY; }
       if (prev && prev.state && typeof prev.state.autoVs === 'boolean') autoVs = prev.state.autoVs;
     } catch (e) {}
 
@@ -4304,7 +4303,7 @@ else init();
       st.vs = vs;
       st.bloque = bloque;                               // bloque de la esquina visible (tecla B)
       st.escala = escala;                               // tamaño del bloque (teclas + y -)
-      st.bloqueX = bx; st.bloqueY = by;                 // desplazamiento del bloque (Shift + flechas)
+      st.margenX = mx; st.margenY = my;                 // márgenes del bloque: izquierda y abajo, en px (teclas I J K L)
       st.autoVs = autoVs;                               // presentación VS automática (tecla A)
       var sig = JSON.stringify(st);
       var now = Date.now();
@@ -4370,7 +4369,7 @@ else init();
          E  editar la temática    W  revelar la temática
          1  abrir/enfocar la salida del contador    2  abrir/enfocar la ventana de presentación de fotos
          3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas
-         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%)    I J K L (o Shift + flechas)  mover el bloque 8 px: arriba, izquierda, abajo, derecha    0  restablecer tamaño y posición
+         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%)    I J K L (o Shift + flechas)  mover el bloque 8 px: arriba, izquierda, abajo, derecha    0  restablecer tamaño y posición (de fábrica: izquierda 0, abajo 16)
          4  pantalla lateral izquierda (MC A)    5  pantalla lateral derecha (MC B)    6  pantalla del reloj (centro) */
     var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision', lateralA: 'cmf-lateral-a', lateralB: 'cmf-lateral-b', reloj: 'cmf-reloj' };
     var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision', lateralA: 'lateral&lado=a', lateralB: 'lateral&lado=b', reloj: 'reloj' };
@@ -4403,14 +4402,14 @@ else init();
     }
     function moverBloque(tecla) {
       var d = 8;
-      if (tecla === 'ArrowLeft') bx -= d; else if (tecla === 'ArrowRight') bx += d; else if (tecla === 'ArrowUp') by -= d; else by += d;
-      bx = Math.max(-28, Math.min(1000, bx)); by = Math.max(-1000, Math.min(28, by));   // no puede salirse del cuadro por la esquina
-      aviso('Margen del bloque: izquierda ' + (28 + bx) + ' px, abajo ' + (28 - by) + ' px');
+      if (tecla === 'ArrowLeft') mx -= d; else if (tecla === 'ArrowRight') mx += d; else if (tecla === 'ArrowUp') my += d; else my -= d;
+      mx = Math.max(0, Math.min(1000, mx)); my = Math.max(0, Math.min(1000, my));   // 0 = pegado a ese borde
+      aviso('Margen del bloque: izquierda ' + mx + ' px, abajo ' + my + ' px');
       flush(true);
     }
     function reiniciarBloque() {
-      escala = 1; bx = 0; by = 0;
-      aviso('Bloque: tamaño y posición originales');
+      escala = 1; mx = 0; my = 16;
+      aviso('Bloque: tamaño y posición de fábrica (izquierda 0 px, abajo 16 px)');
       flush(true);
     }
     function cambiarTamano(d) {
@@ -4604,8 +4603,8 @@ else init();
     function aplicarTrans(p) {
       /* bloque visible si el operador lo quiere (B), hay batalla en curso, no hay ganador ni presentación VS */
       TX.txBloque.style.setProperty('--txe', p.escala || 1);
-      TX.txBloque.style.setProperty('--txx', (p.bloqueX || 0) + 'px');
-      TX.txBloque.style.setProperty('--txy', (p.bloqueY || 0) + 'px');
+      TX.txBloque.style.setProperty('--txl', (typeof p.margenX === 'number' ? p.margenX : 0) + 'px');
+      TX.txBloque.style.setProperty('--txb', (typeof p.margenY === 'number' ? p.margenY : 16) + 'px');
       TX.txBloque.classList.toggle('is-on', !!p.bloque && p.screen === 'Contador' && !p.winner && !p.vs);
       setText(TX.txEtapa, (p.stage || '').toUpperCase());
       setText(TX.txFormato, p.format.name);
