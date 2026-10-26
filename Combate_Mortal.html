@@ -17,8 +17,8 @@
 
   TECLAS (operador): Espacio iniciar · G golpe · Retroceso reiniciar · T turno · N siguiente batalla · V volver · R réplica ·
   F efectos · flechas navegar · Escape cerrar selector.
-  Modo transmisión: O abrir/cerrar su ventana · B mostrar/ocultar el bloque de la esquina · P presentación VS (7 s; sale sola
-  al abrir una batalla, A la activa/desactiva) ·
+  Modo transmisión: O abrir/cerrar su ventana · B mostrar/ocultar el bloque de la esquina · P presentación VS (7 s, entra a oscuras y enciende con relámpagos y chispas
+  que solo viven en el fondo; sale sola al abrir una batalla, A la activa/desactiva) ·
   E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
   3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas ·
   + y - agrandar/achicar el bloque de la esquina de la transmisión · I J K L (o Shift+flechas) lo mueven · 0 lo restablece · 4 / 5 / 6 pantallas izquierda / derecha / reloj del evento.
@@ -1455,12 +1455,14 @@
   #vs.is-on .vs-mitad { transform: none; transition: transform 0.55s cubic-bezier(.2, .9, .2, 1); }
   /* Encuadre: las fotos (4:5) traen "PARTICIPANTE CONFIRMADO" arriba (hasta ~11 %) y el nombre abajo (desde ~80 %).
      Se muestra del 11.5 % al 80 % de su altura, a 1577 px de alto: cabeza completa y torso, sin ningún banner. */
-  .vs-mitad img { position: absolute; top: -181px; height: 1577px; width: auto; max-width: none; transform-origin: 50% 34%; }
-  .vs-mitad--a img { left: -151px; }
-  .vs-mitad--b img { right: -151px; }
-  #vs.is-on .vs-mitad img { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both; }
-  #vs.is-on .vs-mitad--a img { translate: 0 0; animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-a 0.55s ease-out 0.5s; }
-  #vs.is-on .vs-mitad--b img { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-b 0.55s ease-out 0.5s; }
+  .vs-mitad img, .vs-mitad .vs-elec { position: absolute; top: -181px; height: 1577px; width: auto; max-width: none; transform-origin: 50% 34%; }
+  .vs-mitad--a img, .vs-mitad--a .vs-elec { left: -151px; }
+  .vs-mitad--b img, .vs-mitad--b .vs-elec { right: -151px; }
+  /* Relámpagos y chispas (canvas 4:5 con la misma caja que la foto: se mueve, hace zoom y recibe el golpe con ella). */
+  .vs-mitad .vs-elec { pointer-events: none; mix-blend-mode: screen; }
+  #vs.is-on .vs-mitad img, #vs.is-on .vs-mitad .vs-elec { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both; }
+  #vs.is-on .vs-mitad--a img, #vs.is-on .vs-mitad--a .vs-elec { translate: 0 0; animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-a 0.55s ease-out 0.5s; }
+  #vs.is-on .vs-mitad--b img, #vs.is-on .vs-mitad--b .vs-elec { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-b 0.55s ease-out 0.5s; }
   @keyframes vs-zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
   @keyframes vs-golpe-a { 0% { translate: 0 0; } 25% { translate: 26px 0; } 100% { translate: 0 0; } }
   @keyframes vs-golpe-b { 0% { translate: 0 0; } 25% { translate: -26px 0; } 100% { translate: 0 0; } }
@@ -1500,6 +1502,10 @@
     clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
   .vs-pais.is-off { display: none; }
   .vs-bandera { width: 48px; height: 32px; }
+  /* Entrada a oscuras: las fotos entran apagadas, parpadean y "encienden" con el destello del impacto (0,45 s). */
+  .vs-oscuro { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #020611; opacity: 0; }
+  #vs.is-on .vs-oscuro { animation: vs-oscuro 1.5s linear both; }
+  @keyframes vs-oscuro { 0% { opacity: 0.92; } 8% { opacity: 0.76; } 14% { opacity: 0.93; } 22% { opacity: 0.72; } 28% { opacity: 0.92; } 32% { opacity: 0.12; } 38% { opacity: 0.5; } 44% { opacity: 0.06; } 50% { opacity: 0.3; } 60%, 100% { opacity: 0; } }
   .vs-flash { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #eaf6ff; opacity: 0; }
   #vs.is-on .vs-flash { animation: vs-flash 0.6s ease-out 0.45s both; }
   @keyframes vs-flash { 0% { opacity: 0; } 12% { opacity: 0.85; } 100% { opacity: 0; } }
@@ -1922,8 +1928,9 @@
 
 <!-- Presentación VS (P): pantalla dividida en diagonal, solo en la ventana de transmisión -->
 <div id="vs" aria-hidden="true">
-  <div class="vs-mitad vs-mitad--a"><img id="vsFotoA" alt=""></div>
-  <div class="vs-mitad vs-mitad--b"><img id="vsFotoB" alt=""></div>
+  <div class="vs-mitad vs-mitad--a"><img id="vsFotoA" alt=""><canvas class="vs-elec" id="vsElecA" width="648" height="810"></canvas></div>
+  <div class="vs-mitad vs-mitad--b"><img id="vsFotoB" alt=""><canvas class="vs-elec" id="vsElecB" width="648" height="810"></canvas></div>
+  <div class="vs-oscuro"></div>
   <div class="vs-banda"></div>
   <svg class="vs-rayo" viewBox="0 0 1920 1080" aria-hidden="true"><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="#eaf6ff"/><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="none" stroke="#7fd0ff" stroke-width="10" stroke-linejoin="round"/></svg>
   <div class="vs-barra vs-barra--a"></div><div class="vs-barra vs-barra--b"></div>
@@ -4189,7 +4196,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '11';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '12';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4588,6 +4595,117 @@ else init();
         if (ultimo) aplicarTrans(ultimo);
       });
     }
+    /* ---- Relámpagos y chispas de la presentación VS ----
+       Se dibujan en un canvas 4:5 encima de cada foto y se recortan con una máscara sacada de la propia foto (solo el cielo y el aro,
+       que son azules), así viven en el fondo y nunca pasan por encima del MC. Solo corre mientras la presentación está en pantalla
+       (unos 20 cuadros/s: los relámpagos parpadean) y no corre con "reducir movimiento". */
+    var VSE = S.modo === 'transmision' ? (function () {
+      var W = 648, H = 810, reducir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var lados = ['A', 'B'].map(function (L) {
+        var c = byId('vsElec' + L);
+        return { img: V['vsFoto' + L], c: c, g: c ? c.getContext('2d') : null, mask: null, src: '', bolts: [], sparks: [], t0: 0, next: 0, glow: 0 };
+      });
+      function mascara(l) {
+        var im = l.img;
+        if (!im || !im.complete || !im.naturalWidth) return false;
+        var src = im.currentSrc || im.src;
+        if (l.mask && l.src === src) return true;
+        try {
+          var t = document.createElement('canvas'); t.width = W; t.height = H;
+          var tg = t.getContext('2d', { willReadFrequently: true });
+          tg.drawImage(im, 0, 0, W, H);
+          var d = tg.getImageData(0, 0, W, H), p = d.data;
+          for (var i = 0; i < p.length; i += 4) {
+            var a = (p[i + 2] - p[i] - 24) / 46;      // cuánto más azul que rojo: cielo y aro sí; piel, ropa y pelo no
+            p[i] = p[i + 1] = p[i + 2] = 255; p[i + 3] = a <= 0 ? 0 : a >= 1 ? 255 : (a * 255) | 0;
+          }
+          tg.putImageData(d, 0, 0);
+          var m = document.createElement('canvas'); m.width = W; m.height = H;
+          var mg = m.getContext('2d'); mg.filter = 'blur(3px)'; mg.drawImage(t, 0, 0);
+          l.mask = m; l.src = src; return true;
+        } catch (e) { l.mask = null; l.src = src; return false; }   // imagen que no se puede leer: sin rayos, lo demás sigue igual
+      }
+      function camino(x0, y0, x1, y1, desv) {          // rayo por desplazamiento del punto medio
+        var pts = [[x0, y0], [x1, y1]];
+        for (var n = 0; n < 6; n++) {
+          var nuevo = [pts[0]];
+          for (var i = 1; i < pts.length; i++) {
+            var a = pts[i - 1], b = pts[i];
+            nuevo.push([(a[0] + b[0]) / 2 + (Math.random() - 0.5) * desv, (a[1] + b[1]) / 2 + (Math.random() - 0.5) * desv * 0.35], b);
+          }
+          pts = nuevo; desv *= 0.55;
+        }
+        return pts;
+      }
+      function nuevoRayo(l, ahora, fuerte) {
+        var x0 = W * (0.12 + 0.76 * Math.random()), y0 = 60 + Math.random() * 40;
+        var x1 = x0 + (Math.random() - 0.5) * 240, y1 = 330 + Math.random() * 280;
+        var pts = camino(x0, y0, x1, y1, 170), ramas = [];
+        for (var k = 0, n = fuerte ? 3 : 1 + (Math.random() * 2 | 0); k < n; k++) {
+          var o = pts[(pts.length * (0.25 + 0.5 * Math.random())) | 0], dir = Math.random() < 0.5 ? -1 : 1;
+          ramas.push(camino(o[0], o[1], o[0] + dir * (60 + Math.random() * 120), o[1] + 70 + Math.random() * 120, 80));
+        }
+        l.bolts.push({ pts: pts, ramas: ramas, born: ahora, life: 130 + Math.random() * 130, amp: fuerte ? 1 : 0.55 + Math.random() * 0.4 });
+        l.glow = fuerte ? 1 : 0.6;
+      }
+      function trazo(g, pts, w, col, a) {
+        g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+        for (var i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+        g.lineWidth = w; g.strokeStyle = col; g.globalAlpha = a; g.stroke();
+      }
+      function dibujar(l, ahora, dt) {
+        var g = l.g, t = ahora - l.t0, i;
+        if (t > 350 && ahora >= l.next) {
+          if (t < 1800) { nuevoRayo(l, ahora, t < 600 && l.bolts.length === 0); l.next = ahora + 90 + Math.random() * 150; }   // ráfaga al encender
+          else { nuevoRayo(l, ahora, false); if (Math.random() < 0.3) nuevoRayo(l, ahora, false); l.next = ahora + 450 + Math.random() * 1300; }
+        }
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+        g.globalCompositeOperation = 'lighter'; g.lineJoin = g.lineCap = 'round';
+        if (l.glow > 0.03) { g.globalAlpha = 0.26 * l.glow; g.fillStyle = '#2f7dff'; g.fillRect(0, 0, W, H); }
+        l.bolts = l.bolts.filter(function (b) { return ahora - b.born < b.life; });
+        l.bolts.forEach(function (b) {
+          var e = (ahora - b.born) / b.life, a = b.amp * (1 - e * e) * (Math.random() < 0.22 ? 0.35 : 1);
+          trazo(g, b.pts, 16, '#1e90ff', a * 0.22); trazo(g, b.pts, 7, '#66b8ff', a * 0.5); trazo(g, b.pts, 2.6, '#eaf6ff', a);
+          b.ramas.forEach(function (r) { trazo(g, r, 8, '#1e90ff', a * 0.25); trazo(g, r, 2, '#cfe9ff', a * 0.85); });
+        });
+        for (i = 0; i < l.sparks.length; i++) {           // chispas que suben y titilan
+          var c = l.sparks[i];
+          c.y -= c.v * dt; c.x += Math.sin(ahora / 700 + c.f) * 6 * dt;
+          if (c.y < 70) { c.y = 640; c.x = Math.random() * W; }
+          g.globalAlpha = 0.25 + 0.75 * Math.abs(Math.sin(ahora / 260 * c.f));
+          g.fillStyle = '#9fd8ff'; g.beginPath(); g.arc(c.x, c.y, c.s, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1; g.drawImage(l.mask, 0, 0);   // solo en el fondo
+        g.globalCompositeOperation = 'source-over';
+        l.glow *= 0.78;
+      }
+      var raf = 0, activo = false, previo = 0;
+      function tick(ahora) {
+        if (!activo) return;
+        raf = requestAnimationFrame(tick);
+        if (ahora - previo < 50) return;
+        var dt = previo ? Math.min(0.1, (ahora - previo) / 1000) : 0.05; previo = ahora;
+        lados.forEach(function (l) { if (l.g && mascara(l)) dibujar(l, ahora, dt); });
+      }
+      lados.forEach(function (l) { if (l.img) l.img.addEventListener('load', function () { mascara(l); }); });   // la máscara queda lista antes del VS
+      return {
+        set: function (on) {
+          if (reducir || on === activo) return;
+          activo = on;
+          if (on) {
+            var n = performance.now();
+            lados.forEach(function (l) {
+              l.t0 = n; l.next = n; l.bolts = []; l.glow = 0; l.sparks = [];
+              for (var k = 0; k < 34; k++) l.sparks.push({ x: Math.random() * W, y: 120 + Math.random() * 520, v: 14 + Math.random() * 30, s: 1.2 + Math.random() * 2.2, f: 2 + Math.random() * 5 });
+            });
+            previo = 0; raf = requestAnimationFrame(tick);
+          } else {
+            cancelAnimationFrame(raf);
+            lados.forEach(function (l) { if (l.g) l.g.clearRect(0, 0, W, H); });
+          }
+        }
+      };
+    })() : null;
     function ajustarVs(el) {   // si el nombre no cabe en su mitad, se reduce la fuente
       el.style.fontSize = '';
       var max = parseFloat(getComputedStyle(el).maxWidth) || 830;
@@ -4649,6 +4767,7 @@ else init();
         ajustarVs(V['vsNombre' + L]);
       });
       V.vs.classList.toggle('is-on', !!p.vs && p.screen === 'Contador');
+      if (VSE) VSE.set(V.vs.classList.contains('is-on'));
       if (p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
     }
     document.addEventListener('cmf-fonts-ready', function () { if (ultimo && S.modo === 'transmision') aplicarTrans(ultimo); });
