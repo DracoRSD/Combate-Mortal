@@ -4167,6 +4167,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
+  var VERSION = '7';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4273,7 +4274,7 @@ else init();
       if (now - vistas.lateralB < 5000) pant.push('der');
       if (pant.length) partes.push('Pantallas: ' + pant.join(' + '));
       ind.classList.toggle('is-ok', ok);
-      ind.textContent = msg || partes.join(' · ');
+      ind.textContent = msg || partes.join(' · ') + ' · v' + VERSION;
     }
     function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
     function clave(m) { var k = m.modo || 'contador'; return k === 'lateral' ? 'lateral' + (m.lado === 'b' ? 'B' : 'A') : k; }
