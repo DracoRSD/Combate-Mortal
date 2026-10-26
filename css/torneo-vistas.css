@@ -1,0 +1,238 @@
+/* =============================================================================
+   COMBATE MORTAL FREESTYLE · VISTAS DEL TORNEO (bracket, historias, llave de ronda)
+   Estilos de js/torneo-vistas.js. Todo lleva el prefijo cmft-. Medidas en px del
+   lienzo de diseño (bracket 1560x960, historias 1080x1920, llave 1080x1350); el
+   script escala cada lienzo para llenar la pantalla manteniendo la proporción.
+   ============================================================================= */
+@font-face {
+  font-family: 'Bebas Neue'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../assets/fonts/BebasNeue-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Bebas Neue'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../assets/fonts/BebasNeue-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --cmft-css: 1;   /* señal para el operador: los estilos cargaron */
+  --cmft-azul: #1e90ff; --cmft-azul-claro: #8fd0ff; --cmft-linea: rgba(190, 215, 255, .8); --cmft-oro: #ffb300;
+  --cmft-font: "Bebas Neue", "CM Anton", Impact, "Arial Narrow", sans-serif;
+  --cmft-perdedor: grayscale(1) brightness(.3);   /* foto del perdedor (historias y llave) */
+}
+
+/* ---------- Contenedor y vistas ---------- */
+.cmft-raiz { position: absolute; inset: 0; overflow: hidden; background: #000; z-index: 1; user-select: none; -webkit-user-select: none; }
+.cmft-modo-pantalla { position: fixed; }
+.cmft-vista { position: absolute; inset: 0; display: none; }
+.cmft-vista.cmft-on { display: block; }
+.cmft-vista--historias, .cmft-vista--llave { background: radial-gradient(ellipse at center, #0a1a44 0%, #02040c 70%); }
+.cmft-lienzo { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #000 center / 100% 100% no-repeat; overflow: hidden; }
+
+/* ======================= BRACKET (1560 x 960) ======================= */
+.cmft-lineas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cmft-lineas path { fill: none; stroke: var(--cmft-linea); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 0 3px rgba(30, 144, 255, .9)); }
+.cmft-titulo { position: absolute; display: block; height: auto; pointer-events: none; }
+.cmft-box {
+  position: absolute; display: grid; place-items: center; padding: 0 14px; box-sizing: border-box;
+  font-family: var(--cmft-font); font-size: 24px; letter-spacing: .06em; text-transform: uppercase; color: #fff;
+  background: linear-gradient(180deg, rgba(8, 20, 58, .82), rgba(3, 8, 26, .84)); border: 1.7px solid rgba(222, 236, 255, .88);
+  box-shadow: 0 0 14px rgba(30, 144, 255, .38), inset 0 0 14px rgba(30, 144, 255, .14);
+  transition: background .2s, box-shadow .2s, border-color .2s, opacity .2s;
+}
+.cmft-nom { display: inline-block; white-space: nowrap; line-height: 1; padding-top: .08em; text-shadow: 0 0 8px var(--cmft-azul), 0 0 19px var(--cmft-azul); }
+.cmft-box.cmft-clic { cursor: pointer; }
+.cmft-box.cmft-clic:hover { border-color: var(--cmft-azul-claro); box-shadow: 0 0 20px rgba(30, 144, 255, .85), inset 0 0 17px rgba(30, 144, 255, .35); }
+.cmft-box.cmft-gana { border-color: var(--cmft-azul-claro); background: linear-gradient(180deg, rgba(40, 130, 255, .55), rgba(10, 50, 140, .62));
+  box-shadow: 0 0 22px rgba(30, 144, 255, .95), inset 0 0 19px rgba(143, 208, 255, .55); }
+.cmft-box.cmft-pierde { opacity: .42; }
+.cmft-box.cmft-pierde .cmft-nom { text-shadow: none; }
+/* combate que toca: aro pulsante */
+.cmft-box.cmft-toca::after { content: ""; position: absolute; inset: -8px; border: 2.2px solid var(--cmft-azul-claro);
+  box-shadow: 0 0 17px var(--cmft-azul); animation: cmft-aro 1.6s ease-in-out infinite; pointer-events: none; }
+@keyframes cmft-aro { 50% { opacity: .35; } }
+/* octavos del operador: lápiz para cambiar el MC, y casilla vacía */
+.cmft-box--edit { padding-right: 28px; }
+.cmft-lapiz { position: absolute; right: 4px; top: 50%; width: 22px; height: 22px; margin-top: -11px; padding: 2px; border: 0; border-radius: 4px;
+  background: transparent; cursor: pointer; opacity: .55; display: grid; place-items: center; }
+.cmft-lapiz svg { width: 16px; height: 16px; fill: var(--cmft-azul-claro); }
+.cmft-lapiz:hover, .cmft-casilla .cmft-lapiz { opacity: 1; background: rgba(143, 208, 255, .2); }
+.cmft-box--fija .cmft-lapiz { display: none; }
+.cmft-box--fija.cmft-box--edit { padding-right: 14px; }
+.cmft-box--vacia { cursor: pointer; }
+.cmft-box--vacia::before { content: "ELEGIR MC"; position: absolute; left: 0; right: 28px; top: 50%; transform: translateY(-45%); text-align: center;
+  font-size: 16px; letter-spacing: .18em; color: rgba(143, 208, 255, .55); pointer-events: none; }
+/* selección del teclado: marco grueso azul claro (distinto del aro del combate que toca) */
+.cmft-sel { position: absolute; display: none; box-sizing: border-box; border: 4px solid #bfe6ff; border-radius: 8px; pointer-events: none; z-index: 3;
+  box-shadow: 0 0 0 2px rgba(4, 16, 46, .9), 0 0 22px 4px rgba(30, 144, 255, .95), inset 0 0 14px rgba(143, 208, 255, .6); }
+.cmft-sel.cmft-on { display: block; }
+.cmft-sel::before, .cmft-sel::after { content: ""; position: absolute; width: 14px; height: 14px; background: #bfe6ff; top: 50%; margin-top: -7px; transform: rotate(45deg); box-shadow: 0 0 10px var(--cmft-azul); }
+.cmft-sel::before { left: -9px; }
+.cmft-sel::after { right: -9px; }
+.cmft-box.cmft-casilla { outline: 3px solid #fff; outline-offset: 2px; background: linear-gradient(180deg, rgba(60, 140, 255, .55), rgba(10, 40, 120, .7)); z-index: 4; }
+.cmft-bvs { position: absolute; display: grid; place-items: center; font-family: var(--cmft-font); font-size: 16.4px; letter-spacing: .3em; text-indent: .3em;
+  color: var(--cmft-azul-claro); text-shadow: 0 0 9px var(--cmft-azul); cursor: pointer; }
+.cmft-modo-salida .cmft-bvs { cursor: default; }
+/* temática sobre cada semifinal */
+.cmft-tag { position: absolute; text-align: center; font-family: var(--cmft-font); text-transform: uppercase; }
+.cmft-tag small { display: block; font-size: 13.3px; letter-spacing: .35em; text-indent: .35em; color: var(--cmft-azul-claro); margin-bottom: 4.7px; }
+.cmft-tag__txt, .cmft-tag__in { display: block; width: 100%; box-sizing: border-box; margin: 0; color: #fff; font-family: var(--cmft-font); font-weight: 400; font-size: 21px;
+  letter-spacing: .12em; text-align: center; text-transform: uppercase; padding: 5.5px 4px; border: 1.25px solid rgba(143, 208, 255, .65);
+  background: rgba(3, 8, 26, .8); text-shadow: 0 0 9px var(--cmft-azul); border-radius: 0; min-height: 36px; }
+.cmft-tag__in { outline: none; cursor: text; }
+.cmft-tag__in:focus { border-color: #fff; box-shadow: 0 0 0 2px var(--cmft-azul), 0 0 16px var(--cmft-azul); background: rgba(10, 30, 80, .95); }
+/* podio 2° · 1° · 3° */
+.cmft-pod { border-radius: 4.7px; color: #0a1330; letter-spacing: .08em; padding-left: 53px; }
+.cmft-pod .cmft-nom { text-shadow: none; }
+.cmft-pod::before { content: attr(data-rango); position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 18px; opacity: .8; letter-spacing: 0; }
+.cmft-pod--oro { background: linear-gradient(180deg, #ffe27a, #d99a00); border-color: #fff1b0; box-shadow: 0 0 25px rgba(255, 179, 0, .8); font-size: 29.6px; }
+.cmft-pod--plata { background: linear-gradient(180deg, #eef2f8, #9aa4b2); border-color: #fff; box-shadow: 0 0 18.7px rgba(200, 215, 235, .6); }
+.cmft-pod--bronce { background: linear-gradient(180deg, #e8a064, #8a4a1f); border-color: #ffd2a8; box-shadow: 0 0 18.7px rgba(205, 127, 50, .7); }
+.cmft-pod:not(.cmft-lleno) { opacity: .5; }
+.cmft-pod:not(.cmft-lleno) .cmft-nom { display: none; }
+/* panel de abajo a la izquierda: solo la ronda y los dos rivales (sin formatos) */
+.cmft-panel { position: absolute; left: 76px; bottom: 66px; width: 440px; display: flex; flex-direction: column; gap: 7px; transition: opacity .25s; z-index: 5;
+  font-family: var(--cmft-font); text-transform: uppercase; color: #fff; }
+.cmft-panel.cmft-off { opacity: 0; pointer-events: none; }
+.cmft-panel__fila { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.cmft-panel__ronda { font-size: 36px; line-height: 1; letter-spacing: .06em; padding-top: .06em;
+  background: linear-gradient(180deg, #fff 0%, #cfd9e8 45%, #7d8da6 52%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 #0b2a7a) drop-shadow(0 0 8px rgba(30, 144, 255, .8)); }
+.cmft-panel__riv { display: flex; align-items: center; gap: 9px; }
+.cmft-panel__riv b { display: inline-block; font-weight: 400; font-size: 24px; letter-spacing: .06em; white-space: nowrap; text-shadow: 0 0 9px var(--cmft-azul), 0 0 22px var(--cmft-azul); transition: opacity .25s; }
+.cmft-panel__riv b.cmft-pierde { opacity: .4; }
+.cmft-panel__riv i { font-style: normal; font-size: 15px; letter-spacing: .25em; color: var(--cmft-azul-claro); }
+.cmft-panel__acc { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.cmft-panel__tecla { font-size: 15px; letter-spacing: .2em; color: var(--cmft-azul-claro); border: 1px solid rgba(143, 208, 255, .6); border-radius: 4px; padding: 3px 8px 1px; }
+.cmft-panel__estado { font-size: 18px; letter-spacing: .14em; color: var(--cmft-azul-claro); }
+.cmft-panel [hidden] { display: none !important; }
+.cmft-btn { font-family: var(--cmft-font); font-size: 20px; letter-spacing: .12em; text-transform: uppercase; line-height: 1; padding: 6px 18px 4px; cursor: pointer;
+  color: #04102e; background: linear-gradient(180deg, #fff 0%, #cfe6ff 45%, #7fb8ff 55%, #e8f3ff 100%); border: 2px solid #fff; border-radius: 22px;
+  box-shadow: 0 0 16px rgba(30, 144, 255, .9); }
+.cmft-btn:hover { box-shadow: 0 0 24px rgba(30, 144, 255, 1); }
+.cmft-btn:focus { outline: none; }
+.cmft-btn--sec { color: #fff; background: rgba(3, 8, 26, .85); border-color: rgba(222, 236, 255, .7); }
+.cmft-lema { position: absolute; right: 76px; bottom: 56px; font-family: var(--cmft-font); font-size: 18.7px; letter-spacing: .3em; color: rgba(255, 255, 255, .8);
+  text-shadow: 0 0 9px var(--cmft-azul); pointer-events: none; white-space: nowrap; }
+
+/* ======================= HISTORIAS (1080 x 1920) ======================= */
+.cmft-card { position: absolute; inset: 0; width: 1080px; height: 1920px; background: #000 0 0 / 100% 100%; display: none; font-family: var(--cmft-font); color: #fff; }
+.cmft-card.cmft-on { display: block; animation: cmft-entra .35s ease-out; }
+@keyframes cmft-entra { from { opacity: 0; } }
+.cmft-logo { position: absolute; left: 425px; top: 96px; width: 230px; filter: drop-shadow(0 0 18px rgba(30, 144, 255, .6)); }
+.cmft-bar { position: absolute; left: 110px; width: 860px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(10, 26, 74, .80), rgba(3, 8, 26, .86)); border: 3px solid rgba(222, 236, 255, .85);
+  box-shadow: 0 0 28px rgba(30, 144, 255, .45), inset 0 0 26px rgba(30, 144, 255, .18); transition: box-shadow .25s, border-color .25s; }
+.cmft-bar.cmft-toca { animation: cmft-aroH 1.6s ease-in-out infinite; border-color: var(--cmft-azul-claro); }
+@keyframes cmft-aroH { 50% { box-shadow: 0 0 55px rgba(30, 144, 255, 1), inset 0 0 40px rgba(30, 144, 255, .45); } }
+.cmft-foto { position: absolute; border-radius: 50%; overflow: hidden; background: #0a1430; border: 5px solid rgba(200, 222, 255, .9);
+  box-shadow: 0 0 20px rgba(30, 144, 255, .6); transition: box-shadow .25s, border-color .25s; }
+.cmft-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter .25s; }
+.cmft-lado.cmft-clic .cmft-foto, .cmft-lado.cmft-clic .cmft-hnom, .cmft-lado.cmft-clic .cmft-lesc, .cmft-lado.cmft-clic .cmft-lbarW { cursor: pointer; }
+.cmft-lado.cmft-gana .cmft-foto { border-color: #bfe4ff; box-shadow: 0 0 0 4px var(--cmft-azul), 0 0 45px 8px rgba(30, 144, 255, .95); }
+.cmft-lado.cmft-pierde .cmft-foto img { filter: var(--cmft-perdedor); }
+.cmft-lado.cmft-pierde .cmft-hnom { opacity: .4; }
+.cmft-hnom { position: absolute; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; white-space: nowrap;
+  letter-spacing: .05em; text-shadow: 0 0 12px var(--cmft-azul), 0 3px 0 rgba(0, 0, 0, .6); transition: opacity .25s; }
+.cmft-hnom img { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+.cmft-pill { position: absolute; transform: translateX(-50%) scale(.6); opacity: 0; padding: 6px 22px 3px; border-radius: 30px; font-size: 30px;
+  letter-spacing: .14em; color: #04102e; background: linear-gradient(180deg, #fff 0%, #cfe6ff 45%, #7fb8ff 55%, #e8f3ff 100%);
+  border: 2px solid #fff; box-shadow: 0 0 20px rgba(30, 144, 255, .95); transition: opacity .25s, transform .25s; pointer-events: none; }
+.cmft-lado.cmft-gana .cmft-pill { opacity: 1; transform: translateX(-50%) scale(1); }
+.cmft-cvs { position: absolute; transform: translate(-50%, -50%); line-height: 1; letter-spacing: .02em;
+  text-shadow: 7px 7px 0 #1552c9, 0 0 30px rgba(30, 144, 255, .8); pointer-events: none; }
+.cmft-plate { position: absolute; left: 190px; top: 1610px; width: 700px; height: 160px; border-radius: 12px; display: grid; place-items: center;
+  background: linear-gradient(180deg, rgba(10, 26, 74, .82), rgba(3, 8, 26, .9)); border: 3px solid rgba(222, 236, 255, .85);
+  box-shadow: 0 0 30px rgba(30, 144, 255, .5); }
+.cmft-plate img { height: 104px; filter: drop-shadow(0 0 10px rgba(30, 144, 255, .5)); }
+
+/* ======================= LLAVE DE RONDA (1080 x 1350) ======================= */
+.cmft-lcard { position: absolute; inset: 0; width: 1080px; background: #000 0 0 / 100% 100%; display: none; font-family: var(--cmft-font); color: #fff; overflow: hidden; }
+.cmft-lcard.cmft-on { display: block; animation: cmft-entra .35s ease-out; }
+.cmft-ltit { position: absolute; left: 230px; top: 106px; width: 620px; height: 98px; display: grid; place-items: center;
+  clip-path: polygon(30px 0, 100% 0, calc(100% - 30px) 100%, 0 100%);
+  background: linear-gradient(180deg, #1f5fd6 0%, #0b2a7a 55%, #04123a 100%); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55); }
+.cmft-ltit img { height: 74px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .6)); }
+.cmft-ltitW { position: absolute; inset: 0; filter: drop-shadow(0 0 14px rgba(30, 144, 255, .85)); pointer-events: none; }
+.cmft-llogo { position: absolute; top: 100px; width: 112px; filter: drop-shadow(0 0 12px rgba(30, 144, 255, .6)); }
+.cmft-llogoB { position: absolute; left: 500px; width: 80px; opacity: .9; }
+.cmft-lvert { position: absolute; font-size: 42px; letter-spacing: .22em; color: rgba(143, 208, 255, .22); white-space: nowrap;
+  text-shadow: 0 0 12px rgba(30, 144, 255, .4); pointer-events: none; }
+.cmft-lfila { position: absolute; left: 0; top: 0; width: 1080px; transition: filter .25s; pointer-events: none; }
+.cmft-lfila .cmft-lado > * { pointer-events: auto; }
+.cmft-lfila.cmft-toca { animation: cmft-pulsoF 1.6s ease-in-out infinite; }
+@keyframes cmft-pulsoF { 50% { filter: drop-shadow(0 0 16px rgba(30, 144, 255, 1)) brightness(1.12); } }
+.cmft-lbarW { position: absolute; filter: drop-shadow(0 0 10px rgba(30, 144, 255, .7)); transition: filter .25s; }
+.cmft-lbar { position: absolute; inset: 0; display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  background: linear-gradient(180deg, #2a72f0 0%, #0d3796 50%, #061b55 100%); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .55);
+  transition: background .25s, filter .25s; }
+.cmft-lbar span { letter-spacing: .05em; text-shadow: 0 0 10px rgba(30, 144, 255, .9), 0 2px 0 rgba(0, 0, 0, .6); transition: opacity .25s; }
+.cmft-lbar img { border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); flex: none; }
+.cmft-lado.cmft-gana .cmft-lbar { background: linear-gradient(180deg, #8fd0ff 0%, #2f86ff 45%, #0d3faa 100%); }
+.cmft-lado.cmft-gana .cmft-lbarW { filter: drop-shadow(0 0 18px rgba(143, 208, 255, 1)); }
+.cmft-lado.cmft-pierde .cmft-lbar { filter: grayscale(.7) brightness(.5); }
+.cmft-lado.cmft-pierde .cmft-lbar span { opacity: .55; }
+.cmft-lesc { position: absolute; filter: drop-shadow(0 0 10px rgba(30, 144, 255, .85)); transition: filter .25s; }
+.cmft-lesc__borde { position: absolute; inset: 0; background: linear-gradient(180deg, #ffffff, #9cc4ff); }
+.cmft-lesc__borde, .cmft-lesc__in { clip-path: polygon(0 0, 100% 0, 100% 72%, 50% 100%, 0 72%); }
+.cmft-lesc__in { position: absolute; inset: 4px; overflow: hidden; background: #0a1430; }
+.cmft-lesc__in img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter .25s; }
+.cmft-lado.cmft-gana .cmft-lesc { filter: drop-shadow(0 0 20px rgba(143, 208, 255, 1)); }
+.cmft-lado.cmft-pierde .cmft-lesc__in img { filter: var(--cmft-perdedor); }
+.cmft-lado.cmft-pierde .cmft-lesc__borde { background: #5b6b86; }
+.cmft-lvs { position: absolute; display: grid; place-items: center; background: #040a1c; border: 3px solid rgba(222, 236, 255, .9);
+  box-shadow: 0 0 14px rgba(30, 144, 255, .8), inset 0 0 14px rgba(30, 144, 255, .35); }
+.cmft-lvs b { font-weight: 400; line-height: 1; background: linear-gradient(180deg, #fff 0%, #cfd9e8 45%, #7d8da6 52%, #fff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 #0b2a7a); }
+.cmft-lpill { position: absolute; transform: translateX(-50%) scale(.6); opacity: 0; padding: 4px 14px 2px; border-radius: 30px; letter-spacing: .12em;
+  color: #04102e; background: linear-gradient(180deg, #fff 0%, #cfe6ff 45%, #7fb8ff 55%, #e8f3ff 100%); border: 2px solid #fff;
+  box-shadow: 0 0 14px rgba(30, 144, 255, .95); transition: opacity .25s, transform .25s; pointer-events: none; z-index: 2; white-space: nowrap; }
+.cmft-lado.cmft-gana .cmft-lpill { opacity: 1; transform: translateX(-50%) scale(1); }
+
+/* ======================= Avisos, confirmación ======================= */
+.cmft-hud { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 30; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: 500 15px/1.4 system-ui, sans-serif; color: rgba(255, 255, 255, .9); background: rgba(0, 0, 0, .7); padding: 6px 12px; border-radius: 6px;
+  transition: opacity .6s; pointer-events: none; }
+.cmft-hud.cmft-off { opacity: 0; }
+.cmft-inactivo { position: absolute; left: 12px; bottom: 12px; z-index: 40; display: none; pointer-events: none;
+  font-family: var(--cmft-font); font-size: 22px; letter-spacing: .14em; line-height: 1; padding: 7px 14px 5px; border-radius: 6px;
+  color: #1a1200; background: #ffd23f; box-shadow: 0 0 0 2px #1a1200, 0 0 18px rgba(255, 210, 63, .7); }
+.cmft-inactivo.cmft-on { display: block; }
+.cmft-modal { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0, 0, 4, .74); }
+.cmft-modal[hidden] { display: none; }
+.cmft-modal__caja { width: 660px; max-width: 90%; padding: 30px 34px; text-align: center; font-family: var(--cmft-font); color: #fff; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(10, 26, 74, .97), rgba(3, 8, 26, .98)); border: 3px solid rgba(222, 236, 255, .85); box-shadow: 0 0 34px rgba(30, 144, 255, .6); }
+.cmft-modal__tit { display: block; font-weight: 400; font-size: 38px; letter-spacing: .06em; text-shadow: 0 0 12px var(--cmft-azul); }
+.cmft-modal__txt { margin: 10px 0 22px; font-family: system-ui, sans-serif; font-size: 18px; color: rgba(255, 255, 255, .85); }
+.cmft-modal__acc { display: flex; gap: 14px; justify-content: center; }
+
+/* ======================= Integración con el operador (Combate_Mortal.html) ======================= */
+#screenTorneo.cmft-activo .llaves { background: #000 !important; }
+#screenTorneo.cmft-activo .bracket-stages { display: none !important; }
+#screenTorneo.cmft-activo .torneo-header { z-index: 6; }
+#screenTorneo.cmft-activo .llaves__corner { font-family: var(--cmft-font); font-size: 19px; letter-spacing: .1em; line-height: 1; padding: 8px 14px 6px; color: #fff;
+  background: rgba(3, 8, 26, .85); border: 2px solid rgba(222, 236, 255, .7); border-radius: 6px; box-shadow: 0 0 12px rgba(30, 144, 255, .45); }
+#screenTorneo.cmft-activo .llaves__corner:hover { border-color: #fff; box-shadow: 0 0 18px rgba(30, 144, 255, .9); }
+#screenTorneo.cmft-activo .llaves__corner.is-armed { background: #8f1424; border-color: #ff8a7a; }
+#bracketPicker.cmft-picker .bracket-picker__panel { background: linear-gradient(180deg, rgba(10, 26, 74, .97), rgba(3, 8, 26, .98));
+  border: 3px solid rgba(222, 236, 255, .85); border-radius: 12px; box-shadow: 0 0 34px rgba(30, 144, 255, .55); }
+#bracketPicker.cmft-picker .bracket-picker__header { font-family: var(--cmft-font); font-size: 30px; letter-spacing: .1em; color: #fff; text-shadow: 0 0 10px var(--cmft-azul); }
+#bracketPicker.cmft-picker .bracket-picker__header::after { content: "Flechas = moverse · Enter = elegir · Esc = cancelar"; margin-left: auto; margin-right: 18px;
+  font-size: 17px; letter-spacing: .14em; color: var(--cmft-azul-claro); text-shadow: none; }
+#bracketPicker.cmft-picker .fighter-card { transition: transform .12s, box-shadow .12s; }
+#bracketPicker.cmft-picker .fighter-card:focus { outline: none; }
+#bracketPicker.cmft-picker .fighter-card.is-disabled { opacity: .22; }
+#bracketPicker.cmft-picker .fighter-card.cmft-psel { outline: 4px solid #bfe6ff; outline-offset: 2px; transform: scale(1.05); box-shadow: 0 0 26px 4px var(--cmft-azul); position: relative; z-index: 2; }
+
+/* Salida con fondo plano (croma): sin fondo, sin brillos ni transparencias que ensucien el recorte. */
+html.fondo-plano .cmft-raiz { background: transparent !important; }
+html.fondo-plano .cmft-lienzo { background-image: none !important; background-color: transparent !important; }
+html.fondo-plano .cmft-raiz * { box-shadow: none !important; filter: none !important; animation: none !important; }
+html.fondo-plano .cmft-box { background: #071233; }
+html.fondo-plano .cmft-box.cmft-gana { background: #1f5fd6; }
+html.fondo-plano .cmft-box.cmft-pierde { opacity: 1; background: #0a0f1e; color: #5c6680; border-color: #46506a; }
+html.fondo-plano .cmft-tag__txt { background: #071233; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cmft-box.cmft-toca::after, .cmft-bar.cmft-toca, .cmft-lfila.cmft-toca, .cmft-card.cmft-on, .cmft-lcard.cmft-on { animation: none; }
+}

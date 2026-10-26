@@ -27,6 +27,17 @@
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). El botón "Rehacer" de una batalla decidida NO se muestra el día
   del evento; para ensayos o corregir un error, abrir el operador con  ...Combate_Mortal.html?ensayo=1  (y cerrar esa pestaña después). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
+
+  BRACKET v3 (pantalla Torneo): usa css/torneo-vistas.css, js/torneo-vistas.js y assets/torneo, assets/participantes y assets/fonts
+  (la carpeta completa del proyecto). Si faltan, o con  ?bracket=viejo  en la URL, el torneo usa el bracket anterior.
+  Teclado en el torneo (sin depender del foco ni del mouse): flechas moverse por el bracket · Enter o Espacio iniciar la batalla
+  seleccionada (o elegir MC en una casilla vacía de octavos) · Tab / Shift+Tab casilla de arriba / abajo en octavos · E editar la
+  temática de la semifinal seleccionada (Enter confirma, Esc sale) · Esc cerrar · V bracket → historias → llave de ronda ·
+  ← → otra ronda en historias y llave · E descargar el PNG (historias 1080x1920, llave 1080x1350) · F pantalla completa ·
+  Shift+R reiniciar resultados (pide confirmación; el sorteo de octavos se queda). Clic en un nombre o foto: ganador, solo si el
+  cruce no tiene ganador; cambiarlo: Shift+clic o ?ensayo=1. Si la ventana pierde el foco aparece "TECLADO INACTIVO": un clic
+  la reactiva sin hacer nada más.
+  Otras pantallas del torneo, sincronizadas con el operador (mismo Chrome y perfil):  torneo.html#bracket · #historias · #llave
 -->
 <html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Combate Mortal</title>
@@ -1992,6 +2003,10 @@
 })();
 </script>
 
+<!-- Bracket v3 (vistas bracket, historias y llave): archivos de la carpeta del proyecto.
+     Si no están (HTML abierto suelto), el torneo sigue con el bracket anterior. -->
+<link rel="stylesheet" href="css/torneo-vistas.css?v=15">
+<script src="js/torneo-vistas.js?v=15"></script>
 <script>
 (function () {
   'use strict';
@@ -2172,6 +2187,7 @@
   }
 
   function focusFirstNavItem(container) {
+    if (torneoUI && container === els.bracketStages) { torneoUI.enfocar(); return; }   // bracket v3: selección propia, sin foco
     var items = container.querySelectorAll('[data-nav-item]');
     for (var i = 0; i < items.length; i++) {
       if (!items[i].disabled) {
@@ -2281,6 +2297,7 @@
 
   function saveBracket() {
     try { localStorage.setItem(TORNEO_STORAGE_KEY, JSON.stringify(bracket)); } catch (e) {}
+    if (torneoSync) torneoSync.publicar(bracket);
   }
 
   var bracket = loadBracket() || buildDefaultBracket();
@@ -2454,6 +2471,7 @@
   }
 
   function renderBracket() {
+    if (torneoUI) { torneoUI.pintar(); return; }
     var fragment = document.createDocumentFragment();
     STAGE_META.forEach(function (stage) {
       bracket[stage.key].forEach(function (match, index) {
@@ -2503,6 +2521,7 @@
   // por el render y el navegador manda el foco a <body>, dejando las
   // flechas sin nada que mover.
   function focusBracketMatch(stage, index) {
+    if (torneoUI) { torneoUI.enfocar(); return; }
     var card = els.bracketStages.querySelector(
       '.bracket-match[data-stage="' + stage + '"][data-index="' + index + '"]'
     );
@@ -2676,6 +2695,73 @@
       if (key === 'ArrowUp') els.bracketPickerClose.focus();
     }
   });
+
+  // ---------- Bracket v3 (js/torneo-vistas.js + css/torneo-vistas.css) ----------
+  // Tres vistas sobre el MISMO bracket de arriba: bracket (1560x960), historias y llave de ronda.
+  // Se usan si cargaron los dos archivos; si falta alguno o la URL lleva ?bracket=viejo, queda el bracket anterior.
+  // Teclado: un solo escuchador (en el módulo) con selección propia; V vista · E temática/PNG · F pantalla completa · Shift+R reiniciar resultados.
+  var torneoUI = null, torneoSync = null;
+  (function () {
+    var cssOk = getComputedStyle(document.documentElement).getPropertyValue('--cmft-css').trim() === '1';
+    if (!window.CMFTorneo || !cssOk || /[?&]bracket=viejo(&|$)/.test(location.search)) return;
+    var pantalla = document.getElementById('screenTorneo');
+    var raiz = document.createElement('div');
+    els.bracketStages.parentNode.insertBefore(raiz, els.bracketStages);   // dentro de .llaves, debajo de los botones de las esquinas
+    pantalla.classList.add('cmft-activo');
+    els.bracketPicker.classList.add('cmft-picker');
+    var enSalida = !!window.CMF_SALIDA;
+    function cruce(st, i) { return bracket[st] && bracket[st][i]; }
+    torneoUI = window.CMFTorneo.crear({
+      raiz: raiz,
+      modo: enSalida ? 'salida' : 'operador',
+      ensayo: ENSAYO,
+      obtener: function () { return bracket; },
+      activo: function () { return pantalla.classList.contains('active'); },
+      selector: { abierto: function () { return !els.bracketPicker.hidden; }, grid: els.bracketPickerGrid, cancelar: cancelBracketPicker },
+      acciones: {
+        ganador: function (st, i, lado) {
+          var m = cruce(st, i);
+          if (!m || !m.a || !m.b) return;
+          m.winner = lado || null;
+          recomputeBracket(); saveBracket(); renderBracket();
+        },
+        iniciar: function (st, i) {
+          var m = cruce(st, i);
+          if (!m || !m.a || !m.b || m.winner) return;
+          startTorneoBattle(st, i, formatByKey(stageMetaOf(st).formatKey), m.a, m.b);
+        },
+        asignar: function (st, i, lado) {
+          var m = cruce('octavos', i);
+          if (st !== 'octavos' || !m || m.winner) return;
+          openBracketPicker('octavos', i, lado);
+          torneoUI.alAbrirSelector(m[lado]);
+        },
+        tematica: function (i, texto) {
+          var m = cruce('semifinal', i);
+          if (!m) return;
+          m.theme = texto;
+          saveBracket();
+        },
+        rehacer: function (st, i) {
+          var m = cruce(st, i);
+          if (!m) return;
+          m.winner = null;
+          recomputeBracket(); saveBracket(); renderBracket();
+        },
+        reiniciarResultados: function () {   // Shift+R: borra los ganadores; el sorteo de octavos se queda
+          STAGE_META.forEach(function (stage) { bracket[stage.key].forEach(function (m) { m.winner = null; }); });
+          recomputeBracket(); saveBracket(); renderBracket();
+        }
+      }
+    });
+    if (enSalida) return;   // la salida recibe el bracket del operador por su propio canal
+    // Otra ventana (torneo.html u otro operador) cambió el torneo: se toma esa versión, sin volver a publicarla.
+    torneoSync = window.CMFTorneo.canal(function (b) {
+      if (JSON.stringify(b) === JSON.stringify(bracket)) return;
+      bracket = ensureThemes(b);
+      renderBracket();
+    });
+  })();
   renderBracket();
 
   function initialOf(name) { return name.trim().charAt(0).toUpperCase(); }
@@ -4199,7 +4285,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '14';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '15';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
