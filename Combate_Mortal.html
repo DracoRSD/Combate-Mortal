@@ -1453,24 +1453,44 @@
   .vs-mitad--a { clip-path: polygon(0 0, 55.5% 0, 39.5% 100%, 0 100%); transform: translateX(-100%); }
   .vs-mitad--b { clip-path: polygon(60.5% 0, 100% 0, 100% 100%, 44.5% 100%); transform: translateX(100%); }
   #vs.is-on .vs-mitad { transform: none; transition: transform 0.55s cubic-bezier(.2, .9, .2, 1); }
-  .vs-mitad img { position: absolute; top: 0; height: 100%; width: 1190px; object-fit: cover; object-position: top center; transform: scale(1.35) translateY(-14%); transform-origin: center top; }
-  .vs-mitad--a img { left: 0; }
-  .vs-mitad--b img { right: 0; }
+  /* Encuadre: las fotos (4:5) traen "PARTICIPANTE CONFIRMADO" arriba (hasta ~11 %) y el nombre abajo (desde ~80 %).
+     Se muestra del 11.5 % al 80 % de su altura, a 1577 px de alto: cabeza completa y torso, sin ningún banner. */
+  .vs-mitad img { position: absolute; top: -181px; height: 1577px; width: auto; max-width: none; transform-origin: 50% 34%; }
+  .vs-mitad--a img { left: -151px; }
+  .vs-mitad--b img { right: -151px; }
+  #vs.is-on .vs-mitad img { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both; }
+  #vs.is-on .vs-mitad--a img { translate: 0 0; animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-a 0.55s ease-out 0.5s; }
+  #vs.is-on .vs-mitad--b img { animation: vs-zoom 8s cubic-bezier(.2, .7, .2, 1) both, vs-golpe-b 0.55s ease-out 0.5s; }
+  @keyframes vs-zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+  @keyframes vs-golpe-a { 0% { translate: 0 0; } 25% { translate: 26px 0; } 100% { translate: 0 0; } }
+  @keyframes vs-golpe-b { 0% { translate: 0 0; } 25% { translate: -26px 0; } 100% { translate: 0 0; } }
   .vs-mitad::after { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(rgba(2, 6, 17, 0) 55%, rgba(2, 6, 17, 0.88)); }
   .vs-banda { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #1e90ff; clip-path: polygon(55.5% 0, 60.5% 0, 44.5% 100%, 39.5% 100%); opacity: 0; transition: opacity 0.2s ease; }
   #vs.is-on .vs-banda { opacity: 1; transition: opacity 0.2s ease 0.35s; }
   .vs-rayo { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; opacity: 0; }
-  #vs.is-on .vs-rayo { opacity: 1; transition: opacity 0.1s ease 0.4s; }
+  #vs.is-on .vs-rayo { animation: vs-rayo 0.6s linear 0.4s both; }
+  @keyframes vs-rayo { 0% { opacity: 0; } 10% { opacity: 1; } 22% { opacity: 0.2; } 36% { opacity: 1; } 52% { opacity: 0.55; } 70%, 100% { opacity: 1; } }
   .vs-vs {
     position: absolute; left: 50%; top: 50%; font-family: var(--cm-display); font-size: 330px; line-height: 1; letter-spacing: 0.02em;
     background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 8px 0 #040c1e); transform: translate(-50%, -50%) scale(0.4); opacity: 0;
+    filter: drop-shadow(0 8px 0 #040c1e); transform: translate(-50%, -50%) scale(2.6); opacity: 0;
   }
-  #vs.is-on .vs-vs { transform: translate(-50%, -50%); opacity: 1; transition: transform 0.5s cubic-bezier(.2, 1.4, .3, 1) 0.45s, opacity 0.2s ease 0.45s; }
-  .vs-dato { position: absolute; bottom: 70px; display: flex; flex-direction: column; gap: 12px; max-width: 830px; opacity: 0; transform: translateY(40px); transition: opacity 0.3s ease, transform 0.3s ease; }
-  .vs-dato--a { left: 70px; align-items: flex-start; }
-  .vs-dato--b { right: 70px; align-items: flex-end; }
-  #vs.is-on .vs-dato { opacity: 1; transform: none; transition: opacity 0.4s ease 0.55s, transform 0.5s ease 0.55s; }
+  #vs.is-on .vs-vs { animation: vs-slam 0.55s cubic-bezier(.2, 1, .3, 1) 0.45s both; }
+  @keyframes vs-slam { 0% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); } 35% { opacity: 1; transform: translate(-50%, -50%) scale(0.88); } 62% { transform: translate(-50%, -50%) scale(1.08); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+  /* onda de choque y barras de luz diagonales al caer el VS (bordes duros, sin brillos difusos) */
+  .vs-onda { position: absolute; left: 50%; top: 50%; width: 380px; height: 380px; margin: -190px 0 0 -190px; border: 16px solid #7fd0ff; border-radius: 50%; opacity: 0; }
+  #vs.is-on .vs-onda { animation: vs-onda 0.75s ease-out 0.62s both; }
+  @keyframes vs-onda { 0% { opacity: 0.95; transform: scale(0.3); } 100% { opacity: 0; transform: scale(3.4); } }
+  .vs-barra { position: absolute; left: -10%; width: 120%; height: 84px; opacity: 0; }
+  .vs-barra--a { top: 30%; background: #1e90ff; }
+  .vs-barra--b { top: 58%; background: #7fd0ff; }
+  #vs.is-on .vs-barra--a { animation: vs-barra 0.55s ease-out 0.5s both; }
+  #vs.is-on .vs-barra--b { animation: vs-barra 0.55s ease-out 0.62s both; }
+  @keyframes vs-barra { 0% { opacity: 0.9; transform: translateX(-110%) rotate(-14deg); } 100% { opacity: 0; transform: translateX(110%) rotate(-14deg); } }
+  .vs-dato { position: absolute; bottom: 70px; display: flex; flex-direction: column; gap: 12px; max-width: 830px; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease; }
+  .vs-dato--a { left: 70px; align-items: flex-start; transform: translateX(-160px); }
+  .vs-dato--b { right: 70px; align-items: flex-end; transform: translateX(160px); }
+  #vs.is-on .vs-dato { opacity: 1; transform: none; transition: opacity 0.35s ease 0.75s, transform 0.55s cubic-bezier(.2, .9, .2, 1) 0.75s; }
   .vs-nombre {
     font-family: var(--cm-display); font-size: 120px; line-height: 1.05; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; max-width: 830px;
     background: var(--b-chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
@@ -1906,6 +1926,8 @@
   <div class="vs-mitad vs-mitad--b"><img id="vsFotoB" alt=""></div>
   <div class="vs-banda"></div>
   <svg class="vs-rayo" viewBox="0 0 1920 1080" aria-hidden="true"><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="#eaf6ff"/><polygon points="1190,0 1010,480 1105,480 880,1080 1020,590 925,590 1075,0" fill="none" stroke="#7fd0ff" stroke-width="10" stroke-linejoin="round"/></svg>
+  <div class="vs-barra vs-barra--a"></div><div class="vs-barra vs-barra--b"></div>
+  <div class="vs-onda"></div>
   <div class="vs-vs">VS</div>
   <div class="vs-dato vs-dato--a"><div class="vs-nombre" id="vsNombreA"></div><div class="vs-pais" id="vsPaisWA"><img class="vs-bandera" id="vsBanderaA" alt=""><span id="vsPaisA"></span></div></div>
   <div class="vs-dato vs-dato--b"><div class="vs-nombre" id="vsNombreB"></div><div class="vs-pais" id="vsPaisWB"><img class="vs-bandera" id="vsBanderaB" alt=""><span id="vsPaisB"></span></div></div>
@@ -4167,7 +4189,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '10';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '11';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
