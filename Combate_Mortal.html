@@ -21,7 +21,7 @@
   al abrir una batalla, A la activa/desactiva) ·
   E editar la temática · W revelar la temática.   Ventanas: 1 salida del contador · 2 ventana de presentación de fotos ·
   3 mostrar/ocultar la presentación de fotos (se quita sola al iniciar el reloj) · C cambiar el fondo de las salidas ·
-  + y - agrandar/achicar el bloque de la esquina de la transmisión · Shift+flechas lo mueven · 0 lo restablece · 4 / 5 / 6 pantallas izquierda / derecha / reloj del evento.
+  + y - agrandar/achicar el bloque de la esquina de la transmisión · I J K L (o Shift+flechas) lo mueven · 0 lo restablece · 4 / 5 / 6 pantallas izquierda / derecha / reloj del evento.
   Torneo: botones "Exportar llaves" / "Importar llaves" (JSON). El botón "Rehacer" de una batalla decidida NO se muestra el día
   del evento; para ensayos o corregir un error, abrir el operador con  ...Combate_Mortal.html?ensayo=1  (y cerrar esa pestaña después). La batalla en curso se guarda sola y se recupera (con el
   cronómetro en pausa) si se recarga la página por accidente.
@@ -4168,7 +4168,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '8';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '9';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4370,7 +4370,7 @@ else init();
          E  editar la temática    W  revelar la temática
          1  abrir/enfocar la salida del contador    2  abrir/enfocar la ventana de presentación de fotos
          3  mostrar/ocultar la presentación de fotos    C  cambiar el fondo de las salidas
-         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%)    Shift + flechas  mover el bloque (8 px)    0  restablecer tamaño y posición
+         +  /  -  agrandar / achicar el bloque de la esquina (60% a 180%)    I J K L (o Shift + flechas)  mover el bloque 8 px: arriba, izquierda, abajo, derecha    0  restablecer tamaño y posición
          4  pantalla lateral izquierda (MC A)    5  pantalla lateral derecha (MC B)    6  pantalla del reloj (centro) */
     var NOMBRES = { contador: 'cmf-salida', presentacion: 'cmf-presentacion', transmision: 'cmf-transmision', lateralA: 'cmf-lateral-a', lateralB: 'cmf-lateral-b', reloj: 'cmf-reloj' };
     var PARAMS = { contador: 'limpia', presentacion: 'presentacion', transmision: 'transmision', lateralA: 'lateral&lado=a', lateralB: 'lateral&lado=b', reloj: 'reloj' };
@@ -4449,6 +4449,10 @@ else init();
       var tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) { e.preventDefault(); moverBloque(e.key); return; }   // Shift + flechas: mover el bloque
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && /^[ijkl]$/i.test(e.key)) {   // I J K L: mover el bloque (sin Shift)
+        var mapa = { i: 'ArrowUp', k: 'ArrowDown', j: 'ArrowLeft', l: 'ArrowRight' };
+        moverBloque(mapa[e.key.toLowerCase()]); return;
+      }
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       var k = e.key.toLowerCase();
       if (k === 'o') alternarTransmision();
