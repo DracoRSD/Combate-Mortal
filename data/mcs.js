@@ -3,7 +3,9 @@ const McData = [
   {
     nombreMC: "Felpa Divo",
     urlFoto: "assets/images/mcs/felpa-divo.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "Teorema",
@@ -15,12 +17,16 @@ const McData = [
   {
     nombreMC: "Larrix",
     urlFoto: "assets/images/mcs/larrix.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Argentina",
+    bandera: "🇦🇷"
   },
   {
     nombreMC: "Exodo",
     urlFoto: "assets/images/mcs/exodo.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "R16",
@@ -32,17 +38,23 @@ const McData = [
   {
     nombreMC: "Fat N",
     urlFoto: "assets/images/mcs/fat-n.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Colombia",
+    bandera: "🇨🇴"
   },
   {
     nombreMC: "Ufo",
     urlFoto: "assets/images/mcs/ufo.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Panamá",
+    bandera: "🇵🇦"
   },
   {
     nombreMC: "Kenyari",
     urlFoto: "assets/images/mcs/kenyari.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Costa Rica",
+    bandera: "🇨🇷"
   },
   {
     nombreMC: "Dinamita",
@@ -54,17 +66,23 @@ const McData = [
   {
     nombreMC: "Nume",
     urlFoto: "assets/images/mcs/nume.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "Pandora",
     urlFoto: "assets/images/mcs/pandora.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Colombia",
+    bandera: "🇨🇴"
   },
   {
     nombreMC: "Sophia",
     urlFoto: "assets/images/mcs/sophia.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Argentina",
+    bandera: "🇦🇷"
   },
   {
     nombreMC: "Mecha",
@@ -76,17 +94,23 @@ const McData = [
   {
     nombreMC: "Valles T",
     urlFoto: "assets/images/mcs/valles-t.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Colombia",
+    bandera: "🇨🇴"
   },
   {
     nombreMC: "D Kapo",
     urlFoto: "assets/images/mcs/d-kapo.jpg",
-    urlVideo: "assets/videos/mcs/dkpo.mp4"
+    urlVideo: "assets/videos/mcs/dkpo.mp4",
+    pais: "Rep. Dom.",
+    bandera: "🇩🇴"
   },
   {
     nombreMC: "El Menor",
     urlFoto: "assets/images/mcs/el-menor.jpg",
-    urlVideo: "assets/videos/mcs/"
+    urlVideo: "assets/videos/mcs/",
+    pais: "Chile",
+    bandera: "🇨🇱"
   },
 ];
 
