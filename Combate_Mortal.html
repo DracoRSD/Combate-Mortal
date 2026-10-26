@@ -2,7 +2,9 @@
 <!--
   COMBATE MORTAL FREESTYLE — archivo único (HTML + CSS + JS + fuentes/imágenes embebidas, sin dependencias, funciona sin internet).
 
-  CÓMO ARRANCAR (en la carpeta de este archivo):
+  CÓMO ARRANCAR en Windows: doble clic en iniciar.bat (servidor + todas las ventanas de salida en pantalla completa + el operador)
+  y cerrar.bat para cerrar todo. Usan un Chrome propio (carpeta perfil-cmf) con los parámetros que impiden que Chrome congele las ventanas tapadas.
+  A mano (en la carpeta de este archivo):
       python3 -m http.server 8000
   y abrir en Chrome o Edge, en el computador del operador:
       Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
@@ -1332,6 +1334,7 @@
   }
   #salidaIndicador::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
   #salidaIndicador.is-ok { color: #3ddc84; border-color: rgba(61, 220, 132, 0.45); }
+  #salidaIndicador.is-warn { color: #ffd23f; border-color: rgba(255, 210, 63, 0.6); }
   html.salida #salidaIndicador { display: none; }
   /* ----- Presentación del enfrentamiento (ventana ?salida=presentacion) -----
      Banner con las dos fotos a los lados y el centro libre (cámaras). Va en una
@@ -4196,7 +4199,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '13';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '14';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4271,6 +4274,8 @@ else init();
     var seq = Date.now();                 // sube siempre, también tras recargar el operador
     var lastSig = '', lastSend = 0, queued = false;
     var vistas = { contador: 0, presentacion: 0, transmision: 0, lateralA: 0, lateralB: 0, reloj: 0 };     // última señal de cada ventana de salida
+    var ocultas = {};     // ventanas de salida que Chrome tiene tapadas u ocultas: no se redibujan y OBS las vería congeladas
+    var NOMBRE_VENTANA = { contador: 'salida', presentacion: 'presentación', transmision: 'transmisión', lateralA: 'izq', lateralB: 'der', reloj: 'centro' };
     var presentando = false, vs = false, vsTimer = null, bloque = true, escala = 1, mx = 0, my = 16, autoVs = true, pantallaPrev = null, fondoVisto = 'tormenta', fondoSalida = null;   // fondoSalida null: la salida usa el de su URL
     var outWin = null, msgTimer = null, msg = '';
     try {   // tras una recarga, el operador recuerda el fondo que había elegido con B
@@ -4303,12 +4308,15 @@ else init();
       if (now - vistas.reloj < 5000) pant.push('centro');
       if (now - vistas.lateralB < 5000) pant.push('der');
       if (pant.length) partes.push('Pantallas: ' + pant.join(' + '));
-      ind.classList.toggle('is-ok', ok);
+      var tapadas = Object.keys(ocultas).filter(function (k) { return ocultas[k] && now - vistas[k] < 5000; }).map(function (k) { return NOMBRE_VENTANA[k]; });
+      if (tapadas.length) partes.unshift('Tapada: ' + tapadas.join(' + '));
+      ind.classList.toggle('is-ok', ok && !tapadas.length);
+      ind.classList.toggle('is-warn', tapadas.length > 0);
       ind.textContent = msg || partes.join(' · ') + ' · v' + VERSION;
     }
     function aviso(t) { msg = t; pintar(); clearTimeout(msgTimer); msgTimer = setTimeout(function () { msg = ''; pintar(); }, 2000); }
     function clave(m) { var k = m.modo || 'contador'; return k === 'lateral' ? 'lateral' + (m.lado === 'b' ? 'B' : 'A') : k; }
-    function presente(m) { var k = clave(m); vistas[k] = Date.now(); if (k === 'contador' && m.fondo) fondoVisto = m.fondo; pintar(); }
+    function presente(m) { var k = clave(m); vistas[k] = Date.now(); ocultas[k] = !!m.oculta; if (k === 'contador' && m.fondo) fondoVisto = m.fondo; pintar(); }
     setInterval(pintar, 1000);
     pintar();
 
@@ -4892,7 +4900,9 @@ else init();
     /* Presencia: hello hasta recibir el primer estado; ping cada 2 s. */
     tr.send({ type: 'hello', modo: S.modo, lado: S.lado });
     var h = setInterval(function () { if (lastSeq) clearInterval(h); else tr.send({ type: 'hello', modo: S.modo, lado: S.lado }); }, 1000);
-    setInterval(function () { tr.send({ type: 'ping', fondo: S.fondo, modo: S.modo, lado: S.lado }); }, 2000);
+    function ping() { tr.send({ type: 'ping', fondo: S.fondo, modo: S.modo, lado: S.lado, oculta: !!document.hidden }); }
+    setInterval(ping, 2000);
+    document.addEventListener('visibilitychange', ping);      // el operador se entera al instante si Chrome la oculta o la devuelve
     window.addEventListener('pagehide', function () { tr.send({ type: 'bye', modo: S.modo, lado: S.lado }); });
   }
 
