@@ -6,7 +6,7 @@ rem  pantallas LED (lateral A, reloj, lateral B) de 640x1024, las del torneo (to
 rem  y por ultimo el operador. Cada pagina se coloca sola con ?pos= y ?tam= de su direccion.
 rem  OPERADOR=pantallas (lo normal ahora): el operador ya trae las 3 pantallas LED dentro
 rem  (MC A / reloj / MC B, 640x1024 cada una, arriba a la izquierda). Esa ventana va al procesador LED:
-rem  llevala a esa salida (Windows + Shift + flecha) y pulsa F11.
+rem  llevala a esa salida (Windows + Shift + flecha) y haz clic: pasa a pantalla completa.
 rem  No usar --kiosk: como todas comparten el mismo Chrome, pondria TODAS en pantalla completa.
 rem
 rem  Usa un Chrome PROPIO de CMF (carpeta "perfil-cmf" al lado de este archivo).
@@ -90,4 +90,7 @@ if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=700,40&tam=720x
 set "URLOP=%URL%?t=%T%"
 if "%OPERADOR%"=="pantallas" set "URLOP=%URL%?pantallas=1&t=%T%"
 timeout /t 4 >nul
-start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URLOP%"
+rem Operador en 3 pantallas: ventana de aplicacion (sin pestanas ni barra de direccion) que ocupa el monitor;
+rem con el primer clic o tecla pasa a pantalla completa (mantener Esc para salir, un clic vuelve).
+if "%OPERADOR%"=="pantallas" start "" "%CHROME%" %FLAGS% --start-maximized --app="%URLOP%"
+if not "%OPERADOR%"=="pantallas" start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URLOP%"

@@ -4,7 +4,8 @@
 
   OPERADOR EN 3 PANTALLAS LED (?pantallas=1, lo pone iniciar.bat): el contador se ve como tres columnas de 640x1024 (MC A | reloj |
   MC B) arriba a la izquierda; en el torneo, el bracket vertical en la pantalla del centro con MC A y MC B a los lados (V: el
-  bracket horizontal en las tres). La ventana del operador va al procesador LED (F11). Lo que es solo
+  bracket horizontal en las tres). La ventana del operador va al procesador LED: con el primer clic o tecla pasa a pantalla
+  completa (mantener Esc pulsado para salir; un clic vuelve). Lo que es solo
   del operador (indicador, botones, avisos del teclado) va en la franja de abajo (y 1024 a 1080), que no sale en las pantallas.
   CÓMO ARRANCAR en Windows: doble clic en iniciar.bat (servidor + las ventanas de salida, sin pantalla completa + el operador)
   y cerrar.bat para cerrar todo. Usan un Chrome propio (carpeta perfil-cmf) con los parámetros que impiden que Chrome congele las ventanas tapadas.
@@ -2070,8 +2071,9 @@
   function fit() {
     var W = stage.offsetWidth || 1920, H = stage.offsetHeight || 1080;   // 1920x1080; en las pantallas laterales 1080x1920
     var k = Math.min(window.innerWidth / W, window.innerHeight / H);
-    // Operador en 3 pantallas: a 1:1 siempre que quepan las tres columnas (1920x1024), para que cada pantalla sea exacta.
-    if (document.documentElement.classList.contains('tres-pantallas')) k = window.innerWidth >= 1920 && window.innerHeight >= 1024 ? 1 : k;
+    // Operador en 3 pantallas: llena la pantalla (en un monitor más grande se agranda); si caben las tres columnas
+    // (1920x1024) nunca baja de 1:1, para que en la salida al procesador LED cada pantalla sea exacta.
+    if (document.documentElement.classList.contains('tres-pantallas') && window.innerWidth >= 1920 && window.innerHeight >= 1024) k = Math.max(k, 1);
     stage.style.setProperty('--stage-scale', k);
   }
   fit();
@@ -4414,7 +4416,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '29';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '30';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4528,6 +4530,26 @@ else init();
           if (a && a.tagName === 'IFRAME' && tpMuro.contains(a)) { try { a.blur(); window.focus(); } catch (e) {} }
         }, 0);
       });
+      /* Pantalla completa (llenar el monitor / la salida al procesador LED, sin barras del navegador).
+         El navegador exige un gesto: entra con el primer clic o la primera tecla, y cualquier clic la recupera si se salió.
+         Esc queda para el operador (cerrar el selector, etc.): para salir de pantalla completa, mantener Esc pulsado. */
+      var tpTecla = false;
+      var tpCompleta = function () {
+        if (document.fullscreenElement || !document.documentElement.requestFullscreen) return;
+        try {
+          document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(function () {
+            try { if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['Escape']).catch(function () {}); } catch (e) {}
+          }).catch(function () {});
+        } catch (e) {}
+      };
+      window.addEventListener('pointerdown', tpCompleta, true);
+      window.addEventListener('keydown', function (e) {
+        if (tpTecla || /^(Escape|F11|F5|Control|Alt|Shift|Meta)$/.test(e.key)) return;
+        tpTecla = true; tpCompleta();   // solo la primera tecla; después, si se sale, vuelve con un clic
+      }, true);
+      document.addEventListener('fullscreenchange', function () { pintar(); });
+      // Ventana de aplicación (iniciar.bat): ocupa el monitor donde está, aun antes de pasar a pantalla completa.
+      try { if (!document.fullscreenElement) { window.moveTo(screen.availLeft || 0, screen.availTop || 0); window.resizeTo(screen.availWidth, screen.availHeight); } } catch (e) {}
     }
 
     /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
@@ -4545,6 +4567,7 @@ else init();
       if (now - vistas.reloj < 5000) pant.push('centro');
       if (now - vistas.lateralB < 5000) pant.push('der');
       if (pant.length) partes.push('Pantallas: ' + pant.join(' + '));
+      if (document.documentElement.classList.contains('tres-pantallas') && !document.fullscreenElement) partes.push('Clic = pantalla completa');
       var tapadas = Object.keys(ocultas).filter(function (k) { return ocultas[k] && now - vistas[k] < 5000; }).map(function (k) { return NOMBRE_VENTANA[k]; });
       if (tapadas.length) partes.unshift('Tapada: ' + tapadas.join(' + '));
       ind.classList.toggle('is-ok', ok && !tapadas.length);
