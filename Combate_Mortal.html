@@ -11,7 +11,7 @@
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
       Presentación (solo las 2 fotos, croma) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
       Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
-      Pantallas del evento (tormenta, una por monitor, a pantalla completa con clic o F11):
+      Pantallas del evento (tormenta, una por pantalla LED, en ventanas de 640x1024; F11 si se quiere pantalla completa):
         izquierda ?salida=lateral&lado=a (tecla 4) · derecha ?salida=lateral&lado=b (tecla 5) · reloj del centro ?salida=reloj (tecla 6)
         Las tres se adaptan a pantallas verticales (LED de 640x1024): los laterales llenan la pantalla y el reloj usa un lienzo vertical.
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
@@ -1647,8 +1647,9 @@
     }, true);
   });
 
-  /* Un clic pide pantalla completa. */
+  /* Un clic pide pantalla completa (salvo en las pantallas del evento: van en ventana de 640x1024; F11 si se quiere completa). */
   document.addEventListener('click', function () {
+    if (S.local) return;
     if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen().catch(function () {});
   });
 
@@ -4309,7 +4310,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '21';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '22';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4523,7 +4524,7 @@ else init();
     function abrirSalida(modo) {
       var q = new URLSearchParams(location.search);
       var url = location.href.split('?')[0].split('#')[0] + '?salida=' + PARAMS[modo] + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
-      var w = window.open('', NOMBRES[modo], /^lateral/.test(modo) ? 'popup=yes,width=540,height=960' : 'popup=yes,width=1280,height=720');
+      var w = window.open('', NOMBRES[modo], /^lateral|^reloj/.test(modo) ? 'popup=yes,width=640,height=1024' : 'popup=yes,width=1280,height=720');   // pantallas LED: 640x1024
       if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
       outWin = w;
       var vacia = false;
