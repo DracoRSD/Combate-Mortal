@@ -1,0 +1,59 @@
+<!doctype html>
+<!--
+  COMBATE MORTAL FREESTYLE · LAS TRES PANTALLAS LED EN UNA SOLA IMAGEN (1920 x 1024)
+  Para un procesador LED que recibe una sola imagen y la reparte en tres pantallas verticales de 640 x 1024:
+      x 0    a 640   MC A (izquierda)      ?salida=lateral&lado=a
+      x 640  a 1280  reloj / bracket       ?salida=reloj   (en el torneo, el bracket vertical)
+      x 1280 a 1920  MC B (derecha)        ?salida=lateral&lado=b
+  Cada columna es la misma pantalla de siempre dentro de un marco de 640x1024, así que nada cruza el borde entre dos pantallas.
+  La imagen empieza arriba a la izquierda (0,0). En una pantalla de 1920x1080 queda a tamaño real (1:1) y sobran 56 px abajo.
+  Para el evento: pon esta ventana en la salida del procesador y pulsa F11 (pantalla completa).
+  Mismo navegador y perfil que el operador (iniciar.bat la abre así) para que se sincronice.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CMF Pantallas LED</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  #muro { position: absolute; left: 0; top: 0; width: 1920px; height: 1024px; transform-origin: 0 0; }
+  #muro iframe { position: absolute; top: 0; width: 640px; height: 1024px; border: 0; display: block; background: #000; }
+</style>
+</head>
+<body>
+<div id="muro">
+  <iframe title="MC A (izquierda)" style="left: 0" data-src="Combate_Mortal.html?salida=lateral&amp;lado=a"></iframe>
+  <iframe title="Reloj (centro)" style="left: 640px" data-src="Combate_Mortal.html?salida=reloj"></iframe>
+  <iframe title="MC B (derecha)" style="left: 1280px" data-src="Combate_Mortal.html?salida=lateral&amp;lado=b"></iframe>
+</div>
+<script>
+  /* Cada columna carga la pantalla con la misma marca t= de esta página (iniciar.bat la cambia en cada arranque): nunca una copia vieja. */
+  (function () {
+    var t = new URLSearchParams(location.search).get('t') || String(Date.now());
+    Array.prototype.forEach.call(document.querySelectorAll('#muro iframe'), function (f) { f.src = f.getAttribute('data-src') + '&t=' + encodeURIComponent(t); });
+  })();
+  /* Escala: a 1920x1080 (o más alto) queda 1:1; en una ventana más chica se reduce entera, sin mover el origen (0,0). */
+  (function () {
+    var muro = document.getElementById('muro');
+    function escalar() { muro.style.transform = 'scale(' + Math.min(window.innerWidth / 1920, window.innerHeight / 1024) + ')'; }
+    escalar();
+    window.addEventListener('resize', escalar);
+  })();
+  /* Tamaño y posición que pide iniciar.bat (?tam=1920x1024&pos=0,0): solo en ventanas de aplicación; en una pestaña no hace nada. */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var tam = /^(\d+)x(\d+)$/.exec(q.get('tam') || ''), pos = /^(-?\d+),(-?\d+)$/.exec(q.get('pos') || '');
+    if (!tam && !pos) return;
+    function aplicar() {
+      if (document.fullscreenElement) return;
+      try {
+        if (pos) window.moveTo(+pos[1], +pos[2]);
+        if (tam) window.resizeTo(+tam[1] + window.outerWidth - window.innerWidth, +tam[2] + window.outerHeight - window.innerHeight);
+      } catch (e) {}
+    }
+    if (document.readyState === 'complete') aplicar(); else window.addEventListener('load', aplicar);
+  })();
+</script>
+</body>
+</html>

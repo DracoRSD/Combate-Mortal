@@ -26,6 +26,7 @@ if not exist "%CHROME%" (
 rem Comprobar que estan los archivos del bracket nuevo junto a este archivo (si no, el torneo sale con el bracket viejo).
 set FALTA=
 if not exist "%~dp0Combate_Mortal.html" set FALTA=Combate_Mortal.html
+if not exist "%~dp0pantallas.html" set FALTA=pantallas.html
 if not exist "%~dp0js\torneo-vistas.js" set FALTA=js\torneo-vistas.js
 if not exist "%~dp0css\torneo-vistas.css" set FALTA=css\torneo-vistas.css
 if not exist "%~dp0assets\torneo\fondo-bracket.jpg" set FALTA=assets\torneo
@@ -56,9 +57,15 @@ timeout /t 3 >nul
 
 start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1600x900&t=%T%" --window-position=0,0 --window-size=1600,900
 timeout /t 3 >nul
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&pos=640,0&tam=640x1024&t=%T%" --window-position=640,0 --window-size=640,1024
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&pos=0,0&tam=640x1024&t=%T%" --window-position=0,0 --window-size=640,1024
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&pos=1280,0&tam=640x1024&t=%T%" --window-position=1280,0 --window-size=640,1024
+rem Pantallas LED (MC A, reloj, MC B), cada una de 640x1024:
+rem   LED=muro       una sola ventana de 1920x1024 con las tres en columnas (pantallas.html), para un procesador
+rem                  que recibe UNA imagen y la reparte. En el evento: llevarla a esa salida y pulsar F11.
+rem   LED=separadas  tres ventanas de 640x1024 (una por salida de video).
+set LED=muro
+if "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="http://localhost:8000/pantallas.html?pos=0,0&tam=1920x1024&t=%T%" --window-position=0,0 --window-size=1920,1024
+if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&pos=640,0&tam=640x1024&t=%T%" --window-position=640,0 --window-size=640,1024
+if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&pos=0,0&tam=640x1024&t=%T%" --window-position=0,0 --window-size=640,1024
+if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&pos=1280,0&tam=640x1024&t=%T%" --window-position=1280,0 --window-size=640,1024
 rem Pantallas del torneo (bracket, historias, llave): mismo Chrome y perfil, asi se sincronizan con el operador.
 rem Para no abrirlas, cambia TORNEO=1 por TORNEO=0.
 set TORNEO=1

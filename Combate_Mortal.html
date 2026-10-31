@@ -13,7 +13,9 @@
       Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
       Pantallas del evento (tormenta, una por pantalla LED, en ventanas de 640x1024; F11 si se quiere pantalla completa):
         izquierda ?salida=lateral&lado=a (tecla 4) · derecha ?salida=lateral&lado=b (tecla 5) · reloj del centro ?salida=reloj (tecla 6)
-        Las tres se adaptan a pantallas verticales (LED de 640x1024): los laterales llenan la pantalla y el reloj usa un lienzo vertical.
+        Las tres se adaptan a pantallas verticales (LED de 640x1024): los laterales llenan la pantalla y el reloj usa un lienzo vertical
+        (en el torneo, el reloj muestra el bracket vertical). pantallas.html junta las tres en una imagen de 1920x1024 (tres columnas
+        de 640x1024: MC A, reloj, MC B) para un procesador LED que recibe una sola imagen y la reparte.
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
@@ -1579,6 +1581,7 @@
   /* Reloj central en pantalla vertical (LED de 640x1024): lienzo 1080x1728 (5:8), reloj y placas más grandes. */
   html.salida-reloj.reloj-vertical #stage { width: 1080px; height: 1728px; }
   html.salida-reloj.reloj-vertical #screenContador { width: 1080px; min-height: 1728px; height: 1728px; }
+  html.salida-reloj.reloj-vertical #screenTorneo, html.salida-reloj.reloj-vertical #screenTorneo .llaves { width: 1080px; height: 1728px; }   /* bracket vertical */
   html.salida-reloj.reloj-vertical #screenContador .duel { margin-top: 430px; }
   html.salida-reloj.reloj-vertical #battleCore { --d: 900px; }
   html.salida-reloj.reloj-vertical #screenContador > .bracket-bar { top: 96px; transform: translateX(-50%) scale(1.7); transform-origin: 50% 0; }
@@ -2040,8 +2043,8 @@
 
 <!-- Bracket v3 (vistas bracket, historias y llave): archivos de la carpeta del proyecto.
      Si no están (HTML abierto suelto), el torneo sigue con el bracket anterior. -->
-<link rel="stylesheet" href="css/torneo-vistas.css?v=18">
-<script src="js/torneo-vistas.js?v=18"></script>
+<link rel="stylesheet" href="css/torneo-vistas.css?v=19">
+<script src="js/torneo-vistas.js?v=19"></script>
 <script>
 (function () {
   'use strict';
@@ -4338,7 +4341,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '25';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '26';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -5005,7 +5008,9 @@ else init();
       if (!S.local && p.fondo && p.fondo !== S.fondo) S.setFondo(p.fondo);
       /* pantalla al final: el motor de efectos se monta con todo ya puesto.
          Formato y Selección (menús del operador) = fondo vacío. */
-      var scr = p.screen === 'Select' || (S.modo === 'reloj' && p.screen === 'Torneo') ? 'Format' : p.screen;   // el reloj del centro nunca muestra las llaves
+      /* El reloj del centro muestra las llaves solo en vertical (LED de 640x1024): el bracket vertical; en 16:9, solo el fondo. */
+      var relojSinLlaves = S.modo === 'reloj' && p.screen === 'Torneo' && !document.documentElement.classList.contains('reloj-vertical');
+      var scr = p.screen === 'Select' || relojSinLlaves ? 'Format' : p.screen;
       ['Format', 'Torneo', 'Contador'].forEach(function (n) { N['screen' + n].classList.toggle('active', n === scr); });
       N.screenSelect.classList.remove('active');
     }

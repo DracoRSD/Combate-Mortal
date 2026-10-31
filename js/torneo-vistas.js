@@ -425,7 +425,7 @@
     });
 
     /* ===================== ESTADO DE LA VISTA ===================== */
-    const CLAVE_SEL = 'cmf-torneo-seleccion-v1';
+    const CLAVE_SEL = 'cmf-torneo-seleccion-v1', CLAVE_VISTA = 'cmf-torneo-vista-v1';   // selección y última vista elegida con V (por ventana)
     let vista = 'bracket', idxH = 0, idxL = 0, ultimaFirma = null;
     const enBracket = () => vista === 'bracket' || vista === 'vertical';
     let sel = null;   // { id, lado } — la selección propia (no depende del foco del DOM)
@@ -579,6 +579,7 @@
     function aviso(t) { hud.textContent = t; hud.classList.remove('cmft-off'); clearTimeout(hudT); hudT = setTimeout(() => hud.classList.add('cmft-off'), 4000); }
     function mostrar(v, conAviso) {
       vista = ORDEN.includes(v) ? v : 'bracket';
+      if (!salida) { try { sessionStorage.setItem(CLAVE_VISTA, vista); } catch (e) { /* sin sessionStorage */ } }
       vB.classList.toggle('cmft-on', enBracket());
       vH.classList.toggle('cmft-on', vista === 'historias');
       vL.classList.toggle('cmft-on', vista === 'llave');
@@ -952,7 +953,9 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (enBracket()) ajustarBracket(); else ajustarLlave(); pintarSel(); });
     document.addEventListener('DOMContentLoaded', escalar);
 
-    mostrar(op.vista || 'bracket', false);
+    let vistaGuardada = null;
+    if (!salida) { try { vistaGuardada = sessionStorage.getItem(CLAVE_VISTA); } catch (e) { vistaGuardada = null; } }
+    mostrar(op.vista || vistaGuardada || 'bracket', false);   // el operador vuelve a la última vista que eligió (p. ej. el bracket vertical)
     pintar(true);
 
     return {
