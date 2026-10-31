@@ -2,7 +2,10 @@
 <!--
   COMBATE MORTAL FREESTYLE — archivo único (HTML + CSS + JS + fuentes/imágenes embebidas, sin dependencias, funciona sin internet).
 
-  CÓMO ARRANCAR en Windows: doble clic en iniciar.bat (servidor + todas las ventanas de salida en pantalla completa + el operador)
+  OPERADOR EN 3 PANTALLAS LED (?pantallas=1, lo pone iniciar.bat): el contador se ve como tres columnas de 640x1024 (MC A | reloj |
+  MC B) arriba a la izquierda, y el torneo en 1920x1024, para mandar la ventana del operador al procesador LED (F11). Lo que es solo
+  del operador (indicador, botones, avisos del teclado) va en la franja de abajo (y 1024 a 1080), que no sale en las pantallas.
+  CÓMO ARRANCAR en Windows: doble clic en iniciar.bat (servidor + las ventanas de salida, sin pantalla completa + el operador)
   y cerrar.bat para cerrar todo. Usan un Chrome propio (carpeta perfil-cmf) con los parámetros que impiden que Chrome congele las ventanas tapadas.
   A mano (en la carpeta de este archivo):
       python3 -m http.server 8000
@@ -1582,6 +1585,33 @@
   html.salida-reloj.reloj-vertical #stage { width: 1080px; height: 1728px; }
   html.salida-reloj.reloj-vertical #screenContador { width: 1080px; min-height: 1728px; height: 1728px; }
   html.salida-reloj.reloj-vertical #screenTorneo, html.salida-reloj.reloj-vertical #screenTorneo .llaves { width: 1080px; height: 1728px; }   /* bracket vertical */
+  /* Operador en 3 pantallas LED (?pantallas=1): arriba a la izquierda, 1920x1024 = tres columnas de 640x1024.
+     Contador: MC A | reloj | MC B (las mismas pantallas del evento); debajo, en 1024-1080, solo la ayuda de teclas.
+     Torneo: el bracket en 1920x1024 (horizontal: ninguna casilla cruza x=640 ni x=1280; vertical: justo la columna del centro). */
+  .tp-muro { display: none; }
+  html.tres-pantallas .tp-muro { display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1024px; z-index: 20; pointer-events: none; }
+  html.tres-pantallas .tp-muro iframe { position: absolute; top: 0; width: 640px; height: 1024px; border: 0; display: block; background: #000; }
+  html.tres-pantallas #screenContador > :not(.tp-muro):not(.hint):not(.controls):not(#wordInput) { visibility: hidden !important; }
+  html.tres-pantallas #screenContador > .hint { z-index: 21; }
+  html.tres-pantallas #screenContador > #wordInput { z-index: 22; }
+  html.tres-pantallas #stage { left: 0; top: 0; transform: scale(var(--stage-scale, 1)); transform-origin: 0 0; }   /* arriba a la izquierda, como lo lee el procesador */
+  html.tres-pantallas #screenTorneo .cmft-raiz { bottom: 56px; }
+  html.tres-pantallas #screenTorneo .cmft-panel { width: 400px; }
+  /* Franja de abajo (y 1024 a 1080): el procesador no la muestra en las pantallas, así que ahí va lo que es solo del operador:
+     indicador a la izquierda, botones a la derecha, avisos del teclado al centro. */
+  html.tres-pantallas #salidaIndicador { top: auto; bottom: 18px; }
+  html.tres-pantallas #screenContador > .hint { display: none; }
+  html.tres-pantallas #screenContador > .controls { opacity: 1; pointer-events: auto; z-index: 21; left: auto; right: 8px; bottom: 9px; max-width: none; flex-wrap: nowrap; transform: scale(.62); transform-origin: 100% 100%; }
+  html.tres-pantallas #screenContador > #wordInput { left: 50%; bottom: 4px; transform: translateX(-50%); }
+  html.tres-pantallas #screenTorneo .torneo-header { top: auto; height: 56px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding-right: 8px; box-sizing: border-box; }
+  html.tres-pantallas #screenTorneo .llaves__corner { position: static; }
+  html.tres-pantallas #btnVolverTorneo { order: 1; } html.tres-pantallas #btnExportarTorneo { order: 2; }
+  html.tres-pantallas #btnImportarTorneo { order: 3; } html.tres-pantallas #btnReiniciarTorneo { order: 4; }
+  html.tres-pantallas #screenTorneo .cmft-raiz { overflow: visible; }
+  html.tres-pantallas #screenTorneo .cmft-hud { bottom: -44px; }
+  html.tres-pantallas #screenTorneo .cmft-inactivo { left: 50%; bottom: -46px; transform: translateX(-50%); font-size: 18px; }
+  html.tres-pantallas .winner-overlay { padding-bottom: calc(2rem + 56px); }
+  html.tres-pantallas .winner-actions { position: absolute; right: 8px; bottom: 9px; flex-wrap: nowrap; transform: scale(.62); transform-origin: 100% 100%; }
   html.salida-reloj.reloj-vertical #screenContador .duel { margin-top: 430px; }
   html.salida-reloj.reloj-vertical #battleCore { --d: 900px; }
   html.salida-reloj.reloj-vertical #screenContador > .bracket-bar { top: 96px; transform: translateX(-50%) scale(1.7); transform-origin: 50% 0; }
@@ -1597,9 +1627,13 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var modo = q.get('salida');
+  /* Operador armado como las 3 pantallas LED (?pantallas=1): contador en tres columnas de 640x1024 y torneo en 1920x1024. */
+  if (!modo && /^(1|si)$/i.test(q.get('pantallas') || '')) document.documentElement.classList.add('tres-pantallas');
   if (['limpia', 'presentacion', 'transmision', 'lateral', 'reloj'].indexOf(modo) < 0) return;   // limpia = contador / llaves; presentacion = fotos del enfrentamiento
   var root = document.documentElement;
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
+  /* Dentro de otra página (pantallas.html o el operador en 3 pantallas) la salida nunca toma el foco: el teclado queda en el operador. */
+  if (window.top !== window) { try { HTMLElement.prototype.focus = function () {}; } catch (e) {} }
   var S = window.CMF_SALIDA = { on: true, modo: modo === 'limpia' ? 'contador' : modo, local: modo === 'lateral' || modo === 'reloj', lado: q.get('lado') === 'b' ? 'b' : 'a', fondo: 'tormenta', croma: '#FF00FF', flat: false, verde: false, FONDOS: FONDOS };
 
   var c = (q.get('croma') || '').trim();
@@ -2003,7 +2037,10 @@
   var stage = document.getElementById('stage');
   function fit() {
     var W = stage.offsetWidth || 1920, H = stage.offsetHeight || 1080;   // 1920x1080; en las pantallas laterales 1080x1920
-    stage.style.setProperty('--stage-scale', Math.min(window.innerWidth / W, window.innerHeight / H));
+    var k = Math.min(window.innerWidth / W, window.innerHeight / H);
+    // Operador en 3 pantallas: a 1:1 siempre que quepan las tres columnas (1920x1024), para que cada pantalla sea exacta.
+    if (document.documentElement.classList.contains('tres-pantallas')) k = window.innerWidth >= 1920 && window.innerHeight >= 1024 ? 1 : k;
+    stage.style.setProperty('--stage-scale', k);
   }
   fit();
   window.addEventListener('resize', fit);
@@ -4341,7 +4378,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '26';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '27';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4434,6 +4471,28 @@ else init();
       else if (m.type === 'ping') presente(m);
       else if (m.type === 'bye') { vistas[clave(m)] = 0; pintar(); }
     });
+
+    /* Operador en 3 pantallas (?pantallas=1): el contador muestra las tres pantallas LED tal cual (MC A | reloj | MC B).
+       Son las mismas páginas de salida, sincronizadas como cualquier otra; no reciben clics ni foco (el teclado sigue aquí). */
+    if (document.documentElement.classList.contains('tres-pantallas')) {
+      var tpMarca = new URLSearchParams(location.search).get('t') || String(Date.now());
+      var tpMuro = document.createElement('div');
+      tpMuro.className = 'tp-muro'; tpMuro.setAttribute('aria-hidden', 'true');
+      [['lateral&lado=a', 0], ['reloj', 640], ['lateral&lado=b', 1280]].forEach(function (x) {
+        var f = document.createElement('iframe');
+        f.tabIndex = -1; f.style.left = x[1] + 'px';
+        f.src = (location.pathname.split('/').pop() || 'Combate_Mortal.html') + '?salida=' + x[0] + '&t=' + encodeURIComponent(tpMarca);
+        tpMuro.appendChild(f);
+      });
+      byId('screenContador').appendChild(tpMuro);
+      // Si alguna vez el foco cae dentro de una de las tres pantallas, vuelve al operador (el teclado no se pierde).
+      window.addEventListener('blur', function () {
+        setTimeout(function () {
+          var a = document.activeElement;
+          if (a && a.tagName === 'IFRAME' && tpMuro.contains(a)) { try { a.blur(); window.focus(); } catch (e) {} }
+        }, 0);
+      });
+    }
 
     /* Indicador "Salida conectada / Sin salida" (solo en la ventana del operador). */
     var ind = document.createElement('div');

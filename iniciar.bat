@@ -4,6 +4,9 @@ rem  COMBATE MORTAL FREESTYLE - arranque de todo con un doble clic
 rem  Abre el servidor y todas las ventanas SIN pantalla completa: transmision (para OBS),
 rem  pantallas LED (lateral A, reloj, lateral B) de 640x1024, las del torneo (torneo.html)
 rem  y por ultimo el operador. Cada pagina se coloca sola con ?pos= y ?tam= de su direccion.
+rem  OPERADOR=pantallas (lo normal ahora): el operador ya trae las 3 pantallas LED dentro
+rem  (MC A / reloj / MC B, 640x1024 cada una, arriba a la izquierda). Esa ventana va al procesador LED:
+rem  llevala a esa salida (Windows + Shift + flecha) y pulsa F11.
 rem  No usar --kiosk: como todas comparten el mismo Chrome, pondria TODAS en pantalla completa.
 rem
 rem  Usa un Chrome PROPIO de CMF (carpeta "perfil-cmf" al lado de este archivo).
@@ -57,15 +60,25 @@ timeout /t 3 >nul
 
 start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1600x900&t=%T%" --window-position=0,0 --window-size=1600,900
 timeout /t 3 >nul
-rem Pantallas LED (MC A, reloj, MC B), cada una de 640x1024:
+rem Operador:
+rem   OPERADOR=pantallas  el contador del operador sale como 3 columnas de 640x1024 (MC A / reloj / MC B)
+rem                       desde la esquina de arriba a la izquierda; en el torneo, el bracket horizontal ocupa las 3.
+rem                       Esa misma ventana va al procesador LED (F11). Abajo (y 1024 a 1080) quedan los botones del operador.
+rem   OPERADOR=normal     el operador de siempre (las pantallas LED van en ventanas aparte, ver LED).
+set OPERADOR=pantallas
+rem Pantallas LED en ventanas aparte (MC A, reloj, MC B), cada una de 640x1024:
+rem   LED=auto       ninguna si OPERADOR=pantallas (ya van en el operador); si no, muro.
 rem   LED=muro       una sola ventana de 1920x1024 con las tres en columnas (pantallas.html), para un procesador
 rem                  que recibe UNA imagen y la reparte. En el evento: llevarla a esa salida y pulsar F11.
 rem   LED=separadas  tres ventanas de 640x1024 (una por salida de video).
-set LED=muro
+rem   LED=ninguna    no abrir pantallas LED aparte.
+set LED=auto
+if "%LED%"=="auto" if "%OPERADOR%"=="pantallas" set LED=ninguna
+if "%LED%"=="auto" set LED=muro
 if "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="http://localhost:8000/pantallas.html?pos=0,0&tam=1920x1024&t=%T%" --window-position=0,0 --window-size=1920,1024
-if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&pos=640,0&tam=640x1024&t=%T%" --window-position=640,0 --window-size=640,1024
-if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&pos=0,0&tam=640x1024&t=%T%" --window-position=0,0 --window-size=640,1024
-if not "%LED%"=="muro" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&pos=1280,0&tam=640x1024&t=%T%" --window-position=1280,0 --window-size=640,1024
+if "%LED%"=="separadas" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&pos=640,0&tam=640x1024&t=%T%" --window-position=640,0 --window-size=640,1024
+if "%LED%"=="separadas" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&pos=0,0&tam=640x1024&t=%T%" --window-position=0,0 --window-size=640,1024
+if "%LED%"=="separadas" start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&pos=1280,0&tam=640x1024&t=%T%" --window-position=1280,0 --window-size=640,1024
 rem Pantallas del torneo (bracket, historias, llave): mismo Chrome y perfil, asi se sincronizan con el operador.
 rem Para no abrirlas, cambia TORNEO=1 por TORNEO=0.
 set TORNEO=1
@@ -73,5 +86,7 @@ set URLT=http://localhost:8000/torneo.html?t=%T%
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=320,0&tam=640x1024#bracket" --window-position=320,0 --window-size=640,1024
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=120,40&tam=540x960#historias" --window-position=120,40 --window-size=560,980
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=700,40&tam=720x900#llave" --window-position=700,40 --window-size=760,980
+set "URLOP=%URL%?t=%T%"
+if "%OPERADOR%"=="pantallas" set "URLOP=%URL%?pantallas=1&t=%T%"
 timeout /t 4 >nul
-start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URL%?t=%T%"
+start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URLOP%"
