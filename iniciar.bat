@@ -23,6 +23,27 @@ if not exist "%CHROME%" (
   exit /b 1
 )
 
+rem Comprobar que estan los archivos del bracket nuevo junto a este archivo (si no, el torneo sale con el bracket viejo).
+set FALTA=
+if not exist "%~dp0Combate_Mortal.html" set FALTA=Combate_Mortal.html
+if not exist "%~dp0js\torneo-vistas.js" set FALTA=js\torneo-vistas.js
+if not exist "%~dp0css\torneo-vistas.css" set FALTA=css\torneo-vistas.css
+if not exist "%~dp0assets\torneo\fondo-bracket.jpg" set FALTA=assets\torneo
+if not exist "%~dp0assets\participantes\r16.jpg" set FALTA=assets\participantes
+if defined FALTA (
+  echo.
+  echo FALTA: %FALTA%
+  echo Copia TODO el contenido del ZIP ^(Combate_Mortal.html, torneo.html, assets, css, js^) en esta carpeta:
+  echo %~dp0
+  pause
+  exit /b 1
+)
+
+rem Liberar el puerto 8000: cierra cualquier servidor viejo (por ejemplo uno abierto a mano en PowerShell),
+rem que si no seguiria sirviendo los archivos de otra carpeta.
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr /r /c:":8000 .*LISTENING"') do taskkill /F /PID %%p >nul 2>nul
+taskkill /FI "WINDOWTITLE eq Servidor CMF*" /T /F >nul 2>nul
+
 set PY=py
 where py >nul 2>nul || set PY=python
 
