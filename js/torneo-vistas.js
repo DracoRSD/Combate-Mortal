@@ -955,7 +955,7 @@
 
     let vistaGuardada = null;
     if (!salida) { try { vistaGuardada = sessionStorage.getItem(CLAVE_VISTA); } catch (e) { vistaGuardada = null; } }
-    mostrar(op.vista || vistaGuardada || 'bracket', false);   // el operador vuelve a la última vista que eligió (p. ej. el bracket vertical)
+    mostrar(op.vista || vistaGuardada || op.vistaInicial || 'bracket', false);   // el operador vuelve a la última vista que eligió (p. ej. el bracket vertical)
     pintar(true);
 
     return {
@@ -967,7 +967,8 @@
       alAbrirSelector,
       seleccion: () => (sel ? { id: sel.id, lado: sel.lado } : null),
       seleccionar,
-      aviso
+      aviso,
+      iniciar: () => accionarPanel('iniciar')   // iniciar el cruce seleccionado (o el que toca), como el botón del panel
     };
   }
 

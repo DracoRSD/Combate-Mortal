@@ -3,7 +3,8 @@
   COMBATE MORTAL FREESTYLE — archivo único (HTML + CSS + JS + fuentes/imágenes embebidas, sin dependencias, funciona sin internet).
 
   OPERADOR EN 3 PANTALLAS LED (?pantallas=1, lo pone iniciar.bat): el contador se ve como tres columnas de 640x1024 (MC A | reloj |
-  MC B) arriba a la izquierda, y el torneo en 1920x1024, para mandar la ventana del operador al procesador LED (F11). Lo que es solo
+  MC B) arriba a la izquierda; en el torneo, el bracket vertical en la pantalla del centro con MC A y MC B a los lados (V: el
+  bracket horizontal en las tres). La ventana del operador va al procesador LED (F11). Lo que es solo
   del operador (indicador, botones, avisos del teclado) va en la franja de abajo (y 1024 a 1080), que no sale en las pantallas.
   CÓMO ARRANCAR en Windows: doble clic en iniciar.bat (servidor + las ventanas de salida, sin pantalla completa + el operador)
   y cerrar.bat para cerrar todo. Usan un Chrome propio (carpeta perfil-cmf) con los parámetros que impiden que Chrome congele las ventanas tapadas.
@@ -1588,8 +1589,14 @@
   /* Operador en 3 pantallas LED (?pantallas=1): arriba a la izquierda, 1920x1024 = tres columnas de 640x1024.
      Contador: MC A | reloj | MC B (las mismas pantallas del evento); debajo, en 1024-1080, solo la ayuda de teclas.
      Torneo: el bracket en 1920x1024 (horizontal: ninguna casilla cruza x=640 ni x=1280; vertical: justo la columna del centro). */
-  .tp-muro { display: none; }
-  html.tres-pantallas .tp-muro { display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 1024px; z-index: 20; pointer-events: none; }
+  .tp-muro { display: none; position: absolute; left: 0; top: 0; width: 1920px; height: 1024px; z-index: 15; pointer-events: none; }
+  .llaves__corner--iniciar { display: none; }
+  /* Contador: las tres pantallas. Torneo (bracket vertical, historias, llave): MC A y MC B a los lados y el torneo en la del centro.
+     Torneo con el bracket horizontal (V): ocupa las tres. */
+  html.tres-pantallas #stage:has(> #screenContador.active) > .tp-muro,
+  html.tres-pantallas #stage:has(> #screenTorneo.active .cmft-raiz:not([data-vista="bracket"])) > .tp-muro { display: block; }
+  html.tres-pantallas #stage:has(> #screenTorneo.active) > .tp-muro iframe:nth-child(2) { visibility: hidden; }
+  html.tres-pantallas #screenTorneo .cmft-raiz:not([data-vista="bracket"]) { left: 640px; right: 640px; }
   html.tres-pantallas .tp-muro iframe { position: absolute; top: 0; width: 640px; height: 1024px; border: 0; display: block; background: #000; }
   html.tres-pantallas #screenContador > :not(.tp-muro):not(.hint):not(.controls):not(#wordInput) { visibility: hidden !important; }
   html.tres-pantallas #screenContador > .hint { z-index: 21; }
@@ -1607,9 +1614,11 @@
   html.tres-pantallas #screenTorneo .llaves__corner { position: static; }
   html.tres-pantallas #btnVolverTorneo { order: 1; } html.tres-pantallas #btnExportarTorneo { order: 2; }
   html.tres-pantallas #btnImportarTorneo { order: 3; } html.tres-pantallas #btnReiniciarTorneo { order: 4; }
+  html.tres-pantallas #btnIniciarTorneo { display: block; order: 0; margin-right: 18px; }
   html.tres-pantallas #screenTorneo .cmft-raiz { overflow: visible; }
-  html.tres-pantallas #screenTorneo .cmft-hud { bottom: -44px; }
-  html.tres-pantallas #screenTorneo .cmft-inactivo { left: 50%; bottom: -46px; transform: translateX(-50%); font-size: 18px; }
+  /* Avisos del torneo en la franja, entre el indicador y los botones (fixed = relativo al escenario, sea cual sea la vista). */
+  html.tres-pantallas #screenTorneo .cmft-hud { position: fixed; left: 340px; bottom: 16px; transform: none; max-width: 720px; }
+  html.tres-pantallas #screenTorneo .cmft-inactivo { position: fixed; left: 340px; bottom: 13px; transform: none; font-size: 18px; }
   html.tres-pantallas .winner-overlay { padding-bottom: calc(2rem + 56px); }
   html.tres-pantallas .winner-actions { position: absolute; right: 8px; bottom: 9px; flex-wrap: nowrap; transform: scale(.62); transform-origin: 100% 100%; }
   html.salida-reloj.reloj-vertical #screenContador .duel { margin-top: 430px; }
@@ -1790,6 +1799,7 @@
       <button type="button" class="llaves__corner llaves__corner--left" id="btnVolverTorneo" data-nav-item>&lsaquo; Formato</button>
       <button type="button" class="llaves__corner llaves__corner--right" id="btnReiniciarTorneo" data-nav-item>Reiniciar torneo</button>
       <button type="button" class="llaves__corner llaves__corner--left llaves__corner--row2" id="btnExportarTorneo" data-nav-item>Exportar llaves</button>
+      <button type="button" class="llaves__corner llaves__corner--iniciar" id="btnIniciarTorneo">Iniciar batalla &#9166;</button>
       <button type="button" class="llaves__corner llaves__corner--right llaves__corner--row2" id="btnImportarTorneo" data-nav-item>Importar llaves</button>
       <input type="file" id="fileImportarTorneo" accept="application/json,.json" hidden>
     </div>
@@ -2080,8 +2090,8 @@
 
 <!-- Bracket v3 (vistas bracket, historias y llave): archivos de la carpeta del proyecto.
      Si no están (HTML abierto suelto), el torneo sigue con el bracket anterior. -->
-<link rel="stylesheet" href="css/torneo-vistas.css?v=19">
-<script src="js/torneo-vistas.js?v=19"></script>
+<link rel="stylesheet" href="css/torneo-vistas.css?v=20">
+<script src="js/torneo-vistas.js?v=20"></script>
 <script>
 (function () {
   'use strict';
@@ -2806,6 +2816,9 @@
       raiz: raiz,
       modo: enSalida ? 'salida' : 'operador',
       ensayo: ENSAYO,
+      // Operador en 3 pantallas: el torneo abre con el bracket vertical en la pantalla del centro (V: horizontal en las tres).
+      vistaInicial: document.documentElement.classList.contains('tres-pantallas') ? 'vertical' : null,
+      alCambiarVista: function (v) { raiz.setAttribute('data-vista', v); },
       obtener: function () { return bracket; },
       activo: function () { return pantalla.classList.contains('active'); },
       selector: { abierto: function () { return !els.bracketPicker.hidden; }, grid: els.bracketPickerGrid, cancelar: cancelBracketPicker },
@@ -3447,6 +3460,7 @@
     clearTimeout(btn._t);
     btn._t = setTimeout(function () { btn.textContent = base; }, 2500);
   }
+  document.getElementById('btnIniciarTorneo').addEventListener('click', function () { if (torneoUI) torneoUI.iniciar(); });
   document.getElementById('btnExportarTorneo').addEventListener('click', function () {
     try {
       var blob = new Blob([JSON.stringify({ app: 'combate-mortal', tipo: 'llaves', version: 1, bracket: bracket }, null, 2)], { type: 'application/json' });
@@ -4378,7 +4392,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '27';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '28';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4484,7 +4498,7 @@ else init();
         f.src = (location.pathname.split('/').pop() || 'Combate_Mortal.html') + '?salida=' + x[0] + '&t=' + encodeURIComponent(tpMarca);
         tpMuro.appendChild(f);
       });
-      byId('screenContador').appendChild(tpMuro);
+      byId('stage').appendChild(tpMuro);   // a nivel del escenario: sirve en el contador y en el torneo
       // Si alguna vez el foco cae dentro de una de las tres pantallas, vuelve al operador (el teclado no se pierde).
       window.addEventListener('blur', function () {
         setTimeout(function () {

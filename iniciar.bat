@@ -62,7 +62,8 @@ start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1600x900
 timeout /t 3 >nul
 rem Operador:
 rem   OPERADOR=pantallas  el contador del operador sale como 3 columnas de 640x1024 (MC A / reloj / MC B)
-rem                       desde la esquina de arriba a la izquierda; en el torneo, el bracket horizontal ocupa las 3.
+rem                       desde la esquina de arriba a la izquierda; en el torneo, el bracket vertical en la del centro
+rem                       (V: bracket horizontal en las 3).
 rem                       Esa misma ventana va al procesador LED (F11). Abajo (y 1024 a 1080) quedan los botones del operador.
 rem   OPERADOR=normal     el operador de siempre (las pantallas LED van en ventanas aparte, ver LED).
 set OPERADOR=pantallas
