@@ -427,6 +427,7 @@
     /* ===================== ESTADO DE LA VISTA ===================== */
     const CLAVE_SEL = 'cmf-torneo-seleccion-v1';
     let vista = 'bracket', idxH = 0, idxL = 0, ultimaFirma = null;
+    const enBracket = () => vista === 'bracket' || vista === 'vertical';
     let sel = null;   // { id, lado } — la selección propia (no depende del foco del DOM)
     const recuerdo = { h: {}, v: {} };   // último cruce visitado en cada columna o fila (para empates al cambiar)
     let vertical = false;                 // bracket vertical en pantalla (lo decide escalar())
@@ -553,14 +554,14 @@
       if (!salida && !sel) { const c = actual(b); sel = { id: c ? c.id : 'octavos-0', lado: null }; guardarSel(); }
       if (sel && sel.lado && !casillaValida(sel.id, sel.lado)) { sel.lado = null; guardarSel(); }
       pintarBracket(b); pintarHistorias(b); pintarLlave(b); pintarSel();
-      if (vista === 'bracket') ajustarBracket(); else if (vista === 'llave') ajustarLlave();
+      if (enBracket()) ajustarBracket(); else if (vista === 'llave') ajustarLlave();
     }
 
     /* ===================== ESCALA ===================== */
     function escalar() {
       const w = raiz.clientWidth, h = raiz.clientHeight;
       if (!w || !h) return;
-      vertical = h > w;   // ventana más alta que ancha (LED de 640x1024): bracket vertical
+      vertical = vista === 'vertical' || h > w;   // vista "bracket vertical" (V) o ventana más alta que ancha (LED de 640x1024)
       vB.classList.toggle('cmft-vertical', vertical);
       LIENZOS.map((L) => [L.lienzo, L.geo.W, L.geo.H]).concat([[hWrap, 1080, 1920], [lWrap, LLAVE_ANCHO, LLAVE_ALTO]]).forEach(([e, ew, eh]) => {
         const s = Math.min(w / ew, h / eh);
@@ -568,27 +569,28 @@
       });
     }
     /* Al mostrarse la pantalla (o cambiar la ventana) se reescala y se vuelven a medir los nombres. */
-    function reajustar() { escalar(); if (vista === 'bracket') ajustarBracket(); else if (vista === 'llave') ajustarLlave(); pintarSel(); }
+    function reajustar() { escalar(); if (enBracket()) ajustarBracket(); else if (vista === 'llave') ajustarLlave(); pintarSel(); }
     if (window.ResizeObserver) new ResizeObserver(reajustar).observe(raiz);
     window.addEventListener('resize', reajustar);
 
     /* ===================== VISTAS ===================== */
-    const ORDEN = ['bracket', 'historias', 'llave'];
+    const ORDEN = ['bracket', 'vertical', 'historias', 'llave'];   // "vertical" = el bracket en formato 640x1024
     let hudT = null;
     function aviso(t) { hud.textContent = t; hud.classList.remove('cmft-off'); clearTimeout(hudT); hudT = setTimeout(() => hud.classList.add('cmft-off'), 4000); }
     function mostrar(v, conAviso) {
       vista = ORDEN.includes(v) ? v : 'bracket';
-      vB.classList.toggle('cmft-on', vista === 'bracket');
+      vB.classList.toggle('cmft-on', enBracket());
       vH.classList.toggle('cmft-on', vista === 'historias');
       vL.classList.toggle('cmft-on', vista === 'llave');
       if (op.alCambiarVista) op.alCambiarVista(vista);
       escalar();
-      if (vista !== 'bracket') { const b = B(); idxH = indiceCarta(b); idxL = indiceRonda(b); }
+      if (!enBracket()) { const b = B(); idxH = indiceCarta(b); idxL = indiceRonda(b); }
       pintar(false);
       if (conAviso === false || salida) return;
       aviso(vista === 'historias' ? `HISTORIAS · ${CARTAS[idxH].nombre} — siguen solas al torneo · ← → otra ronda · E = PNG · V = llave de ronda`
         : vista === 'llave' ? `LLAVE DE RONDA · ${RONDAS[idxL].nombre} — sigue sola al torneo · ← → otra ronda · E = PNG · V = bracket`
-          : 'BRACKET · flechas = moverse · Enter = iniciar / elegir MC · V = historias · F = pantalla completa');
+          : vista === 'vertical' ? 'BRACKET VERTICAL (640x1024) · ↑ ↓ = cambiar de ronda · ← → = dentro de la ronda · Enter = iniciar · V = historias'
+            : 'BRACKET · flechas = moverse · Enter = iniciar / elegir MC · V = bracket vertical · F = pantalla completa');
     }
 
     /* ===================== ACCIONES ===================== */
@@ -640,6 +642,7 @@
     }
     function editarTematica() {
       if (!operador || !sel || POR_ID[sel.id].st !== 'semifinal') { aviso('E edita la temática: selecciona una semifinal'); return; }
+      if (vertical) { aviso('La temática se edita en el bracket horizontal (V hasta volver a él) o en el contador con E'); return; }
       const t = temas[POR_ID[sel.id].i];
       t.focus(); t.select();   // lo que se escriba reemplaza la palabra; las flechas mueven el cursor dentro del campo
     }
@@ -663,7 +666,7 @@
     }
     /* Exportar la pieza actual como PNG del tamaño del lienzo (dibujada con canvas). */
     async function exportar() {
-      if (vista === 'bracket') return;
+      if (enBracket()) return;
       try {
         await Promise.all([document.fonts.load('60px "Bebas Neue"'), document.fonts.ready]);
         const blob = vista === 'historias' ? await dibujarHistoria() : await dibujarLlave();
@@ -860,7 +863,7 @@
       if (k === 'R' && e.shiftKey) { parar(e); if (!e.repeat) reiniciar(); return; }
       if (kl === 'v' && !e.shiftKey) { parar(e); if (!e.repeat) mostrar(ORDEN[(ORDEN.indexOf(vista) + 1) % ORDEN.length]); return; }
       if (kl === 'f' && !e.shiftKey) { parar(e); if (!e.repeat) pantallaCompleta(); return; }
-      if (vista === 'bracket') {
+      if (enBracket()) {
         if (flecha) { parar(e); mover(k); return; }
         if (k === 'Enter' || k === ' ') { parar(e); if (!e.repeat) accionar(); return; }
         if (k === 'Tab') { parar(e); casilla(e.shiftKey); return; }
@@ -946,7 +949,7 @@
       document.documentElement.addEventListener('mouseleave', () => { ratonDentro = false; pintarAviso(); });
       setInterval(pintarAviso, 500);
     }
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (vista === 'bracket') ajustarBracket(); else ajustarLlave(); pintarSel(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (enBracket()) ajustarBracket(); else ajustarLlave(); pintarSel(); });
     document.addEventListener('DOMContentLoaded', escalar);
 
     mostrar(op.vista || 'bracket', false);
@@ -982,7 +985,7 @@
     const h = (location.hash || '').toLowerCase();
     const ui = crear({
       raiz, modo: 'pantalla', ensayo,
-      vista: /historias/.test(h) ? 'historias' : /llave/.test(h) ? 'llave' : 'bracket',
+      vista: /historias/.test(h) ? 'historias' : /llave/.test(h) ? 'llave' : /vertical/.test(h) ? 'vertical' : 'bracket',
       obtener: () => b,
       activo: () => true,
       alCambiarVista: (v) => { try { history.replaceState(null, '', '#' + v); } catch (e) { /* vista previa sin historial */ } },
@@ -992,7 +995,7 @@
         reiniciarResultados: () => { ETAPAS.forEach(([st]) => b[st].forEach((m) => { m.winner = null; })); recalcular(b); guardar(); }
       }
     });
-    window.addEventListener('hashchange', () => { const x = (location.hash || '').toLowerCase(); ui.mostrar(/historias/.test(x) ? 'historias' : /llave/.test(x) ? 'llave' : 'bracket'); });
+    window.addEventListener('hashchange', () => { const x = (location.hash || '').toLowerCase(); ui.mostrar(/historias/.test(x) ? 'historias' : /llave/.test(x) ? 'llave' : /vertical/.test(x) ? 'vertical' : 'bracket'); });
     return ui;
   }
 

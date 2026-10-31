@@ -4,6 +4,7 @@
   Las mismas vistas del torneo del operador, en una ventana aparte y sincronizadas con él
   (mismo navegador y mismo perfil: iniciar.bat las abre así).
       http://localhost:8000/torneo.html#bracket     bracket completo (1560x960; en una ventana vertical, p. ej. 640x1024, sale el bracket vertical)
+      http://localhost:8000/torneo.html#vertical    bracket vertical (640x1024) en cualquier ventana
       http://localhost:8000/torneo.html#historias   historias 1080x1920, una tarjeta por grupo
       http://localhost:8000/torneo.html#llave       llave de la ronda 1080x1350
   Teclas: V cambiar de vista · ← → otra ronda (historias y llave) · E descargar PNG ·
@@ -15,7 +16,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CMF · Torneo</title>
-<link rel="stylesheet" href="css/torneo-vistas.css?v=17">
+<link rel="stylesheet" href="css/torneo-vistas.css?v=18">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   .cmft-falta { color: #fff; font: 18px/1.5 system-ui, sans-serif; padding: 40px; }
@@ -23,7 +24,7 @@
 </head>
 <body>
 <div id="cmft"></div>
-<script src="js/torneo-vistas.js?v=17"></script>
+<script src="js/torneo-vistas.js?v=18"></script>
 <script>
   /* Tamaño y posición que pide iniciar.bat (?tam=640x1024&pos=320,0): solo en ventanas de aplicación; en una pestaña no hace nada. */
   (function () {
