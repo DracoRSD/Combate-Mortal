@@ -25,6 +25,20 @@
 <div id="cmft"></div>
 <script src="js/torneo-vistas.js?v=17"></script>
 <script>
+  /* Tamaño y posición que pide iniciar.bat (?tam=640x1024&pos=320,0): solo en ventanas de aplicación; en una pestaña no hace nada. */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var tam = /^(\d+)x(\d+)$/.exec(q.get('tam') || ''), pos = /^(-?\d+),(-?\d+)$/.exec(q.get('pos') || '');
+    if (!tam && !pos) return;
+    function aplicar() {
+      if (document.fullscreenElement) return;
+      try {
+        if (pos) window.moveTo(+pos[1], +pos[2]);
+        if (tam) window.resizeTo(+tam[1] + window.outerWidth - window.innerWidth, +tam[2] + window.outerHeight - window.innerHeight);
+      } catch (e) {}
+    }
+    if (document.readyState === 'complete') aplicar(); else window.addEventListener('load', aplicar);
+  })();
   if (window.CMFTorneo) window.CMFTorneo.pantalla(document.getElementById('cmft'));
   else document.body.innerHTML = '<p class="cmft-falta">No se encontró js/torneo-vistas.js. Abre esta página desde el servidor (iniciar.bat), con la carpeta completa del proyecto.</p>';
 </script>

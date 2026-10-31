@@ -1647,6 +1647,21 @@
     }, true);
   });
 
+  /* Tamaño y posición que pide iniciar.bat (?tam=640x1024&pos=0,0): al abrir, el contenido de la ventana queda justo de ese
+     tamaño y en ese lugar. Solo lo permiten las ventanas de aplicación o emergentes; en una pestaña normal no hace nada. */
+  (function () {
+    var tam = /^(\d+)x(\d+)$/.exec(q.get('tam') || ''), pos = /^(-?\d+),(-?\d+)$/.exec(q.get('pos') || '');
+    if (!tam && !pos) return;
+    function aplicar() {
+      if (document.fullscreenElement) return;
+      try {
+        if (pos) window.moveTo(+pos[1], +pos[2]);
+        if (tam) window.resizeTo(+tam[1] + window.outerWidth - window.innerWidth, +tam[2] + window.outerHeight - window.innerHeight);
+      } catch (e) {}
+    }
+    if (document.readyState === 'complete') aplicar(); else window.addEventListener('load', aplicar);
+  })();
+
   /* Un clic pide pantalla completa (salvo en las pantallas del evento: van en ventana de 640x1024; F11 si se quiere completa). */
   document.addEventListener('click', function () {
     if (S.local) return;
@@ -4310,7 +4325,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '22';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '23';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.

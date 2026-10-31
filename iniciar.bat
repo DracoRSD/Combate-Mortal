@@ -1,9 +1,10 @@
 @echo off
 rem ============================================================================
 rem  COMBATE MORTAL FREESTYLE - arranque de todo con un doble clic
-rem  Abre el servidor, la transmision (pantalla completa, para OBS), las pantallas LED
-rem  (lateral A, reloj, lateral B) en ventanas de 640x1024, las del torneo (torneo.html)
-rem  y por ultimo la ventana del operador.
+rem  Abre el servidor y todas las ventanas SIN pantalla completa: transmision (para OBS),
+rem  pantallas LED (lateral A, reloj, lateral B) de 640x1024, las del torneo (torneo.html)
+rem  y por ultimo el operador. Cada pagina se coloca sola con ?pos= y ?tam= de su direccion.
+rem  No usar --kiosk: como todas comparten el mismo Chrome, pondria TODAS en pantalla completa.
 rem
 rem  Usa un Chrome PROPIO de CMF (carpeta "perfil-cmf" al lado de este archivo).
 rem  Asi los parametros que evitan que Chrome congele las ventanas tapadas SIEMPRE
@@ -32,17 +33,17 @@ set URL=http://localhost:8000/Combate_Mortal.html
 start "Servidor CMF" cmd /k %PY% -m http.server 8000
 timeout /t 3 >nul
 
-start "" "%CHROME%" %FLAGS% --kiosk --app="%URL%?salida=transmision&t=%T%" --window-position=0,0
+start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1600x900&t=%T%" --window-position=0,0 --window-size=1600,900
 timeout /t 3 >nul
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&t=%T%" --window-position=640,0 --window-size=640,1024
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&t=%T%" --window-position=0,0 --window-size=640,1024
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&t=%T%" --window-position=1280,0 --window-size=640,1024
+start "" "%CHROME%" %FLAGS% --app="%URL%?salida=reloj&pos=640,0&tam=640x1024&t=%T%" --window-position=640,0 --window-size=640,1024
+start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=a&pos=0,0&tam=640x1024&t=%T%" --window-position=0,0 --window-size=640,1024
+start "" "%CHROME%" %FLAGS% --app="%URL%?salida=lateral&lado=b&pos=1280,0&tam=640x1024&t=%T%" --window-position=1280,0 --window-size=640,1024
 rem Pantallas del torneo (bracket, historias, llave): mismo Chrome y perfil, asi se sincronizan con el operador.
 rem Para no abrirlas, cambia TORNEO=1 por TORNEO=0.
 set TORNEO=1
 set URLT=http://localhost:8000/torneo.html?t=%T%
-if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#bracket" --window-position=320,0 --window-size=640,1024
-if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#historias" --window-position=120,40 --window-size=560,980
-if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#llave" --window-position=700,40 --window-size=760,980
+if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=320,0&tam=640x1024#bracket" --window-position=320,0 --window-size=640,1024
+if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=120,40&tam=540x960#historias" --window-position=120,40 --window-size=560,980
+if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=700,40&tam=720x900#llave" --window-position=700,40 --window-size=760,980
 timeout /t 4 >nul
 start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URL%?t=%T%"
