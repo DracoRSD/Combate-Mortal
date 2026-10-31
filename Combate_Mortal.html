@@ -35,7 +35,7 @@
   (la carpeta completa del proyecto). Si faltan, o con  ?bracket=viejo  en la URL, el torneo usa el bracket anterior.
   Teclado en el torneo (sin depender del foco ni del mouse): flechas moverse por el bracket · Enter o Espacio iniciar la batalla
   seleccionada (o elegir MC en una casilla vacía de octavos) · Tab / Shift+Tab casilla de arriba / abajo en octavos · E editar la
-  temática de la semifinal seleccionada (Enter confirma, Esc sale) · Esc cerrar · V bracket → historias → llave de ronda ·
+  temática de la semifinal seleccionada (Enter confirma, Esc sale; en el bracket la palabra sale como ?????? salvo mientras se edita) · Esc cerrar · V bracket → historias → llave de ronda ·
   ← → otra ronda en historias y llave · E descargar el PNG (historias 1080x1920, llave 1080x1350) · F pantalla completa ·
   Shift+R reiniciar resultados (pide confirmación; el sorteo de octavos se queda). Clic en un nombre o foto: ganador, solo si el
   cruce no tiene ganador; cambiarlo: Shift+clic o ?ensayo=1. Si la ventana pierde el foco aparece "TECLADO INACTIVO": un clic
@@ -2008,8 +2008,8 @@
 
 <!-- Bracket v3 (vistas bracket, historias y llave): archivos de la carpeta del proyecto.
      Si no están (HTML abierto suelto), el torneo sigue con el bracket anterior. -->
-<link rel="stylesheet" href="css/torneo-vistas.css?v=15">
-<script src="js/torneo-vistas.js?v=15"></script>
+<link rel="stylesheet" href="css/torneo-vistas.css?v=16">
+<script src="js/torneo-vistas.js?v=16"></script>
 <script>
 (function () {
   'use strict';
@@ -4295,7 +4295,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '18';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '19';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.

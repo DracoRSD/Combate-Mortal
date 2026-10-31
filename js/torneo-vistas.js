@@ -261,7 +261,9 @@
       if (operador) {
         campo = el('input', 'cmft-tag__in'); campo.type = 'text'; campo.maxLength = 24; campo.spellcheck = false; campo.autocomplete = 'off'; campo.tabIndex = -1;
         campo.addEventListener('input', () => { const v = campo.value.toUpperCase().slice(0, 24); if (acc.tematica) acc.tematica(i, v); });
-        campo.addEventListener('focus', () => { seleccionar('semifinal-' + i, null); });
+        /* La palabra es secreta hasta revelarla con W en la batalla: en el bracket sale "??????" y solo se ve mientras se edita. */
+        campo.addEventListener('focus', () => { seleccionar('semifinal-' + i, null); campo.value = tematicaReal(i); });
+        campo.addEventListener('blur', () => { campo.value = OCULTA; });
       } else campo = el('b', 'cmft-tag__txt');
       t.appendChild(campo); lienzo.appendChild(t);
       return campo;
@@ -362,6 +364,8 @@
     }
     function guardarSel() { try { sessionStorage.setItem(CLAVE_SEL, JSON.stringify(sel)); } catch (e) { /* sin sessionStorage */ } }
     const B = () => op.obtener() || vacio();
+    const OCULTA = '??????';
+    const tematicaReal = (i) => { const s = B().semifinal; return (s && s[i] && s[i].theme) || ''; };
     /* La casilla (Tab) solo existe en octavos del operador, mientras el cruce no tenga ganador. */
     const casillaValida = (id, lado) => !!lado && operador && POR_ID[id].st === 'octavos' && !cruce(B(), POR_ID[id]).winner;
 
@@ -391,7 +395,7 @@
         const d = mc(n); podio[k].nom.textContent = d ? d.nombre : ''; podio[k].e.classList.toggle('cmft-lleno', !!d);
       });
       temas.forEach((t, i) => {
-        const v = (b.semifinal && b.semifinal[i] && b.semifinal[i].theme) || '';
+        const v = tematicaReal(i) ? OCULTA : '';
         if (operador) { if (document.activeElement !== t && t.value !== v) t.value = v; } else t.textContent = v;
       });
     }
