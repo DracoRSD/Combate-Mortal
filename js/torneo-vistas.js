@@ -148,6 +148,68 @@
     enlace(posCruce('semifinal', 1), posCruce('final', 0), -1);
     return d;
   }
+  const navDe = (grupos) => { const de = {}; grupos.forEach((g, i) => g.forEach((id, r) => { de[id] = [i, r]; })); return de; };
+  const GEO_H = {
+    clase: 'cmft-bracket--h', W, H, fondo: IMG.fondoH, titulos: TITULOS, podio: PODIO, lineas: lineasBracket,
+    caja: (c, lado) => { const [x, top] = posCruce(c.st, c.i); return [x, lado === 'a' ? top : top + BH + GAP, CW, BH]; },
+    vs: (c) => { const [x, top] = posCruce(c.st, c.i); return [x + CW / 2 - 78, top + BH, 156, GAP]; },
+    marco: (c) => { const [x, top] = posCruce(c.st, c.i); return [x - 13, top - 13, CW + 26, 2 * BH + GAP + 26]; },
+    temas: [[572 - CW / 2, 350, CW], [988 - CW / 2, 350, CW]],
+    nav: { grupos: COLS, de: COL_DE, antes: 'ArrowLeft', despues: 'ArrowRight', menos: 'ArrowUp', mas: 'ArrowDown', cruz: CY }
+  };
+
+  /* ---------- Bracket vertical (lienzo 1080 x 1728 = 5:8, para pantallas LED de 640 x 1024) ----------
+     Se usa cuando la ventana es más alta que ancha. Arriba, la mitad izquierda del bracket baja hacia el centro; abajo,
+     la mitad derecha sube; en el centro, Gran Final, 3er Lugar y el podio. Octavos, cuartos y semifinal van en parejas
+     apiladas (A arriba, B abajo); la final y el 3er lugar, en fila (A a la izquierda, B a la derecha). */
+  const VW = 1080, VH = 1728, VCW = 216, VBH = 50, VGAP = 22, VPAR = 2 * VBH + VGAP;
+  const V_OCT_X = [180, 420, 660, 900], V_CUA_X = [300, 780], V_TOP = { octavos: 100, cuartos: 300, semifinal: 500 };   // dentro del marco del fondo
+  const V_FILA = { final: [735, 64, [170, 510], [570, 910]], tercerPuesto: [868, 54, [230, 510], [570, 850]] };   // [y, alto, xA, xB]
+  function posV(st, i) {   // { pila: [centro x, arriba] } o { fila: [y, alto, xA, xB] }
+    if (V_FILA[st]) return { fila: V_FILA[st] };
+    const n = st === 'octavos' ? 4 : st === 'cuartos' ? 2 : 1, j = i % n;
+    const cx = st === 'octavos' ? V_OCT_X[j] : st === 'cuartos' ? V_CUA_X[j] : VW / 2;
+    return { pila: [cx, i < n ? V_TOP[st] : VH - V_TOP[st] - VPAR] };   // la mitad de abajo es el espejo de la de arriba
+  }
+  const FILAS_V = [['octavos-0', 'octavos-1', 'octavos-2', 'octavos-3'], ['cuartos-0', 'cuartos-1'], ['semifinal-0'], ['final-0'], ['tercerPuesto-0'],
+    ['semifinal-1'], ['cuartos-2', 'cuartos-3'], ['octavos-4', 'octavos-5', 'octavos-6', 'octavos-7']];
+  const CX_V = {};
+  CRUCES.forEach((c) => { const p = posV(c.st, c.i); CX_V[c.id] = p.pila ? p.pila[0] : VW / 2; });
+  function lineasV() {
+    let d = '';
+    const enlace = (src, dst) => {   // de una pareja a la de la ronda siguiente, siempre hacia el centro
+      const [sx, sy] = src.pila, [dx, dy] = dst.pila, baja = sy < dy;
+      const y0 = baja ? sy + VPAR : sy, y1 = baja ? dy : dy + VPAR, ym = (y0 + y1) / 2;
+      d += `M${sx} ${y0}V${ym}H${dx}V${y1}`;
+    };
+    for (let i = 0; i < 8; i++) enlace(posV('octavos', i), posV('cuartos', i >> 1));
+    for (let i = 0; i < 4; i++) enlace(posV('cuartos', i), posV('semifinal', i >> 1));
+    return d;
+  }
+  const GEO_V = {
+    clase: 'cmft-bracket--v', W: VW, H: VH, fondo: IMG.fondoV, cubrir: true, lineas: lineasV,
+    titulos: [['octavos', 540, 44, 190], ['octavos', 540, VH - 40 - 190 * 141 / 560, 190], ['cuartos', 540, 237, 190], ['cuartos', 540, 1442, 190],
+      ['semi', 250, 535, 220], ['semi', 250, 1141, 220], ['granfinal', 540, 652, 280], ['tercer', 540, 813, 200], ['campeon', 540, 936, 220]],
+    podio: { oro: [430, 1016, 650, 1076, '1°'], plata: [160, 1026, 420, 1076, '2°'], bronce: [660, 1030, 920, 1076, '3°'] },
+    caja: (c, lado) => {
+      const p = posV(c.st, c.i);
+      if (p.fila) { const [y, h, xa, xb] = p.fila, x = lado === 'a' ? xa : xb; return [x[0], y, x[1] - x[0], h]; }
+      const [cx, top] = p.pila; return [cx - VCW / 2, lado === 'a' ? top : top + VBH + VGAP, VCW, VBH];
+    },
+    vs: (c) => {
+      const p = posV(c.st, c.i);
+      if (p.fila) { const [y, h, xa, xb] = p.fila; return [xa[1], y, xb[0] - xa[1], h]; }
+      const [cx, top] = p.pila; return [cx - 78, top + VBH, 156, VGAP];
+    },
+    marco: (c) => {
+      const p = posV(c.st, c.i);
+      if (p.fila) { const [y, h, xa, xb] = p.fila; return [xa[0] - 13, y - 13, xb[1] - xa[0] + 26, h + 26]; }
+      const [cx, top] = p.pila; return [cx - VCW / 2 - 13, top - 13, VCW + 26, VPAR + 26];
+    },
+    grande: (c) => !!V_FILA[c.st],
+    temas: [[720, 534, 220], [720, 1140, 220]],
+    nav: { grupos: FILAS_V, de: navDe(FILAS_V), antes: 'ArrowUp', despues: 'ArrowDown', menos: 'ArrowLeft', mas: 'ArrowRight', cruz: CX_V }
+  };
 
   /* ---------- Historias (1080 x 1920) y llave de ronda (1080 x LLAVE_ALTO) ---------- */
   const CARTAS = [
@@ -216,58 +278,66 @@
     modal.hidden = true;
     raiz.append(hud, inactivo, modal);
 
-    /* ===================== BRACKET ===================== */
-    const lienzo = el('div', 'cmft-lienzo cmft-bracket');
-    lienzo.style.width = W + 'px'; lienzo.style.height = H + 'px'; lienzo.style.backgroundImage = `url("${IMG.fondoH}")`;
-    vB.appendChild(lienzo);
+    /* ===================== BRACKET (horizontal 1560x960; vertical 1080x1728 si la ventana es más alta que ancha) ===================== */
     const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'cmft-lineas');
-    const path = document.createElementNS(NS, 'path'); path.setAttribute('d', lineasBracket()); svg.appendChild(path);
-    lienzo.appendChild(svg);
-    TITULOS.forEach(([k, cx, top, w]) => {
-      const im = el('img', 'cmft-titulo'); im.src = IMG[k]; im.alt = ''; im.draggable = false;
-      caja(im, cx - w / 2, top, w); lienzo.appendChild(im);
-    });
-    const marcoSel = el('div', 'cmft-sel'); lienzo.appendChild(marcoSel);
-    const cajas = [];   // { e, nom, c, lado }
-    CRUCES.forEach((c) => {
-      const [x, top] = posCruce(c.st, c.i);
-      const vs = caja(el('div', 'cmft-bvs', 'VS'), x + CW / 2 - 78, top + BH, 156, GAP);
-      vs.dataset.id = c.id; lienzo.appendChild(vs);
-      ['a', 'b'].forEach((lado) => {
-        const e = caja(el('div', 'cmft-box'), x, lado === 'a' ? top : top + BH + GAP, CW, BH);
-        const nom = el('span', 'cmft-nom'); e.appendChild(nom);
-        e.dataset.id = c.id; e.dataset.lado = lado;
-        if (operador && c.st === 'octavos') {
-          e.classList.add('cmft-box--edit');
-          const lap = el('button', 'cmft-lapiz', LAPIZ); lap.type = 'button'; lap.tabIndex = -1; lap.title = 'Cambiar MC'; lap.dataset.lapiz = '1';
-          e.appendChild(lap);
-        }
-        lienzo.appendChild(e); cajas.push({ e, nom, c, lado });
+    function construir(geo) {
+      const lienzo = el('div', 'cmft-lienzo cmft-bracket ' + geo.clase);
+      lienzo.style.width = geo.W + 'px'; lienzo.style.height = geo.H + 'px'; lienzo.style.backgroundImage = `url("${geo.fondo}")`;
+      if (geo.cubrir) lienzo.style.backgroundSize = 'cover';
+      vB.appendChild(lienzo);
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${geo.W} ${geo.H}`); svg.setAttribute('class', 'cmft-lineas');
+      const path = document.createElementNS(NS, 'path'); path.setAttribute('d', geo.lineas()); svg.appendChild(path);
+      lienzo.appendChild(svg);
+      geo.titulos.forEach(([k, cx, top, w]) => {
+        const im = el('img', 'cmft-titulo'); im.src = IMG[k]; im.alt = ''; im.draggable = false;
+        caja(im, cx - w / 2, top, w); lienzo.appendChild(im);
       });
-    });
-    const podio = {};
-    Object.entries(PODIO).forEach(([k, [x0, y0, x1, y1, rango]]) => {
-      const e = caja(el('div', 'cmft-box cmft-pod cmft-pod--' + k), x0, y0, x1 - x0, y1 - y0);
-      e.dataset.rango = rango; const nom = el('span', 'cmft-nom'); e.appendChild(nom);
-      lienzo.appendChild(e); podio[k] = { e, nom };
-    });
-    const temas = [0, 1].map((i) => {
-      const cx = i === 0 ? 572 : 988;
-      const t = caja(el('div', 'cmft-tag'), cx - CW / 2, 350, CW);
-      t.appendChild(el('small', null, 'TEMÁTICA'));
-      let campo;
-      if (operador) {
-        campo = el('input', 'cmft-tag__in'); campo.type = 'text'; campo.maxLength = 24; campo.spellcheck = false; campo.autocomplete = 'off'; campo.tabIndex = -1;
-        campo.addEventListener('input', () => { const v = campo.value.toUpperCase().slice(0, 24); if (acc.tematica) acc.tematica(i, v); });
-        /* La palabra es secreta hasta revelarla con W en la batalla: en el bracket sale "??????" y solo se ve mientras se edita. */
-        campo.addEventListener('focus', () => { seleccionar('semifinal-' + i, null); campo.value = tematicaReal(i); });
-        campo.addEventListener('blur', () => { campo.value = OCULTA; });
-      } else campo = el('b', 'cmft-tag__txt');
-      t.appendChild(campo); lienzo.appendChild(t);
-      return campo;
-    });
+      const marco = el('div', 'cmft-sel'); lienzo.appendChild(marco);
+      const editable = operador && geo === GEO_H;   // lápiz y temática editable: solo en el bracket horizontal del operador
+      const cajas = [];   // { e, nom, c, lado }
+      CRUCES.forEach((c) => {
+        const vs = caja(el('div', 'cmft-bvs', 'VS'), ...geo.vs(c));
+        vs.dataset.id = c.id; lienzo.appendChild(vs);
+        ['a', 'b'].forEach((lado) => {
+          const e = caja(el('div', 'cmft-box'), ...geo.caja(c, lado));
+          if (geo.grande && geo.grande(c)) e.classList.add('cmft-box--grande');
+          const nom = el('span', 'cmft-nom'); e.appendChild(nom);
+          e.dataset.id = c.id; e.dataset.lado = lado;
+          if (editable && c.st === 'octavos') {
+            e.classList.add('cmft-box--edit');
+            const lap = el('button', 'cmft-lapiz', LAPIZ); lap.type = 'button'; lap.tabIndex = -1; lap.title = 'Cambiar MC'; lap.dataset.lapiz = '1';
+            e.appendChild(lap);
+          }
+          lienzo.appendChild(e); cajas.push({ e, nom, c, lado });
+        });
+      });
+      const podio = {};
+      Object.entries(geo.podio).forEach(([k, [x0, y0, x1, y1, rango]]) => {
+        const e = caja(el('div', 'cmft-box cmft-pod cmft-pod--' + k), x0, y0, x1 - x0, y1 - y0);
+        e.dataset.rango = rango; const nom = el('span', 'cmft-nom'); e.appendChild(nom);
+        lienzo.appendChild(e); podio[k] = { e, nom };
+      });
+      const temas = geo.temas.map(([x, y, w], i) => {
+        const t = caja(el('div', 'cmft-tag'), x, y, w);
+        t.appendChild(el('small', null, 'TEMÁTICA'));
+        let campo;
+        if (editable) {
+          campo = el('input', 'cmft-tag__in'); campo.type = 'text'; campo.maxLength = 24; campo.spellcheck = false; campo.autocomplete = 'off'; campo.tabIndex = -1;
+          campo.addEventListener('input', () => { const v = campo.value.toUpperCase().slice(0, 24); if (acc.tematica) acc.tematica(i, v); });
+          /* La palabra es secreta hasta revelarla con W en la batalla: en el bracket sale "??????" y solo se ve mientras se edita. */
+          campo.addEventListener('focus', () => { seleccionar('semifinal-' + i, null); campo.value = tematicaReal(i); });
+          campo.addEventListener('blur', () => { campo.value = OCULTA; });
+        } else campo = el('b', 'cmft-tag__txt');
+        t.appendChild(campo); lienzo.appendChild(t);
+        return campo;
+      });
+      return { geo, lienzo, marco, cajas, podio, temas, editable };
+    }
+    const LIENZOS = [construir(GEO_H), construir(GEO_V)];
+    const lienzo = LIENZOS[0].lienzo;                                   // el panel y el lema van solo en el horizontal
+    const cajas = LIENZOS[0].cajas.concat(LIENZOS[1].cajas);
+    const temas = LIENZOS[0].temas;                                     // las editables (operador)
     const panel = el('div', 'cmft-panel',
       '<div class="cmft-panel__fila"><div class="cmft-panel__ronda"></div><div class="cmft-panel__riv"><b class="cmft-panel__a"></b><i>VS</i><b class="cmft-panel__b"></b></div></div>' +
       '<div class="cmft-panel__acc"><button type="button" class="cmft-btn" data-acc="iniciar">Iniciar batalla</button><span class="cmft-panel__tecla">ENTER</span>' +
@@ -358,7 +428,8 @@
     const CLAVE_SEL = 'cmf-torneo-seleccion-v1';
     let vista = 'bracket', idxH = 0, idxL = 0, ultimaFirma = null;
     let sel = null;   // { id, lado } — la selección propia (no depende del foco del DOM)
-    const recuerdo = {};   // último cruce visitado en cada columna (para empates al cambiar de columna)
+    const recuerdo = { h: {}, v: {} };   // último cruce visitado en cada columna o fila (para empates al cambiar)
+    let vertical = false;                 // bracket vertical en pantalla (lo decide escalar())
     if (!salida) {
       try { const s = JSON.parse(sessionStorage.getItem(CLAVE_SEL) || 'null'); if (s && POR_ID[s.id]) sel = { id: s.id, lado: s.lado === 'a' || s.lado === 'b' ? s.lado : null }; } catch (e) { sel = null; }
     }
@@ -391,22 +462,23 @@
         e.classList.toggle('cmft-box--fija', !!m.winner);
       });
       const fin = cruce(b, POR_ID['final-0']), ter = cruce(b, POR_ID['tercerPuesto-0']);
-      [['oro', ganadorDe(fin)], ['plata', perdedorDe(fin)], ['bronce', ganadorDe(ter)]].forEach(([k, n]) => {
-        const d = mc(n); podio[k].nom.textContent = d ? d.nombre : ''; podio[k].e.classList.toggle('cmft-lleno', !!d);
-      });
-      temas.forEach((t, i) => {
-        const v = tematicaReal(i) ? OCULTA : '';
-        if (operador) { if (document.activeElement !== t && t.value !== v) t.value = v; } else t.textContent = v;
+      LIENZOS.forEach((L) => {
+        [['oro', ganadorDe(fin)], ['plata', perdedorDe(fin)], ['bronce', ganadorDe(ter)]].forEach(([k, n]) => {
+          const d = mc(n); L.podio[k].nom.textContent = d ? d.nombre : ''; L.podio[k].e.classList.toggle('cmft-lleno', !!d);
+        });
+        L.temas.forEach((t, i) => {
+          const v = tematicaReal(i) ? OCULTA : '';
+          if (L.editable) { if (document.activeElement !== t && t.value !== v) t.value = v; } else t.textContent = v;
+        });
       });
     }
     function pintarSel() {
       const b = B();
       cajas.forEach(({ e, c, lado }) => e.classList.toggle('cmft-casilla', !!sel && sel.id === c.id && sel.lado === lado));
-      if (sel && !salida) {
-        const [x, top] = posCruce(POR_ID[sel.id].st, POR_ID[sel.id].i);
-        caja(marcoSel, x - 13, top - 13, CW + 26, 2 * BH + GAP + 26);
-        marcoSel.classList.add('cmft-on');
-      } else marcoSel.classList.remove('cmft-on');
+      LIENZOS.forEach((L) => {
+        if (sel && !salida) { caja(L.marco, ...L.geo.marco(POR_ID[sel.id])); L.marco.classList.add('cmft-on'); }
+        else L.marco.classList.remove('cmft-on');
+      });
       /* Panel: ronda y rivales del cruce SELECCIONADO (si no hay selección, del combate que toca). */
       const c = (sel && POR_ID[sel.id]) || actual(b) || (cruce(b, POR_ID['final-0']).winner ? POR_ID['final-0'] : null);   // torneo terminado: la final
       if (!c) { panel.classList.add('cmft-off'); P.iniciar.hidden = P.rehacer.hidden = true; return; }
@@ -458,7 +530,7 @@
       lCartas.forEach((v, i) => v.e.classList.toggle('cmft-on', i === idxL));
     }
     function ajustarBracket() {
-      cajas.concat(Object.values(podio)).forEach(({ e, nom }) => {
+      cajas.concat(...LIENZOS.map((L) => Object.values(L.podio))).forEach(({ e, nom }) => {   // el lienzo oculto mide 0 y se salta
         if (!e.clientWidth) return;
         const cs = getComputedStyle(e);
         achicar(nom, (e.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) * 0.96);
@@ -488,7 +560,9 @@
     function escalar() {
       const w = raiz.clientWidth, h = raiz.clientHeight;
       if (!w || !h) return;
-      [[lienzo, W, H], [hWrap, 1080, 1920], [lWrap, LLAVE_ANCHO, LLAVE_ALTO]].forEach(([e, ew, eh]) => {
+      vertical = h > w;   // ventana más alta que ancha (LED de 640x1024): bracket vertical
+      vB.classList.toggle('cmft-vertical', vertical);
+      LIENZOS.map((L) => [L.lienzo, L.geo.W, L.geo.H]).concat([[hWrap, 1080, 1920], [lWrap, LLAVE_ANCHO, LLAVE_ALTO]]).forEach(([e, ew, eh]) => {
         const s = Math.min(w / ew, h / eh);
         e.style.transform = `translate(${(w - ew * s) / 2}px, ${(h - eh * s) / 2}px) scale(${s})`;
       });
@@ -539,22 +613,24 @@
     }
     function mover(dir) {
       if (!sel) return;
-      const [c, r] = COL_DE[sel.id];
+      /* Horizontal: ← → cambian de columna y ↑ ↓ se mueven dentro de ella. Vertical: ↑ ↓ cambian de fila y ← → dentro de ella. */
+      const N = (vertical ? GEO_V : GEO_H).nav, R = recuerdo[vertical ? 'v' : 'h'];
+      const [g, r] = N.de[sel.id], grupo = N.grupos[g];
       let nuevo = sel.id;
-      if (dir === 'ArrowUp') nuevo = COLS[c][Math.max(0, r - 1)];
-      else if (dir === 'ArrowDown') nuevo = COLS[c][Math.min(COLS[c].length - 1, r + 1)];
+      if (dir === N.menos) nuevo = grupo[Math.max(0, r - 1)];
+      else if (dir === N.mas) nuevo = grupo[Math.min(grupo.length - 1, r + 1)];
       else {
-        const c2 = c + (dir === 'ArrowRight' ? 1 : -1);
-        if (c2 < 0 || c2 >= COLS.length) return;   // en los bordes se queda
+        const g2 = g + (dir === N.despues ? 1 : -1);
+        if (g2 < 0 || g2 >= N.grupos.length) return;   // en los bordes se queda
         let mejor = null, dmin = Infinity;
-        COLS[c2].forEach((id) => {
-          const d = Math.abs(CY[id] - CY[sel.id]);
-          if (d < dmin - 0.5 || (Math.abs(d - dmin) <= 0.5 && id === recuerdo[c2])) { dmin = d; mejor = id; }
+        N.grupos[g2].forEach((id) => {
+          const d = Math.abs(N.cruz[id] - N.cruz[sel.id]);
+          if (d < dmin - 0.5 || (Math.abs(d - dmin) <= 0.5 && id === R[g2])) { dmin = d; mejor = id; }
         });
         nuevo = mejor;
       }
       if (nuevo === sel.id) return;
-      recuerdo[c] = sel.id;
+      R[g] = sel.id;
       seleccionar(nuevo, null);
     }
     function casilla(atras) {

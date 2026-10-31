@@ -115,6 +115,18 @@
 .cmft-lema { position: absolute; right: 76px; bottom: 56px; font-family: var(--cmft-font); font-size: 18.7px; letter-spacing: .3em; color: rgba(255, 255, 255, .8);
   text-shadow: 0 0 9px var(--cmft-azul); pointer-events: none; white-space: nowrap; }
 
+/* Bracket vertical (1080 x 1728, para pantallas LED de 640 x 1024): solo cuando la ventana es más alta que ancha. */
+.cmft-bracket--v { display: none; }
+.cmft-vertical .cmft-bracket--h { display: none; }
+.cmft-vertical .cmft-bracket--v { display: block; }
+.cmft-bracket--v .cmft-box { font-size: 30px; }
+.cmft-bracket--v .cmft-box--grande { font-size: 38px; }
+.cmft-bracket--v .cmft-pod { padding-left: 46px; }
+.cmft-bracket--v .cmft-pod--oro { font-size: 36px; }
+.cmft-bracket--v .cmft-bvs { font-size: 18px; }
+.cmft-bracket--v .cmft-tag small { font-size: 16px; }
+.cmft-bracket--v .cmft-tag__txt { font-size: 26px; }
+
 /* ======================= HISTORIAS (1080 x 1920) ======================= */
 .cmft-card { position: absolute; inset: 0; width: 1080px; height: 1920px; background: #000 0 0 / 100% 100%; display: none; font-family: var(--cmft-font); color: #fff; }
 .cmft-card.cmft-on { display: block; animation: cmft-entra .35s ease-out; }

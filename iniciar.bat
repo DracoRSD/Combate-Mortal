@@ -40,7 +40,7 @@ rem Pantallas del torneo (bracket, historias, llave): mismo Chrome y perfil, asi
 rem Para no abrirlas, cambia TORNEO=1 por TORNEO=0.
 set TORNEO=1
 set URLT=http://localhost:8000/torneo.html?t=%T%
-if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#bracket" --window-position=60,60 --window-size=1280,800
+if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#bracket" --window-position=60,0 --window-size=640,1024
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#historias" --window-position=120,40 --window-size=560,980
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%#llave" --window-position=700,40 --window-size=760,980
 timeout /t 4 >nul

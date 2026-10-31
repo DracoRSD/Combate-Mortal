@@ -3,7 +3,7 @@
   COMBATE MORTAL FREESTYLE · TORNEO EN OTRA PANTALLA
   Las mismas vistas del torneo del operador, en una ventana aparte y sincronizadas con él
   (mismo navegador y mismo perfil: iniciar.bat las abre así).
-      http://localhost:8000/torneo.html#bracket     bracket completo (1560x960)
+      http://localhost:8000/torneo.html#bracket     bracket completo (1560x960; en una ventana vertical, p. ej. 640x1024, sale el bracket vertical)
       http://localhost:8000/torneo.html#historias   historias 1080x1920, una tarjeta por grupo
       http://localhost:8000/torneo.html#llave       llave de la ronda 1080x1350
   Teclas: V cambiar de vista · ← → otra ronda (historias y llave) · E descargar PNG ·
@@ -15,7 +15,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CMF · Torneo</title>
-<link rel="stylesheet" href="css/torneo-vistas.css?v=16">
+<link rel="stylesheet" href="css/torneo-vistas.css?v=17">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   .cmft-falta { color: #fff; font: 18px/1.5 system-ui, sans-serif; padding: 40px; }
@@ -23,7 +23,7 @@
 </head>
 <body>
 <div id="cmft"></div>
-<script src="js/torneo-vistas.js?v=16"></script>
+<script src="js/torneo-vistas.js?v=17"></script>
 <script>
   if (window.CMFTorneo) window.CMFTorneo.pantalla(document.getElementById('cmft'));
   else document.body.innerHTML = '<p class="cmft-falta">No se encontró js/torneo-vistas.js. Abre esta página desde el servidor (iniciar.bat), con la carpeta completa del proyecto.</p>';
