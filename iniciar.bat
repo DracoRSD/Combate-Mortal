@@ -58,7 +58,9 @@ set URL=http://localhost:8000/Combate_Mortal.html
 start "Servidor CMF" cmd /k %PY% -m http.server 8000
 timeout /t 3 >nul
 
-start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1600x900&t=%T%" --window-position=0,0 --window-size=1600,900
+rem Transmision (para OBS): contenido de 1920x1080 exactos. Si el monitor es de 1920x1080 no cabe con la barra de titulo:
+rem haz clic dentro de esa ventana y pasa a pantalla completa (1920x1080).
+start "" "%CHROME%" %FLAGS% --app="%URL%?salida=transmision&pos=0,0&tam=1920x1080&t=%T%" --window-position=0,0 --window-size=1920,1080
 timeout /t 3 >nul
 rem Operador:
 rem   OPERADOR=pantallas  el contador del operador sale como 3 columnas de 640x1024 (MC A / reloj / MC B)

@@ -15,7 +15,7 @@
       Operador (menús, teclado, controles)   http://localhost:8000/Combate_Mortal.html
       Salida limpia (para el mezclador/OBS)  http://localhost:8000/Combate_Mortal.html?salida=limpia
       Presentación (solo las 2 fotos, croma) http://localhost:8000/Combate_Mortal.html?salida=presentacion   (otra capa, aparte del contador)
-      Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
+      Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (1920x1080, croma por defecto; tecla O la abre)
       Pantallas del evento (tormenta, una por pantalla LED, en ventanas de 640x1024; F11 si se quiere pantalla completa):
         izquierda ?salida=lateral&lado=a (tecla 4) · derecha ?salida=lateral&lado=b (tecla 5) · reloj del centro ?salida=reloj (tecla 6)
         Las tres se adaptan a pantallas verticales (LED de 640x1024): los laterales llenan la pantalla y el reloj usa un lienzo vertical
@@ -4416,7 +4416,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '30';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '31';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
@@ -4673,7 +4673,8 @@ else init();
     function abrirSalida(modo) {
       var q = new URLSearchParams(location.search);
       var url = location.href.split('?')[0].split('#')[0] + '?salida=' + PARAMS[modo] + (fondoSalida ? '&fondo=' + fondoSalida : '') + (q.get('croma') ? '&croma=' + encodeURIComponent(q.get('croma')) : '');
-      var w = window.open('', NOMBRES[modo], /^lateral|^reloj/.test(modo) ? 'popup=yes,width=640,height=1024' : 'popup=yes,width=1280,height=720');   // pantallas LED: 640x1024
+      var w = window.open('', NOMBRES[modo], /^lateral|^reloj/.test(modo) ? 'popup=yes,width=640,height=1024'   // pantallas LED: 640x1024
+        : modo === 'transmision' ? 'popup=yes,left=0,top=0,width=1920,height=1080' : 'popup=yes,width=1280,height=720');   // transmisión (OBS): 1920x1080
       if (!w) { aviso('Ventana bloqueada: permite ventanas emergentes'); return; }
       outWin = w;
       var vacia = false;
