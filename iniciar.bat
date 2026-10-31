@@ -6,7 +6,7 @@ rem  pantallas LED (lateral A, reloj, lateral B) de 640x1024, las del torneo (to
 rem  y por ultimo el operador. Cada pagina se coloca sola con ?pos= y ?tam= de su direccion.
 rem  OPERADOR=pantallas (lo normal ahora): el operador ya trae las 3 pantallas LED dentro
 rem  (MC A / reloj / MC B, 640x1024 cada una, arriba a la izquierda). Esa ventana va al procesador LED:
-rem  llevala a esa salida (Windows + Shift + flecha) y haz clic: pasa a pantalla completa.
+rem  mide 1920x1024 (las 3 pantallas a tamano real); en la salida de 1920 al procesador, un clic = pantalla completa.
 rem  No usar --kiosk: como todas comparten el mismo Chrome, pondria TODAS en pantalla completa.
 rem
 rem  Usa un Chrome PROPIO de CMF (carpeta "perfil-cmf" al lado de este archivo).
@@ -90,9 +90,10 @@ if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=320,0&tam=640x1
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=120,40&tam=540x960#historias" --window-position=120,40 --window-size=560,980
 if "%TORNEO%"=="1" start "" "%CHROME%" %FLAGS% --app="%URLT%&pos=700,40&tam=720x900#llave" --window-position=700,40 --window-size=760,980
 set "URLOP=%URL%?t=%T%"
-if "%OPERADOR%"=="pantallas" set "URLOP=%URL%?pantallas=1&t=%T%"
+if "%OPERADOR%"=="pantallas" set "URLOP=%URL%?pantallas=1&pos=0,0&tam=1920x1024&t=%T%"
 timeout /t 4 >nul
-rem Operador en 3 pantallas: ventana de aplicacion (sin pestanas ni barra de direccion) que ocupa el monitor;
-rem con el primer clic o tecla pasa a pantalla completa (mantener Esc para salir, un clic vuelve).
-if "%OPERADOR%"=="pantallas" start "" "%CHROME%" %FLAGS% --start-maximized --app="%URLOP%"
+rem Operador en 3 pantallas: ventana de aplicacion (sin pestanas ni barra de direccion) de 1920x1024 exactos en 0,0:
+rem solo las tres pantallas de 640x1024, a tamano real. En una salida de 1920 de ancho (procesador LED) el primer clic
+rem la pone en pantalla completa (mantener Esc para salir).
+if "%OPERADOR%"=="pantallas" start "" "%CHROME%" %FLAGS% --app="%URLOP%" --window-position=0,0 --window-size=1920,1024
 if not "%OPERADOR%"=="pantallas" start "" "%CHROME%" %FLAGS% --new-window --start-maximized "%URLOP%"
