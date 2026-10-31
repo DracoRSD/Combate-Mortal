@@ -1242,6 +1242,8 @@
   .llaves__corner--right { right: 23.04px; }
   .llaves__corner:hover, .llaves__corner:focus-visible { background: rgba(6,11,26,0.85); border-color: var(--color-bracket-glow); color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79,195,247,0.45), 0 0 12px rgba(79,195,247,0.6); }
   .bracket-stages { position: absolute; inset: 0; }
+  .llaves__falta { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 9; max-width: 1500px; padding: 6px 16px; border-radius: 6px;
+    font: 600 16px/1.3 system-ui, sans-serif; color: #1a1200; background: #ffd23f; text-align: center; pointer-events: none; }
   .bracket-match { display: contents; }
   .bracket-slot { position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center; margin: 0; padding: 0 9.6px; background: #27375a; border: 2.11px solid #ffffff; border-radius: 0; color: #ffffff; font-family: 'CM Bebas', 'CM Anton', sans-serif; font-weight: 700; font-size: 20.16px; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; overflow: hidden; }
   .bracket-slot--final { background: #1e90ff; font-size: 24.96px; }
@@ -2741,7 +2743,18 @@
   var torneoUI = null, torneoSync = null;
   (function () {
     var cssOk = getComputedStyle(document.documentElement).getPropertyValue('--cmft-css').trim() === '1';
-    if (!window.CMFTorneo || !cssOk || /[?&]bracket=viejo(&|$)/.test(location.search)) return;
+    if (/[?&]bracket=viejo(&|$)/.test(location.search)) return;
+    if (!window.CMFTorneo || !cssOk) {
+      // Faltan los archivos del bracket nuevo: queda el anterior, pero se avisa en pantalla (no en las salidas) por qué.
+      if (!window.CMF_SALIDA) {
+        var falta = document.createElement('div');
+        falta.className = 'llaves__falta';
+        falta.textContent = 'BRACKET ANTERIOR · no se encontró ' + (!window.CMFTorneo ? 'js/torneo-vistas.js' : 'css/torneo-vistas.css') +
+          ' · copia la carpeta COMPLETA del ZIP (assets, css, js) junto a Combate_Mortal.html y abre con iniciar.bat';
+        els.bracketStages.parentNode.appendChild(falta);
+      }
+      return;
+    }
     var pantalla = document.getElementById('screenTorneo');
     var raiz = document.createElement('div');
     els.bracketStages.parentNode.insertBefore(raiz, els.bracketStages);   // dentro de .llaves, debajo de los botones de las esquinas
@@ -4325,7 +4338,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '23';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '24';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
