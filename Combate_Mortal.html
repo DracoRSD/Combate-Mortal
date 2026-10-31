@@ -13,6 +13,7 @@
       Transmisión (bloque de la esquina)     http://localhost:8000/Combate_Mortal.html?salida=transmision   (croma por defecto; tecla O la abre)
       Pantallas del evento (tormenta, una por monitor, a pantalla completa con clic o F11):
         izquierda ?salida=lateral&lado=a (tecla 4) · derecha ?salida=lateral&lado=b (tecla 5) · reloj del centro ?salida=reloj (tecla 6)
+        Las tres se adaptan a pantallas verticales (LED de 640x1024): los laterales llenan la pantalla y el reloj usa un lienzo vertical.
   Opciones de la salida:  &fondo=tormenta|croma|negro|transparente   &croma=%23RRGGBB (clave, por defecto magenta #FF00FF)
   Las dos ventanas deben abrirse en el MISMO navegador y perfil (se hablan por BroadcastChannel). Tecla P en el operador abre la
   salida; en la ventana de salida, clic = pantalla completa (o F11). El operador debe quedar visible (no minimizado).
@@ -1573,6 +1574,14 @@
   html.salida-reloj #screenContador .duel { margin-top: 232px; grid-template-columns: auto; }   /* una sola columna: el reloj queda centrado */
   html.salida-reloj #battleCore { --d: 650px; }
   html.salida-reloj #screenContador > .word-label { top: 905px; }
+  /* Reloj central en pantalla vertical (LED de 640x1024): lienzo 1080x1728 (5:8), reloj y placas más grandes. */
+  html.salida-reloj.reloj-vertical #stage { width: 1080px; height: 1728px; }
+  html.salida-reloj.reloj-vertical #screenContador { width: 1080px; min-height: 1728px; height: 1728px; }
+  html.salida-reloj.reloj-vertical #screenContador .duel { margin-top: 430px; }
+  html.salida-reloj.reloj-vertical #battleCore { --d: 900px; }
+  html.salida-reloj.reloj-vertical #screenContador > .bracket-bar { top: 96px; transform: translateX(-50%) scale(1.7); transform-origin: 50% 0; }
+  html.salida-reloj.reloj-vertical #screenContador > .format-info { top: 270px; transform: translateX(-50%) scale(1.7); transform-origin: 50% 0; }
+  html.salida-reloj.reloj-vertical #screenContador > .word-label { top: 1460px; transform: translateX(-50%) skew(-8deg) scale(1.6); transform-origin: 50% 0; }
 </style>
 
 <script>
@@ -1621,6 +1630,11 @@
   root.classList.toggle('salida-trans', S.modo === 'transmision');
   root.classList.toggle('salida-lateral', S.modo === 'lateral');
   root.classList.toggle('salida-reloj', S.modo === 'reloj');
+  if (S.modo === 'reloj') {   // pantalla más alta que ancha (LED vertical): el reloj pasa al lienzo vertical
+    var relojVertical = function () { root.classList.toggle('reloj-vertical', window.innerHeight > window.innerWidth); };
+    relojVertical();
+    window.addEventListener('resize', relojVertical);
+  }
   root.classList.toggle('salida-local', S.local);
   document.title = { presentacion: 'CMF Presentación', transmision: 'CMF Transmisión', reloj: 'CMF Reloj', lateral: S.lado === 'b' ? 'CMF Derecha' : 'CMF Izquierda' }[S.modo] || 'CMF Salida';   // títulos distintos: así se distinguen en la captura de ventana de OBS
   S.setFondo(q.get('fondo'));
@@ -4295,7 +4309,7 @@ else init();
   if (!I) return;
   var SALIDA = !!window.CMF_SALIDA;
   var CANAL = 'cmf-salida';
-  var VERSION = '19';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
+  var VERSION = '20';   // sube con cada cambio; se ve al final del indicador del operador para saber qué archivo se cargó
   var FONDOS = ['tormenta', 'croma', 'negro', 'transparente'];
 
   /* Transporte: lo único que habría que reescribir para usar WebSocket.
